@@ -1,8 +1,8 @@
-# InfluxDB 3 Helm Chart
+# InfluxDB 3
 
-A Helm chart for InfluxDB 3
+A Helm chart for InfluxDB 3 Core time-series database
 
-This Helm chart deploys a simple, single-node InfluxDB 3 instance in Kubernetes.
+This Helm chart deploys a simple, single-node InfluxDB 3 instance in Kubernetes for metrics storage.
 
 ## Installing the Chart
 
@@ -39,11 +39,13 @@ helm delete influxdb3
 
 The command removes all the Kubernetes components associated with the chart and deletes the release.
 
-## Values
+## Configuration
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| affinity | object | `{}` | Pod affinity configuration |
+### Chart Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `affinity` | object | `{}` | Pod affinity configuration |
 | annotations | object | `{}` | Annotations for the Deployment |
 | securityContext | object | `{}` | Container security context (allowPrivilegeEscalation, etc.) |
 | fullnameOverride | string | `""` | Overrides the chart's computed fullname |
@@ -69,3 +71,8 @@ The command removes all the Kubernetes components associated with the chart and 
 | args | list | `["--object-store=memory", "--data-dir=/var/lib/influxdb3", "--plugin-dir=/var/lib/influxdb3-plugins", "--node-id=node0", "--http-bind=0.0.0.0:8081", "--without-auth"]` | InfluxDB command line arguments |
 
 For more information about InfluxDB 3 configuration, please refer to the [InfluxDB 3 Documentation](https://docs.influxdata.com/influxdb/v3/).
+
+## Production Use
+
+This chart is intended for **development, testing, and demonstration purposes only**.
+It has not been hardened for production use. Use in production environments at your own risk.

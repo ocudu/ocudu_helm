@@ -1,8 +1,13 @@
-# srsRAN Grafana Helm Chart
+# Grafana Monitoring Stack
 
-A Helm chart for srsRAN Grafana with InfluxDB 3 and Telegraf
+> **⚠️ PoC/Demo - Not for Production Use**
+> 
+> This chart is intended for **development, testing, and demonstration purposes only**.
+> It has not been hardened for production use. Use in production environments at your own risk.
 
-This Helm chart deploys Grafana with srsRAN Dashboards using InfluxDB 3 and Telegraf for metrics.
+A Helm chart for deploying Grafana monitoring stack with InfluxDB 3 and Telegraf
+
+This Helm chart deploys Grafana with srsRAN dashboards using InfluxDB 3 and Telegraf for metrics collection and visualization.
 
 ## Installing the Chart
 
@@ -23,10 +28,12 @@ helm delete grafana
 
 The command removes all the Kubernetes components associated with the chart and deletes the release.
 
-## Values
+## Configuration
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
+### Chart Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
 | grafana.image.repository | string | `"softwareradiosystems/grafana"` | Grafana image repository |
 | grafana.image.tag | string | `"11c9bbabb6__2025-09-15"` | Grafana image tag |
 | grafana.env.GF_VERSION | string | `"12.0.2"` | Grafana version |
@@ -69,3 +76,7 @@ The command removes all the Kubernetes components associated with the chart and 
 
 For more information about Grafana configuration, please refer to the [Grafana Documentation](https://grafana.com/docs/).
 
+## Production Use
+
+This chart is intended for **development, testing, and demonstration purposes only**.
+It has not been hardened for production use. Use in production environments at your own risk.

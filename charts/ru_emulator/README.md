@@ -1,8 +1,8 @@
-# srsRAN Project RU Emulator Server Helm Chart
+# RU Emulator
 
-A Helm chart for srsRAN Project RU Emulator
+A Helm chart for deploying the srsRAN Radio Unit (O-RU) emulator
 
-This Helm chart deploys a RU emulator that receives data from the srsRAN Project CU/DU and responds back like a real RU.
+This Helm chart deploys an RU emulator that receives data from any DU via OpenFronthaul and responds like a real Radio Unit.
 
 ## Installing the Chart
 
@@ -24,11 +24,13 @@ helm delete ru-emulator
 The command removes all the Kubernetes components associated with the chart and deletes the release.
 
 
-## Values
+## Configuration
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| affinity | object | `{}` | Pod affinity configuration |
+### Chart Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `affinity` | object | `{}` | Pod affinity configuration |
 | annotations | object | `{}` | Annotations for the Deployment |
 | securityContext | object | `{}` | Container security context (allowPrivilegeEscalation, etc.) |
 | fullnameOverride | string | `""` | Overrides the chart's computed fullname |
@@ -47,3 +49,8 @@ The command removes all the Kubernetes components associated with the chart and 
 | serviceAccount.name | string | `nil` | Service account name |
 | tolerations | list | `[]` | Tolerations applied to Pods |
 | config | section | `[]` | Configuration for the ru-emulator |
+
+## Production Use
+
+This chart is intended for **development, testing, and demonstration purposes only**.
+It has not been hardened for production use. Use in production environments at your own risk.

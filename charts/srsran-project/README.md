@@ -1,6 +1,6 @@
-# srsran-project-cudu
+# srsRAN Project CU/DU
 
-A Helm chart for srsRAN Project CU/DU
+A Helm chart for deploying the srsRAN Project 5G CU/DU (gNB)
 
 ## Node Requirements
 
@@ -47,9 +47,11 @@ helm delete srsran-project
 
 The command removes all the Kubernetes components associated with the chart and deletes the release.
 
-## Values
+## Configuration
 
-| Key | Type | Default | Description |
+### Chart Parameters
+
+| Parameter | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | `{}` | Pod affinity configuration |
 | annotations | object | `{}` | Annotations for the Deployment |

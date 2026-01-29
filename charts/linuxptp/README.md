@@ -1,6 +1,6 @@
-# linuxptp-agent
+# linuxptp
 
-A Helm chart for Linuxptp Agent
+A Helm chart for deploying LinuxPTP for precise time synchronization
 
 ## Installing the Chart
 
@@ -22,11 +22,13 @@ helm delete my-release
 The command removes all the Kubernetes components associated with the chart and deletes the release.
 
 
-## Values
+## Configuration
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| affinity | object | `{}` | Pod affinity configuration |
+### Chart Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `affinity` | object | `{}` | Pod affinity configuration |
 | annotations | object | `{}` | Annotations for the Deployment |
 | securityContext | object | `{}` | Container security context (allowPrivilegeEscalation, etc.) |
 | fullnameOverride | string | `""` | Overrides the chart's computed fullname |
@@ -47,3 +49,8 @@ The command removes all the Kubernetes components associated with the chart and 
 | config | section | `[]` | Configuration for the linuxptp daemon |
 
 For more information about the values of the config sectoin please refer to the  [LinuxPTP Documentation](https://linuxptp.nwtime.org/documentation/default/).
+
+## Production Use
+
+This chart is intended for **development, testing, and demonstration purposes only**.
+It has not been hardened for production use. Use in production environments at your own risk.

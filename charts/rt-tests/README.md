@@ -1,6 +1,6 @@
 # rt-tests
 
-A Helm chart for rt-tests tool
+A Helm chart for deploying rt-tests real-time performance testing tools
 
 ## Installing the Chart
 
@@ -21,11 +21,13 @@ helm delete my-release
 
 The command removes all the Kubernetes components associated with the chart and deletes the release.
 
-## Values
+## Configuration
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| affinity | object | `{}` | Pod affinity configuration |
+### Chart Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `affinity` | object | `{}` | Pod affinity configuration |
 | annotations | object | `{}` | Annotations for the Deployment |
 | securityContext | object | `{}` | Container security context (allowPrivilegeEscalation, etc.) |
 | fullnameOverride | string | `""` | Overrides the chart's computed fullname |
@@ -72,3 +74,8 @@ Notes:
 - You can modify the rt_tests.yml file to add, remove, or adjust the entries as needed.
 
 This configuration allows you to automate and manage multiple tests or tools, such as performance or stress tests, efficiently within the container.
+
+## Production Use
+
+This chart is intended for **development, testing, and demonstration purposes only**.
+It has not been hardened for production use. Use in production environments at your own risk.

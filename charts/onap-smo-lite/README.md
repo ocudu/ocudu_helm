@@ -1,8 +1,9 @@
-# onap-smo-lite
+# ONAP SMO Lite
 
-This Helm chart deploys a minimal ONAP SMO stack for demo purposes. The stack consists of the SDNC web UI, SDNR controller, SDNR Elasticsearch database, the supporting Kafka/Zookeeper pair, the ONAP VES collector used for alarm and registration forwarding, and an optional Kafka UI for easy inspection of topics.
 
-> **Demo-only:** the chart intentionally deploys a specific constellation of ONAP components to showcase integration with the srsRAN CU/DU. It is not meant as a turnkey, production-ready ONAP installation. For more info refer to the official ONAP deployment guides.
+A Helm chart for deploying a lightweight ONAP SMO stack for O1 management demonstrations
+
+This Helm chart deploys a minimal ONAP SMO stack consisting of the SDNC web UI, SDNR controller, SDNR Elasticsearch database, Kafka/Zookeeper messaging, ONAP VES collector for event forwarding, and an optional Kafka UI for topic inspection.
 
 ## Components
 
@@ -22,9 +23,11 @@ helm install onap-smo ./
 
 By default the chart provisions Kubernetes `Deployment` objects for all three workloads with in-cluster `Service` discovery and shareable configuration served through `ConfigMap` and `Secret` resources. Supply your own credentials by pointing `sdnr.adminCredentials.existingSecret` to a pre-created secret containing `username` and `password` keys.
 
-## Configuration Highlights
+## Configuration
 
-| Value | Description | Default |
+### Chart Parameters
+
+| Parameter | Description | Default |
 |-------|-------------|---------|
 | `sdncWeb.image.repository` | Container image repository for the web UI | `nexus3.onap.org:10001/onap/sdnc-web-image` |
 | `sdncWeb.image.tag` | Container image tag for the web UI | `3.1.1-STAGING-latest` |
@@ -53,3 +56,8 @@ By default the chart provisions Kubernetes `Deployment` objects for all three wo
 > **Note:** The chart defaults assume the Kubernetes DNS zone suffix `srsk8s.bcn`. Change the service hostnames accordingly if your cluster uses a different cluter domain.
 
 Refer to [`values.yaml`](values.yaml) for the complete list of tunables.
+
+## Production Use
+
+This chart is intended for **development, testing, and demonstration purposes only**.
+It has not been hardened for production use. Use in production environments at your own risk.
