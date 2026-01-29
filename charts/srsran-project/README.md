@@ -6,6 +6,7 @@ A Helm chart for deploying the srsRAN Project 5G CU/DU (gNB)
 
 ## Documentation
 
+- **[Security Guide](docs/security.md)** - Pod Security Standards, RBAC, and PDB configuration ⭐
 - **[Network Modes](docs/network-modes.md)** - SR-IOV vs hostNetwork deployment modes
 - **[SR-IOV Setup](docs/sriov-setup.md)** - Complete SR-IOV configuration guide (recommended for production)
 - **[NetworkPolicy](docs/networkpolicy.md)** - Network security and traffic control
@@ -107,6 +108,9 @@ Find images at: [Docker Hub - softwareradiosystems](https://hub.docker.com/u/sof
 | `sriovConfig.enabled` | bool | `true` | Enable SR-IOV device plugin |
 | `sriovConfig.extendedResourceName` | string | `"intel.com/intel_sriov_netdevice"` | SR-IOV resource name |
 | `sriovConfig.vfCount` | int | `1` | Number of SR-IOV VFs to request |
+| `rbac.create` | bool | `true` | Create RBAC Role and RoleBinding |
+| `podDisruptionBudget.enabled` | bool | `true` | Enable PodDisruptionBudget |
+| `podDisruptionBudget.unhealthyPodEvictionPolicy` | string | `"AlwaysAllow"` | Pod eviction policy |
 | `networkPolicy.enabled` | bool | `false` | Enable NetworkPolicy (only works with hostNetwork: false) |
 | `persistence.enabled` | bool | `true` | Enable persistent storage for logs |
 | `persistence.type` | string | `"hostPath"` | Storage type: `pvc` or `hostPath` |
@@ -122,10 +126,11 @@ Find images at: [Docker Hub - softwareradiosystems](https://hub.docker.com/u/sof
 | `config.gnb-config.yml` | string | See values.yaml | gNB configuration file |
 
 For complete parameter documentation, see:
+- [Security configuration](docs/security.md) - RBAC, PDB, Pod Security Standards
 - [Network configuration](docs/network-modes.md)
 - [Storage configuration](docs/storage.md)
 - [Performance tuning](docs/hugepages.md)
-- [Security](docs/networkpolicy.md)
+- [Network policies](docs/networkpolicy.md)
 
 ### gNB Configuration
 

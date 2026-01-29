@@ -56,6 +56,38 @@ serviceAccount:
   # -- Service account name
   name: "srsadmin-gnb"
 
+# -- RBAC (Role-Based Access Control) configuration
+rbac:
+  # -- Create Role and RoleBinding resources
+  # Grants least-privilege permissions to the service account
+  create: true
+  # -- Additional custom RBAC rules
+  # @default -- `[]` (no additional rules)
+  extraRules: []
+  # Example: Allow reading secrets
+  # - apiGroups: [""]
+  #   resources: ["secrets"]
+  #   verbs: ["get"]
+
+# -- Pod Disruption Budget configuration
+# Ensures cluster stability during node maintenance and upgrades
+# ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+podDisruptionBudget:
+  # -- Enable PodDisruptionBudget resource
+  enabled: true
+  # -- Minimum number of available pods
+  # Use 0 for single-replica deployments to allow disruption
+  # Use only one: minAvailable OR maxUnavailable (not both)
+  minAvailable: 0
+  # -- Maximum number of unavailable pods
+  # Uncomment to use maxUnavailable instead of minAvailable
+  # maxUnavailable: 1
+  # -- Unhealthy pod eviction policy
+  # AlwaysAllow: Allows eviction of unhealthy pods (recommended for production)
+  # IfHealthyBudget: Protects unhealthy pods (may block node drains)
+  # @default -- `AlwaysAllow`
+  unhealthyPodEvictionPolicy: AlwaysAllow
+
 # -- Additional pod annotations
 # @default -- `{}` (no additional annotations)
 podAnnotations: {}
