@@ -1,10 +1,31 @@
+#
+# Copyright 2021-2025 Software Radio Systems Limited
+#
+# By using this file, you agree to the terms and conditions set
+# forth in the LICENSE file which can be found at the top level of
+# the distribution.
+#
+
+# -- Container image configuration
 image:
+  # -- Container image repository
   repository: softwareradiosystems/tuned
+  # -- Image tag
+  # @default -- Chart appVersion
   tag: "v2.21.0_1.0.0"
+  # -- Image pull policy
   pullPolicy: IfNotPresent
 
+# -- Name of the tuned profile to create and apply
 profileName: srs-tuned
 
+# -- Content of the tuned profile configuration file
+# This example profile configures system parameters for low-latency RAN workloads including:
+# - Bootloader kernel parameters (hugepages, IOMMU, CPU isolation)
+# - CPU governor and performance settings
+# - Kernel scheduler tuning
+# - Network stack optimization
+# - Virtual memory settings
 profileContent: |
   #
   # Copyright 2021-2025 Software Radio Systems Limited
@@ -44,6 +65,8 @@ profileContent: |
   [vm]
   transparent_hugepages=never
 
+# -- Content of the startup script executed by the tuned profile
+# This script applies additional performance optimizations on system startup
 startupScriptContent: |-
   #!/bin/bash
   #
@@ -67,6 +90,8 @@ startupScriptContent: |-
 
   process $@
 
+# -- Pod affinity configuration for advanced scheduling
+# @default -- `{}` (no affinity rules)
 affinity: {}
   # nodeAffinity:
   #   requiredDuringSchedulingIgnoredDuringExecution:
@@ -77,26 +102,51 @@ affinity: {}
   #         values:
   #         - hostname
 
+# -- Tolerations for pod assignment
+# Allows pods to be scheduled on nodes with matching taints
+# @default -- `[]` (no tolerations)
 tolerations: []
 #   - key: "node-role.kubernetes.io/master"
 #     operator: "Exists"
 #     effect: "NoSchedule"
 #
 
+# -- Host path to the tuned directory
+# This directory contains tuned daemon configuration and profiles
 hostPathTuned: /usr/lib/tuned
 
+# -- Node selector for pod assignment
+# Schedule pods only on nodes with matching labels
+# @default -- `{}` (no node selector)
 nodeSelector: {}
   # kubernetes.io/hostname: hostname
 
+# -- Security context for the container
+# Tuned requires privileged access to modify system parameters
 securityContext:
+  # -- Run container in privileged mode (required for system tuning)
   privileged: true
 
+# -- Resource requests and limits
+# @default -- `{}` (no resource constraints)
 resources: {}
+
+# -- Additional pod annotations
+# @default -- `{}` (no additional annotations)
 annotations: {}
+
+# -- Restart DaemonSet pods when configuration changes
+# Set to true to automatically apply profile changes on update
 restartOnConfigChange: true
 
-# The reboot happens 1 min after the profile is applied.
+# -- Automatic reboot configuration after profile application
+# Some tuned profile changes (especially bootloader parameters) require a reboot
 reboot:
+  # -- Enable automatic system reboot after profile is applied
   enabled: true
+  # -- Command to execute for system reboot
+  # Uses shutdown with 1-minute delay to allow graceful shutdown
   cmd: "/sbin/shutdown -r +1 'tuned profile applied by helm'"
+  # -- Directory to store reboot marker files
+  # Used to track which nodes have been rebooted
   markerDir: /var/lib/tuned-helm

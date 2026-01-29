@@ -6,133 +6,262 @@
 # the distribution.
 #
 
+# -- Grafana configuration (upstream chart values)
+# This chart deploys Grafana for visualization of srsRAN metrics
 grafana:
+  # -- Container image configuration
   image:
+    # -- Container image repository (custom build with dashboards)
     repository: softwareradiosystems/grafana
+    # -- Image tag
+    # @default -- Matches srsRAN release version
     tag: "11c9bbabb6__2025-09-15"
+  
+  # -- Environment variables for Grafana configuration
   env:
+    # -- Grafana HTTP port
     GF_PORT: "3000"
+    # -- Enable anonymous access
     GF_AUTH_ANONYMOUS_ENABLED: "true"
+    # -- Role for anonymous users (Admin, Editor, or Viewer)
     GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
+    # -- Hide Grafana version in UI
     GF_AUTH_ANONYMOUS_HIDE_VERSION: "true"
+    # -- Log level (debug, info, warn, error)
     # GF_LOG_LEVEL: "warning"
+    # -- Default home dashboard path
     GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: "/etc/dashboards/home.json"
+    # -- Minimum dashboard refresh interval
     GF_DASHBOARDS_MIN_REFRESH_INTERVAL: "1s"
+    # -- Disable plugin administration
     GF_PLUGINS_PLUGIN_ADMIN_ENABLED: "false"
+    # -- Admin username
     GF_SECURITY_ADMIN_USER: "admin"
+    # -- Admin password (change for production)
     GF_SECURITY_ADMIN_PASSWORD: "admin1234"
+    # -- InfluxDB3 service URL
     INFLUXDB3_EXTERNAL_URL: "http://influxdb3.srsran.svc.cluster.local:8081"
+    # -- InfluxDB3 authentication token (fake token for demo)
     INFLUXDB3_AUTH_TOKEN: "fake-token-1234567890abcdef"
+    # -- InfluxDB3 database/bucket name
     INFLUXDB3_BUCKET: "srsran"
+  
+  # -- Service configuration
   service:
+    # -- Enable service
     enabled: true
+    # -- Service type (NodePort for external access)
     type: NodePort
+    # -- Service port
     port: 80
+    # -- Target port (container port)
     targetPort: 3000
+    # -- NodePort for external access
     nodePort: 30001
+  
+  # -- Data source configuration
+  # Configures InfluxDB3 as the data source for Grafana
   datasources:
+    # -- Datasource configuration file
     datasources.yaml:
+      # -- Datasources API version
       apiVersion: 1
+      # -- List of data sources
       datasources:
+        # -- InfluxDB data source configuration
         - name: InfluxDB
+          # -- Data source type
           type: influxdb
+          # -- Access mode (proxy = through Grafana backend)
           access: proxy
+          # -- InfluxDB3 URL
           url: http://influxdb3.srsran.svc.cluster.local:8081
+          # -- Unique identifier for this data source
           uid: JOSE3g9KVz
+          # -- JSON data for InfluxDB3 configuration
           jsonData:
+            # -- InfluxDB version (SQL for v3)
             version: SQL
+            # -- Database name
             dbName: srsran
+            # -- Allow insecure gRPC connections
             insecureGrpc: true
+            # -- Maximum series to return in queries
             maxSeries: 100000
+          # -- Secure JSON data (passwords, tokens)
           secureJsonData:
+            # -- Authentication token
             token: "fake-token-1234567890abcdef"
 
+# -- InfluxDB3 configuration (subchart)
+# This deploys InfluxDB3 time-series database for metrics storage
 influxdb3:
+  # -- Container image configuration
   image:
+    # -- Container image repository
     repository: influxdb
+    # -- Image tag
     tag: "3.1.0-core"
+  
+  # -- Service configuration
   service:
+    # -- Service type
     type: ClusterIP
+    # -- Service port
     port: 8081
+  
+  # -- Command-line arguments for InfluxDB3
+  # @default -- See values.yaml
   args:
+    # Use in-memory object store
     - --object-store=memory
+    # Data directory
     - --data-dir=/var/lib/influxdb3
+    # Plugin directory
     - --plugin-dir=/var/lib/influxdb3-plugins
+    # Node identifier
     - --node-id=node0
+    # HTTP bind address
     - --http-bind=0.0.0.0:8081
+    # Disable authentication (demo only)
     - --without-auth
+  
+  # -- Database configuration
   database:
+    # -- Database name to create
     name: srsran
+  
+  # -- Persistence configuration
   persistence:
+    # -- Enable persistent storage
     enabled: true
+    # -- Persistence type (hostPath or pvc)
     type: hostPath
+    # -- Host path for data storage
     hostPath: /mnt/influxdb3
+    # -- Access mode for PVC
     accessMode: ReadWriteOnce
+    # -- Storage size
     size: 50Gi
+    # -- Mount path for data directory
     mountPath: /var/lib/influxdb3
+    # -- Mount path for plugins directory
     pluginMountPath: /var/lib/influxdb3-plugins
 
+# -- Telegraf configuration (subchart)
+# This deploys Telegraf agent for collecting metrics from srsRAN gNB
 telegraf:
+  # -- Use custom image configuration
   useImageConfig: true
+  
+  # -- Container image configuration
   image:
+    # -- Container image repository (custom build with WebSocket input)
     repo: "softwareradiosystems/telegraf"
+    # -- Image tag
+    # @default -- Matches srsRAN release version
     tag: "11c9bbabb6__2025-09-15"
+  
+  # -- Image pull secrets
   imagePullSecrets:
     - name: regcred
+  
+  # -- Command-line arguments for Telegraf
   args:
     - "--config"
     - "/etc/srs/telegraf.conf"
+  
+  # -- Environment variables for Telegraf configuration
   env:
+    # -- WebSocket URL for srsRAN metrics endpoint
     - name: WS_URL
       value: "srsran-project-cudu-chart-metrics.srsran.svc.cluster.local:8001"
+    # -- InfluxDB3 service URL
     - name: INFLUXDB3_EXTERNAL_URL
       value: "http://influxdb3.srsran.svc.cluster.local:8081"
+    # -- InfluxDB3 authentication token
     - name: INFLUXDB3_AUTH_TOKEN
       value: "fake-token-1234567890abcdef"
+    # -- InfluxDB3 bucket/database name
     - name: INFLUXDB3_BUCKET
       value: "srsran"
+    # -- InfluxDB3 write rate limit (0 = unlimited)
     - name: INFLUXDB3_RATE_LIMIT
       value: "0"
+    # -- InfluxDB3 rate limit period
     - name: INFLUXDB3_RATE_LIMIT_PERIOD
       value: "0s"
+    # -- Testbed identifier tag
     - name: INFLUXDB3_TESTBED
       value: "k8s-cluster"
+    # -- Input collection interval
     - name: TELEGRAF_INPUT_INTERVAL
       value: "1s"
+    # -- Output flush interval
     - name: TELEGRAF_OUTPUT_INTERVAL
       value: "1s"
+    # -- Buffer size limit (number of metrics)
     - name: TELEGRAF_BUFFER_LIMIT
       value: "10000"
+    # -- Quiet mode (less logging)
     - name: TELEGRAF_QUIET
       value: "true"
+    # -- Debug mode
     - name: TELEGRAF_DEBUG
       value: "false"
+    # -- Log file path (empty = stdout)
     - name: TELEGRAF_LOG_FILE
       value: ""
+    # -- Input buffer size
     - name: TELEGRAF_INPUT_BUFFER_SIZE
       value: "1MiB"
+    # -- Additional CLI arguments
     - name: TELEGRAF_CLI_EXTRA_ARGS
       value: ""
+  
+  # -- Liveness probe configuration
   livenessProbe:
+    # -- HTTP health check
     httpGet:
+      # -- Health check endpoint path
       path: /health
+      # -- Health check port
       port: 9273
+    # -- Initial delay before first probe
     initialDelaySeconds: 30
+    # -- Probe interval
     periodSeconds: 10
+    # -- Probe timeout
     timeoutSeconds: 5
+    # -- Failure threshold
     failureThreshold: 3
+  
+  # -- Readiness probe configuration
   readinessProbe:
+    # -- HTTP health check
     httpGet:
+      # -- Health check endpoint path
       path: /health
+      # -- Health check port
       port: 9273
+    # -- Initial delay before first probe
     initialDelaySeconds: 5
+    # -- Probe interval
     periodSeconds: 5
+    # -- Probe timeout
     timeoutSeconds: 3
+    # -- Failure threshold
     failureThreshold: 3
+  
+  # -- Tolerations for pod assignment
+  # Example configuration for dedicated hardware
   tolerations:
     - key: "machine"
       operator: "Equal"
       value: "srskit-rack1"
       effect: "NoSchedule"
+  
+  # -- Service configuration
   service:
+    # -- Disable service (Telegraf doesn't need external access)
     enabled: false

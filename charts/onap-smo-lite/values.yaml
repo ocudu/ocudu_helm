@@ -6,74 +6,163 @@
 # the distribution.
 #
 
+# -- Global configuration shared across all components
 global:
+  # -- Image pull secrets for private registries
+  # @default -- `[]` (no pull secrets)
   imagePullSecrets: []
+  # -- Additional pod annotations
+  # @default -- `{}` (no additional annotations)
   podAnnotations: {}
+  # -- Node selector for pod assignment
+  # @default -- `{}` (no node selector)
   nodeSelector: {}
+  # -- Tolerations for pod assignment
+  # @default -- `[]` (no tolerations)
   tolerations: []
+  # -- Pod affinity configuration
+  # @default -- `{}` (no affinity rules)
   affinity: {}
 
+# -- SDNC Web UI configuration
+# Web interface for ONAP SDN-R controller
 sdncWeb:
+  # -- Container image configuration
   image:
+    # -- Container image repository
     repository: nexus3.onap.org:10001/onap/sdnc-web-image
+    # -- Image tag
     tag: 3.1.1-STAGING-latest
+    # -- Image pull policy
     pullPolicy: IfNotPresent
+  
+  # -- Service configuration
   service:
+    # -- Service type (NodePort for external access)
     type: NodePort
+    # -- Service port
     port: 8080
+    # -- NodePort for external access
     nodePort: 30080
+  
+  # -- Environment variables
   env:
+    # -- Enable OAuth authentication
     enableOAuth: false
+    # -- SDNR backend host URL
+    # WARNING: Contains hardcoded cluster domain - update for your cluster
     sdnrHost: "onap-smo-sdnr.onap.svc.srsk8s.bcn"
+  
+  # -- Ingress configuration
   ingress:
+    # -- Enable Ingress
     enabled: false
+    # -- Ingress class name
     className: ""
+    # -- Ingress annotations
+    # @default -- `{}` (no annotations)
     annotations: {}
+    # -- Ingress hosts configuration
     hosts:
       - host: sdnc-web.local
         paths:
           - path: /
             pathType: Prefix
+    # -- TLS configuration
+    # @default -- `[]` (no TLS)
     tls: []
+  
+  # -- Resource requests and limits
+  # @default -- `{}` (no resource constraints)
   resources: {}
 
+# -- SDN-R (Software Defined Networking - Radio) configuration
+# OpenDaylight-based controller for RAN management
 sdnr:
+  # -- Container image configuration
   image:
+    # -- Container image repository
     repository: nexus3.onap.org:10001/onap/sdnc-image
+    # -- Image tag
     tag: 3.1.1-STAGING-latest
+    # -- Image pull policy
     pullPolicy: IfNotPresent
+  
+  # -- Service configuration
   service:
+    # -- Service type
     type: ClusterIP
+    # -- Service port (OpenDaylight REST API)
     port: 8181
+  
+  # -- Admin credentials for SDN-R
   adminCredentials:
+    # -- Admin username
     username: root
+    # -- Admin password (change for production)
     password: root
+    # -- Use existing secret for credentials
+    # @default -- `""` (create new secret)
     existingSecret: ""
+  
+  # -- Configuration directory path
   configDir: /opt/onap/ccsdk/data/properties
+  
+  # -- Java options for JVM tuning
   javaOpts: "-Xms256m -Xmx4g"
+  
+  # -- Environment variables for SDN-R
   env:
+    # -- SDN-R controller unique identifier
     sdnrControllerId: c94bbd5f-d456-44bd-aa7a-47b274f73762
+    # -- Enable A1 adapter northbound interface
     a1AdapterNorthbound: "false"
+    # -- Number of CCSDK replicas
     ccsdkReplicas: "0"
+    # -- Domain name
     domain: ""
+    # -- Enable OAuth authentication
     enableOAuth: "false"
+    # -- Elasticsearch database URL
+    # WARNING: Contains hardcoded cluster domain - update for your cluster
     sdnrDbUrl: "http://onap-smo-sdnrdb.onap.svc.srsk8s.bcn:9200"
+    # -- Database type
     sdnrDbType: ELASTICSEARCH
+    # -- Enable device manager
     sdnrDm: "false"
+    # -- Initialize SDN-R on startup
     sdnrInit: "true"
+    # -- Run SDN-R only (no SDNC)
     sdnrOnly: "true"
+    # -- Enable wireless transport features
     sdnrWt: "true"
+    # -- Enable asynchronous handling
     sdnrAsyncHandling: "true"
+    # -- Async thread pool size
     sdnrAsyncPoolSize: "200"
+    # -- Enable NETCONF call home
     sdnrNetconfCallHomeEnabled: "true"
+  
+  # -- Persistence configuration
   persistence:
+    # -- Enable persistent storage
     enabled: false
+    # -- Use existing PVC
+    # @default -- `""` (create new PVC)
     existingClaim: ""
+    # -- Access modes for PVC
     accessModes:
       - ReadWriteOnce
+    # -- Storage size
     size: 2Gi
+    # -- Storage class name
+    # @default -- `""` (use default storage class)
     storageClass: ""
+  
+  # -- Device manager configuration file
+  # @default -- See values.yaml for full configuration
   config:
+    # -- Device manager properties
     devicemanager: |-
       [aai]
       aaiPropertiesFile=null
@@ -126,10 +215,19 @@ sdnr:
 
       [dmonf14]
       useDomApi=${SDNR_ONF14_USEDOMAPI}
+  
+  # -- Config mount path
   configMountPath: /opt/opendaylight/etc
+  
+  # -- Resource requests and limits
+  # @default -- `{}` (no resource constraints)
   resources: {}
 
+# -- SDN-R Registrar configuration
+# Registers SDN-R with Kafka for event streaming
 sdnrRegistrar:
+  # -- Registrar configuration file
+  # @default -- See values.yaml for full configuration
   config: |-
     [stndDefinedFault]
     topic=unauthenticated.SEC_3GPP_FAULTSUPERVISION_OUTPUT
@@ -175,124 +273,281 @@ sdnrRegistrar:
     limit=10000
     fetchPause=5000
 
+# -- Elasticsearch configuration for SDN-R database
 sdnrdb:
+  # -- Container image configuration
   image:
+    # -- Container image repository
     repository: docker.elastic.co/elasticsearch/elasticsearch-oss
+    # -- Image tag
     tag: 7.9.3
+    # -- Image pull policy
     pullPolicy: IfNotPresent
+  
+  # -- Service configuration
   service:
+    # -- Service type
     type: ClusterIP
+    # -- Service port
     port: 9200
+  
+  # -- Environment variables
   env:
+    # -- Elasticsearch discovery type (single-node for demo)
     discoveryType: single-node
+  
+  # -- Persistence configuration
   persistence:
+    # -- Enable persistent storage
     enabled: false
+    # -- Use existing PVC
+    # @default -- `""` (create new PVC)
     existingClaim: ""
+    # -- Access modes for PVC
     accessModes:
       - ReadWriteOnce
+    # -- Storage size
     size: 5Gi
+    # -- Storage class name
+    # @default -- `""` (use default storage class)
     storageClass: ""
+  
+  # -- Resource requests and limits
+  # @default -- `{}` (no resource constraints)
   resources: {}
 
+# -- Zookeeper configuration (required by Kafka)
 zookeeper:
+  # -- Enable Zookeeper deployment
   enabled: true
+  
+  # -- Container image configuration
   image:
+    # -- Container image repository (Strimzi Kafka includes Zookeeper)
     repository: quay.io/strimzi/kafka
+    # -- Image tag
     tag: 0.43.0-kafka-3.8.0
+    # -- Image pull policy
     pullPolicy: IfNotPresent
+  
+  # -- Service configuration
   service:
+    # -- Service type
     type: ClusterIP
+    # -- Service port
     port: 2181
+  
+  # -- Environment variables for Zookeeper
   env:
+    # -- Log directory
     LOG_DIR: /tmp/logs
+    # -- Number of Zookeeper replicas
     ZOOKEEPER_REPLICAS: "1"
+    # -- Tick time in milliseconds
     ZOOKEEPER_TICK_TIME: "2000"
+    # -- Sync limit
     ZOOKEEPER_SYNC_LIMIT: "5"
+    # -- Init limit
     ZOOKEEPER_INIT_LIMIT: "10"
+    # -- Max client connections
     ZOOKEEPER_MAX_CLIENT_CNXNS: "200"
+    # -- Autopurge snapshot retain count
     ZOOKEEPER_AUTOPURGE_SNAP_RETAIN_COUNT: "3"
+    # -- Autopurge interval in hours
     ZOOKEEPER_AUTOPURGE_PURGE_INTERVAL: "24"
+    # -- Client port
     ZOOKEEPER_CLIENT_PORT: "2181"
+  
+  # -- Additional environment variables
+  # @default -- `[]` (no extra env vars)
   extraEnv: []
+  
+  # -- Resource requests and limits
+  # @default -- `{}` (no resource constraints)
   resources: {}
 
+# -- Kafka configuration for event streaming
 kafka:
+  # -- Enable Kafka deployment
   enabled: true
+  
+  # -- Container image configuration
   image:
+    # -- Container image repository
     repository: quay.io/strimzi/kafka
+    # -- Image tag
     tag: 0.43.0-kafka-3.8.0
+    # -- Image pull policy
     pullPolicy: IfNotPresent
+  
+  # -- Service configuration
   service:
+    # -- Service type
     type: ClusterIP
+    # -- Service port
     port: 9092
+  
+  # -- Kafka broker configuration
   config:
+    # -- Inter-broker listener name
     interBrokerListenerName: PLAINTEXT
+    # -- Listener security protocol map
     listenerSecurityProtocolMap: PLAINTEXT:PLAINTEXT,INTERNAL_PLAINTEXT:PLAINTEXT,EXTERNAL_PLAINTEXT:PLAINTEXT
+    # -- Listeners
     listeners: PLAINTEXT://0.0.0.0:9092
+    # -- Advertised listeners
+    # WARNING: Contains hardcoded cluster domain - update for your cluster
     advertisedListeners: "PLAINTEXT://onap-smo-kafka.onap.svc.srsk8s.bcn:9092"
+    # -- Replication factor
     replicationFactor: 1
+    # -- Number of partitions
     numPartitions: 2
+  
+  # -- Environment variables for Kafka
   env:
+    # -- Log directory
     LOG_DIR: /tmp/logs
+    # -- Enable CADI (AAF authentication)
     enableCadi: "false"
+    # -- Zookeeper connection string
+    # WARNING: Contains hardcoded cluster domain - update for your cluster
     KAFKA_ZOOKEEPER_CONNECT: "onap-smo-zookeeper.onap.svc.srsk8s.bcn:2181"
+    # -- Zookeeper connection timeout
     KAFKA_ZOOKEEPER_CONNECTION_TIMEOUT_MS: "40000"
+    # -- Zookeeper session timeout
     KAFKA_ZOOKEEPER_SESSION_TIMEOUT_MS: "40000"
+    # -- Disable Confluent support metrics
     KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE: "false"
+    # -- Enable Zookeeper ACLs
     KAFKA_ZOOKEEPER_SET_ACL: "true"
+    # -- Offsets topic partitions
     KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: "2"
+  
+  # -- Authentication configuration
   auth:
+    # -- Enable authentication
     enabled: false
+    # -- Username
     username: ""
+    # -- Password
     password: ""
+  
+  # -- Additional environment variables
+  # @default -- `[]` (no extra env vars)
   extraEnv: []
+  
+  # -- Resource requests and limits
+  # @default -- `{}` (no resource constraints)
   resources: {}
 
+# -- Kafka UI configuration
+# Web interface for Kafka cluster management
 kafkaUi:
+  # -- Enable Kafka UI deployment
   enabled: true
+  
+  # -- Container image configuration
   image:
+    # -- Container image repository
     repository: provectuslabs/kafka-ui
+    # -- Image tag
     tag: v0.7.2
+    # -- Image pull policy
     pullPolicy: IfNotPresent
+  
+  # -- Service configuration
   service:
+    # -- Service type (NodePort for external access)
     type: NodePort
+    # -- Service port
     port: 8080
+    # -- NodePort for external access
     nodePort: 30085
+  
+  # -- Ingress configuration
   ingress:
+    # -- Enable Ingress
     enabled: false
+    # -- Ingress class name
     className: ""
+    # -- Ingress annotations
+    # @default -- `{}` (no annotations)
     annotations: {}
+    # -- Ingress hosts configuration
     hosts:
       - host: kafka-ui.local
         paths:
           - path: /
             pathType: Prefix
+    # -- TLS configuration
+    # @default -- `[]` (no TLS)
     tls: []
+  
+  # -- Environment variables
   env:
+    # -- Enable dynamic configuration
     dynamicConfigEnabled: "true"
+  
+  # -- Additional environment variables
+  # @default -- `[]` (no extra env vars)
   extraEnv: []
+  
+  # -- Resource requests and limits
+  # @default -- `{}` (no resource constraints)
   resources: {}
 
+# -- VES Collector configuration
+# Collects Virtual Event Streaming (VES) events from network functions
 vesCollector:
+  # -- Enable VES Collector deployment
   enabled: true
+  
+  # -- Container image configuration
   image:
+    # -- Container image repository
     repository: nexus3.onap.org:10001/onap/org.onap.dcaegen2.collectors.ves.vescollector
+    # -- Image tag
     tag: 1.12.4
+    # -- Image pull policy
     pullPolicy: IfNotPresent
+  
+  # -- Service configuration
   service:
+    # -- Service type
     type: ClusterIP
+    # -- Service port
     port: 8443
+  
+  # -- Environment variables
   env:
+    # -- Kafka bootstrap servers
+    # WARNING: Contains hardcoded cluster domain - update for your cluster
     bootstrapServers: "onap-smo-kafka.onap.svc.srsk8s.bcn:9092"
+    # -- DMaaP host (empty = use Kafka)
     dmaapHost: ""
+  
+  # -- TLS configuration
   tls:
+    # -- Enable TLS
     enabled: false
+    # -- Trust all certificates
     trustAll: false
+  
+  # -- Authentication credentials
   credentials:
+    # -- Username for basic auth
     username: sample1
+    # -- Password for basic auth
     password: sample1
+  
+  # -- VES API version
   version: v7
+  
+  # -- VES Collector configuration files
+  # @default -- See values.yaml for full configuration
   config:
+    # -- Collector properties file
+    # Contains security, schema validation, and stream configuration
     collectorProperties: |
       collector.service.secure.port=8443
       auth.method=certBasicAuth
@@ -314,6 +569,10 @@ vesCollector:
       collector.description.api.version.location=etc/api_version_description.json
       event.transform.flag=0
       collector.dynamic.config.update.frequency=5
+    
+    # -- DMaaP/Kafka topic mappings
+    # Maps VES event domains to Kafka topics
+    # @default -- See values.yaml (contains full topic routing configuration)
     dmaapConfig: |
       {
           "ves-syslog": {

@@ -6,32 +6,65 @@
 # the distribution.
 #
 
+# -- Number of pod replicas
+# @default -- `1` (single instance)
 replicaCount: 1
 
+# -- Container image configuration
 image:
+  # -- Container image repository
   repository: softwareradiosystems/srsran-project
+  # -- Image pull policy
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+  # -- Image tag (overrides Chart appVersion if set)
+  # @default -- Chart appVersion
   tag: split72_release_avx512
 
+# -- Image pull secrets for private registries
+# @default -- `[]` (no pull secrets)
 imagePullSecrets: []
+
+# -- Override the name of the chart
+# @default -- Chart name
 nameOverride: ""
+
+# -- Override the full name of resources
+# @default -- Release name + chart name
 fullnameOverride: ""
+
+# -- ConfigMap name override
+# Useful for pinning specific configuration via Terraform or GitOps
+# Example:
+# ```yaml
+# configmap:
+#   nameOverride: "ru-emu-srskit-rack1-config"
+# ```
+# @default -- `{}` (use generated name)
 configmap: {}
 # To pin a custom name (e.g., via Terraform --set):
 # configmap:
 #   nameOverride: "ru-emu-srskit-rack1-config"
 
+# -- Additional pod annotations
+# @default -- `{}` (no additional annotations)
 podAnnotations: {}
 
+# -- Pod-level security context
+# @default -- `{}` (no pod security context)
 podSecurityContext: {}
 
+# -- Container-level security context for hostNetwork mode
+# RU emulator requires privileged access for DPDK and network configuration
 securityContext:
+  # -- Additional capabilities for network and system operations
   capabilities:
     add: ["SYS_NICE", "NET_ADMIN"]
+  # -- Run container in privileged mode
   privileged: true
 
-# securityContext for SR-IOV enabled
+# -- Alternative security context for SR-IOV mode
+# When using SR-IOV, privileged mode is not required
+# Uncomment and use this configuration if SR-IOV is enabled
 # securityContext:
 #   allowPrivilegeEscalation: false
 #   capabilities:
@@ -43,38 +76,86 @@ securityContext:
 #       - SYS_NICE
 #   privileged: false
 
+# -- Resource requests and limits
+# Example:
+# ```yaml
+# resources:
+#   limits:
+#     cpu: 4
+#     memory: 8Gi
+#     hugepages-1Gi: 2Gi
+#   requests:
+#     cpu: 4
+#     memory: 8Gi
+#     hugepages-1Gi: 2Gi
+# ```
+# @default -- `{}` (no resource constraints)
 resources: {}
 
+# -- Node selector for pod assignment
+# Schedule pods only on nodes with matching labels
+# @default -- `{}` (no node selector)
 nodeSelector: {}
 
+# -- Tolerations for pod assignment
+# Allows pods to be scheduled on nodes with matching taints
+# @default -- `[]` (no tolerations)
 tolerations: []
 
+# -- Pod affinity configuration for advanced scheduling
+# @default -- `{}` (no affinity rules)
 affinity: {}
 
-# Disable hostnetwork in case you use SR-IOV plugin
+# -- Network configuration
 network:
+  # -- Enable host network mode for direct host network access
+  # Disable this when using SR-IOV plugin
   hostNetwork: true
 
-# Enable SR-IOV plugin (currently only single cell supported)
+# -- SR-IOV configuration
+# Single-cell SR-IOV support for high-performance networking
 sriovConfig:
+  # -- Enable SR-IOV network device plugin
   enabled: false
+  # -- Extended resource name for SR-IOV devices
+  # This must match your SR-IOV device plugin configuration
   extendedResourceName: "intel.com/intel_sriov_netdevice"
 
+# -- RU emulator configuration
+# OpenFronthaul Radio Unit emulator settings
 config:
+  # -- Logging configuration
   log:
+    # -- Log file path inside container
     filename: /tmp/ru_em.log
+    # -- Log level (debug, info, warning, error)
     level: warning
 
+  # -- DPDK configuration (optional)
+  # Uncomment to customize DPDK EAL (Environment Abstraction Layer) arguments
   #dpdk:
+  #  # EAL arguments for CPU core binding
   #  eal_args: "--lcores (0-1)@(0-15)"
 
+  # -- RU emulator cell configuration
   ru_emu:
+    # -- List of emulated RU cells
+    # Each cell represents one OpenFronthaul connection to a DU
     cells:
+    # -- Cell bandwidth in MHz
     - bandwidth: 100
+      # -- Network interface name for OpenFronthaul traffic
       network_interface: enp4s0f0
+      # -- MAC address of the RU (emulated device)
       ru_mac_addr: 50:7c:6f:45:44:33
+      # -- MAC address of the DU (destination)
       du_mac_addr: 00:11:22:33:44:00
+      # -- VLAN tag for traffic isolation
       vlan_tag: 6
+      # -- Uplink port IDs for OpenFronthaul
       ul_port_id: [0]
+      # -- Compression method for uplink IQ data
+      # Options: none, bfp (block floating point), bfp_sel
       compr_method_ul: "bfp"
+      # -- Compression bitwidth for uplink (1-16 bits)
       compr_bitwidth_ul: 9

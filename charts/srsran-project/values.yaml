@@ -6,54 +6,116 @@
 # the distribution.
 #
 
+# -- Number of pod replicas
+# Note: srsRAN gNB is stateful and requires replicaCount: 1
+# @default -- `1` (do not change for stateful workload)
 replicaCount: 1
 
+# -- Container image configuration
 image:
-  # Check https://hub.docker.com/u/softwareradiosystems for available images
+  # -- Container image repository
+  # See https://hub.docker.com/u/softwareradiosystems for available images
   repository: softwareradiosystems/srsran-project
+  # -- Image pull policy
   pullPolicy: IfNotPresent
+  # -- Image tag
+  # Format: release_<arch>-<commit>__<date>
+  # @default -- Chart appVersion
   tag: release_avx512-11c9bbabb6__2025-09-15
 
+# -- Image pull secrets for private registries
+# @default -- See values.yaml
 imagePullSecrets:
   - name: regcred
 
+# -- Override the name of the chart
+# @default -- `srsran-project-cudu`
 nameOverride: "srsran-project-cudu"
+
+# -- Override the full name of resources
+# @default -- `srsran-project-cudu-chart`
 fullnameOverride: "srsran-project-cudu-chart"
+
+# -- ConfigMap name overrides for different components
+# Allows customization of ConfigMap names for advanced use cases
 configmap:
+  # -- Main gNB configuration ConfigMap name override
   main: { nameOverride: "" }
+  # -- O1 adapter configuration ConfigMap name override
   o1: { nameOverride: "" }
+  # -- Entrypoint script ConfigMap name override
   entrypoint: { nameOverride: "" }
 
+# -- Service account configuration
 serviceAccount:
+  # -- Create a service account
   create: true
+  # -- Additional service account annotations
+  # @default -- `{}` (no annotations)
   annotations: {}
+  # -- Service account name
   name: "srsadmin-gnb"
 
+# -- Additional pod annotations
+# @default -- `{}` (no additional annotations)
 podAnnotations: {}
 
+# -- Pod-level security context
+# @default -- `{}` (no pod security context)
 podSecurityContext: {}
 
-# securityContext for LB disabled
+# -- Container-level security context (for non-LoadBalancer mode)
+# This configuration requires privileged mode for DPDK with kernel drivers
+# Use this when hostNetwork is enabled
 securityContext:
+  # -- Additional capabilities for system operations
   capabilities:
     add: ["SYS_NICE", "NET_ADMIN"]
+  # -- Run container in privileged mode (required for DPDK igb_uio)
   privileged: true
 
-# securityContext for LB enabled
+# -- Alternative security context for LoadBalancer mode
+# This configuration uses vfio-pci driver which doesn't require privileged mode
+# Uncomment this and comment the above when using LoadBalancer services
 # securityContext:
+#   # Prevent privilege escalation
 #   allowPrivilegeEscalation: false
 #   capabilities:
 #     add:
+#       # Lock memory pages (required for DPDK)
 #       - IPC_LOCK
+#       # System administration (for DPDK setup)
 #       - SYS_ADMIN
+#       # Raw I/O operations (for DPDK)
 #       - SYS_RAWIO
+#       # Raw socket operations
 #       - NET_RAW
+#       # Set process priority (for real-time scheduling)
 #       - SYS_NICE
 
-# Disable hostnetwork in case you enable LB
+# -- Network configuration
 network:
+  # -- Enable host network mode
+  # Provides direct access to host network interfaces for DPDK
+  # Disable this when using LoadBalancer services with SR-IOV
   hostNetwork: true
 
+# -- Resource requests and limits
+# Example with hugepages for DPDK:
+# ```yaml
+# resources:
+#   enable_hugepages_1gi: true
+#   enable_hugepages_2mi: false
+#   limits:
+#     cpu: 12
+#     memory: 16Gi
+#     hugepages-1Gi: 2Gi
+#   requests:
+#     cpu: 12
+#     memory: 16Gi
+#     hugepages-1Gi: 2Gi
+# ```
+# @default -- `{}` (no resource constraints)
 resources: {}
   # enable_hugepages_1gi: true
   # enable_hugepages_2mi: false
@@ -66,112 +128,222 @@ resources: {}
   #   memory: 16Gi
   #   hugepages-1Gi: 2Gi
 
+# -- Node selector for pod assignment
+# Schedule pods only on nodes with matching labels
+# Example:
+# ```yaml
+# nodeSelector:
+#   node-role.kubernetes.io/worker: ""
+#   feature.node.kubernetes.io/cpu-cpuid.AVX512F: "true"
+# ```
+# @default -- `{}` (no node selector)
 nodeSelector: {}
+
+# -- Tolerations for pod assignment
+# Allows pods to be scheduled on nodes with matching taints
+# @default -- `{}` (no tolerations)
 tolerations: {}
+
+# -- Pod affinity configuration for advanced scheduling
+# @default -- `{}` (no affinity rules)
 affinity: {}
 
+# -- Metrics service configuration
+# Exposes gNB metrics endpoint for Telegraf collection
 metricsService:
+  # -- Enable metrics service
   enabled: false
+  # -- Service type (ClusterIP or LoadBalancer)
   type: ClusterIP
+  # -- LoadBalancer IP address (when type is LoadBalancer)
   # loadBalancerIP: "10.0.0.123"
-  # Make sure this port matches the port in the gnb config
+  # -- Service port (must match the port in gnb-config.yml)
   port: 8001
+  # -- Target port (container port)
   targetPort: 8001
 
+# -- Debugging configuration
+# Enables persistent log storage on the host for troubleshooting
 debugging:
+  # -- Enable debugging log persistence
   enabled: true
+  # -- Preserve logs from previous runs (append mode)
   preserveOldLogs: true
+  # -- Storage capacity for log volume
   storageCapacity: "100Mi"
+  # -- Host path for log storage
   hostPath: "/mnt/debugging-logs"
+  # -- Container path where logs are written
   containerPath: "/tmp"
 
+# -- O1 interface configuration
+# Enables NETCONF-based management interface for the gNB
 o1:
+  # -- Enable O1 interface containers (NETCONF server + O1 adapter)
   enable_srs_o1: false
 
+# -- SR-IOV configuration (optional)
+# Enables SR-IOV network device plugin for high-performance networking
+# Uncomment to use SR-IOV instead of DPDK with hostNetwork
 # sriovConfig:
+#   # Enable SR-IOV plugin
 #   enabled: false
+#   # Extended resource name (must match your SR-IOV device plugin)
 #   extendedResourceName: "intel.com/intel_sriov_netdevice"
 
+# -- gNB configuration file
+# This is the main srsRAN gNB configuration in YAML format
+# For detailed documentation, see: https://docs.srsran.com
 config:
+  # -- Main gNB configuration file
+  # @default -- See values.yaml for complete example
   gnb-config.yml: |-
+    # CU-CP (Control Plane) configuration
     cu_cp:
+      # AMF (Access and Mobility Management Function) connection
       amf:
+        # AMF IP address (5G Core)
         addr: 127.0.1.100
+        # AMF SCTP port
         port: 38412
+        # Local bind address for N2 interface
         bind_addr: 127.0.0.1
+        # Supported tracking areas
         supported_tracking_areas:
           - tac: 7
             plmn_list:
               - plmn: "00101"
+                # Network slicing configuration
                 tai_slice_support_list:
                   - sst: 1
 
+    # RU (Radio Unit) OpenFronthaul configuration
     ru_ofh:
+      # Timing advance parameters (in microseconds)
+      # T1a: DL control plane timing window
       t1a_max_cp_dl: 535
       t1a_min_cp_dl: 286
+      # T1a: UL control plane timing window
       t1a_max_cp_ul: 535
       t1a_min_cp_ul: 286
+      # T1a: User plane timing window
       t1a_max_up: 390
       t1a_min_up: 80
+      # T4a: Timing advance adjustment range
       ta4_max: 500
       ta4_min: 25
+      # Enable PRACH control plane messages
       is_prach_cp_enabled: false
+      # IQ data compression configuration
+      # Method: none, bfp (block floating point), bfp_sel
+      # Uplink compression
       compr_method_ul: bfp
       compr_bitwidth_ul: 9
+      # Downlink compression
       compr_method_dl: bfp
       compr_bitwidth_dl: 9
+      # PRACH compression
       compr_method_prach: bfp
       compr_bitwidth_prach: 9
+      # Use static compression headers (optimization)
       enable_ul_static_compr_hdr: true
       enable_dl_static_compr_hdr: true
+      # IQ data scaling factor
       iq_scaling: 5.5
+      # Cell configuration (OpenFronthaul interface per cell)
       cells:
+        # Network interface name for O-RU communication
         - network_interface: enp1s0f0
+          # RU MAC address (destination)
           ru_mac_addr: 70:b3:d5:e1:5b:06
+          # DU MAC address (source, this gNB)
           du_mac_addr: 80:61:5f:0d:df:aa
+          # VLAN tag for control plane traffic
           vlan_tag_cp: 5
+          # VLAN tag for user plane traffic
           vlan_tag_up: 5
+          # PRACH port IDs (antenna ports for random access)
           prach_port_id: [4, 5]
+          # Downlink port IDs (antenna ports for DL transmission)
           dl_port_id: [0, 1, 2, 3]
+          # Uplink port IDs (antenna ports for UL reception)
           ul_port_id: [0, 1]
 
+    # Cell configuration (radio parameters)
     cell_cfg:
+      # Downlink ARFCN (Absolute Radio Frequency Channel Number)
+      # 637212 = 3489.48 MHz (Band 78)
       dl_arfcn: 637212
+      # Frequency band (3GPP band number)
       band: 78
+      # Channel bandwidth in MHz
       channel_bandwidth_MHz: 100
+      # Common subcarrier spacing (kHz)
       common_scs: 30
+      # PLMN (Public Land Mobile Network) identifier
+      # Format: MCCMNC (3-digit MCC + 2/3-digit MNC)
       plmn: "00101"
+      # Tracking Area Code
       tac: 7
+      # Physical Cell ID (0-1007)
       pci: 1
+      # Number of downlink antennas
       nof_antennas_dl: 4
+      # Number of uplink antennas
       nof_antennas_ul: 2
+      # PRACH (Physical Random Access Channel) configuration
       prach:
+        # PRACH configuration index (3GPP TS 38.211)
         prach_config_index: 7
+        # Root sequence index for Zadoff-Chu sequences
         prach_root_sequence_index: 1
+        # Zero correlation zone (for preamble separation)
         zero_correlation_zone: 0
+        # PRACH frequency start offset (PRBs)
         prach_frequency_start: 0
+      # TDD UL/DL configuration (Time Division Duplex)
       tdd_ul_dl_cfg:
+        # DL/UL pattern period (ms)
         dl_ul_tx_period: 10
+        # Number of full DL slots per period
         nof_dl_slots: 7
+        # Number of DL symbols in partial slot
         nof_dl_symbols: 6
+        # Number of full UL slots per period
         nof_ul_slots: 2
+        # Number of UL symbols in partial slot
         nof_ul_symbols: 4
 
+    # Logging configuration
     log:
+      # Log file path
       filename: /tmp/gnb.log
+      # Global log level (debug, info, warning, error)
       all_level: warning
 
+    # PCAP (Packet Capture) configuration for debugging
     pcap:
+      # Enable MAC layer PCAP
       mac_enable: false
+      # MAC PCAP file path
       mac_filename: /tmp/gnb_mac.pcap
+      # Enable NGAP (N2 interface) PCAP
       ngap_enable: false
+      # NGAP PCAP file path
       ngap_filename: /tmp/gnb_ngap.pcap
 
+    # Metrics configuration
     metrics:
+      # Automatically start stdout metrics reporting
       autostart_stdout_metrics: true
+      # Enable JSON format for metrics
       enable_json: false
 
+    # Remote control interface (WebSocket)
     remote_control:
+      # Bind address for remote control
       bind_addr: 0.0.0.0
+      # Enable remote control interface
       enabled: false
+      # Remote control port (for Telegraf metrics collection)
       port: 8001

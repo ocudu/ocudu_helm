@@ -6,42 +6,109 @@
 # the distribution.
 #
 
+# -- Override the name of the chart
+# @default -- Chart name
 nameOverride: ""
+
+# -- Override the full name of resources
+# @default -- Release name + chart name
 fullnameOverride: ""
 
+# -- Additional pod annotations
+# @default -- `{}` (no additional annotations)
 podAnnotations: {}
+
+# -- Pod-level security context
+# @default -- `{}` (no pod security context)
 podSecurityContext: {}
+
+# -- Container-level security context
+# @default -- `{}` (no security context)
 securityContext: {}
+
+# -- Resource requests and limits
+# Example:
+# ```yaml
+# resources:
+#   limits:
+#     cpu: 2
+#     memory: 4Gi
+#   requests:
+#     cpu: 1
+#     memory: 2Gi
+# ```
+# @default -- `{}` (no resource constraints)
 resources: {}
+
+# -- Node selector for pod assignment
+# Schedule pods only on nodes with matching labels
+# @default -- `{}` (no node selector)
 nodeSelector: {}
+
+# -- Tolerations for pod assignment
+# Allows pods to be scheduled on nodes with matching taints
+# @default -- `[]` (no tolerations)
 tolerations: []
+
+# -- Pod affinity configuration for advanced scheduling
+# @default -- `{}` (no affinity rules)
 affinity: {}
 
+# -- Container image configuration
 image:
+  # -- Container image repository
   repository: influxdb
+  # -- Image tag
+  # @default -- Chart appVersion
   tag: "3.1.0-core"
+  # -- Image pull policy
   pullPolicy: IfNotPresent
 
+# -- Service configuration
 service:
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
   type: ClusterIP
+  # -- Service port for HTTP API
   port: 8081
 
+# -- Persistence configuration
+# InfluxDB3 stores time-series data and requires persistent storage
 persistence:
+  # -- Enable persistent storage
   enabled: true
+  # -- Access mode for PersistentVolumeClaim
+  # Use ReadWriteOnce for single-node access
   accessMode: ReadWriteOnce
+  # -- Size of the persistent volume
   size: 50Gi
+  # -- Mount path for data directory inside container
   mountPath: /var/lib/influxdb3
+  # -- Mount path for plugins directory inside container
   pluginMountPath: /var/lib/influxdb3-plugins
+  # -- Host path for storage (when using hostPath volumes)
+  # Only used if PVC is not available or disabled
   hostPath: /mnt/influxdb3
 
+# -- Environment variables for InfluxDB3 configuration
 env:
+  # -- Log level filter (error, warn, info, debug, trace)
   LOG_FILTER: error
+  # -- Unique node identifier for distributed deployments
   INFLUXDB_NODE_ID: node0
 
+# -- Command-line arguments for InfluxDB3 server
+# These configure core database behavior
+# @default -- See values.yaml
 args:
+  # Use in-memory object store (no persistent object storage)
   - --object-store=memory
+  # Data directory for local storage
   - --data-dir=/var/lib/influxdb3
+  # Plugin directory for extensions
   - --plugin-dir=/var/lib/influxdb3-plugins
+  # Node identifier (must match INFLUXDB_NODE_ID)
   - --node-id=node0
+  # HTTP API bind address and port
   - --http-bind=0.0.0.0:8081
+  # Disable authentication (suitable for demos/PoC only)
   - --without-auth

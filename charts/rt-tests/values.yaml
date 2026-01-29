@@ -6,41 +6,94 @@
 # the distribution.
 #
 
+# -- Container image configuration
 image:
+  # -- Container image repository
   repository: softwareradiosystems/rt-tests
+  # -- Image pull policy
   pullPolicy: IfNotPresent
+  # -- Image tag
+  # @default -- Chart appVersion
   tag: v2.8
 
+# -- Image pull secrets for private registries
+# @default -- `{}` (no pull secrets)
 imagePullSecrets: {}
 
+# -- Override the name of the chart
+# @default -- `rt-tests-chart`
 nameOverride: "rt-tests-chart"
+
+# -- Override the full name of resources
+# @default -- `rt-tests-chart`
 fullnameOverride: "rt-tests-chart"
+
+# -- ConfigMap name override
+# Useful for pinning specific configuration via Terraform or GitOps
+# Example:
+# ```yaml
+# configmap:
+#   nameOverride: "rt-tests-myhost-config"
+# ```
+# @default -- `{}` (use generated name)
 configmap: {}
 # configmap:
 #   nameOverride: "rt-tests-myhost-config"
 
+# -- Additional pod annotations
+# @default -- `{}` (no additional annotations)
 podAnnotations: {}
 
+# -- Pod-level security context
+# @default -- `{}` (no pod security context)
 podSecurityContext: {}
 
+# -- Container-level security context
+# RT tests require privileged access for accurate latency measurements
 securityContext:
+  # -- Run container in privileged mode (required for RT testing)
   privileged: true
 
+# -- Resource requests and limits
+# RT tests are CPU-intensive and require dedicated CPU allocation
+# @default -- See values.yaml for example configuration
 resources:
   limits:
+    # -- CPU limit (adjust based on your testing requirements)
     cpu: 16
+    # -- Memory limit
     memory: 500Mi
   requests:
+    # -- CPU request (should match limits for dedicated cores)
     cpu: 16
+    # -- Memory request
     memory: 500Mi
 
+# -- Node selector for pod assignment
+# Schedule pods only on nodes with matching labels
+# @default -- `{}` (no node selector)
 nodeSelector: {}
 
+# -- Pod affinity configuration for advanced scheduling
+# @default -- `{}` (no affinity rules)
 affinity: {}
 
+# -- Host path for storing test results
+# Results are written to this directory on the host for persistence
 hostOutputFolder: /var/lib/rt-tests
 
+# -- Real-time test configuration
+# Defines parameters for stress-ng and cyclictest
 config:
+  # -- RT test configuration file (YAML format)
+  # Contains command-line arguments for both test tools
   rt_tests.yml: |-
+    # stress-ng parameters: CPU, I/O, VM, and fork stress tests
+    # Runs for 12 hours by default
     stress-ng: "--cpu 16 --iomix 4 --vm 2 --vm-bytes 128M --fork 4 --timeout 12h"
+    # cyclictest parameters: real-time latency measurement
+    # - mlockall: Lock memory to prevent swapping
+    # - priority 95: RT scheduling priority
+    # - histogram 25: Latency histogram with 25µs buckets
+    # - duration 12h: Run for 12 hours
     cyclictest: "--mlockall --priority 95 --distance 0 --threads 16 --histogram 25 --quiet --duration 12h"
