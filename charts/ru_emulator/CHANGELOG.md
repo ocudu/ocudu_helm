@@ -1,3 +1,12 @@
+# Changelog
+
+## 1.1.1 (Unreleased)
+
+### Changed
+- Standardize Chart.yaml metadata with complete fields
+- Add comprehensive .helmignore file
+- Clean up verbose Chart.yaml comments
+
 ## 1.1.0 (April 16, 2025)
 ### Changed
 - Forward SIGTERM in the entrypoint script so the emulator shuts down cleanly.

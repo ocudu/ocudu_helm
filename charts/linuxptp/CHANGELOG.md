@@ -1,3 +1,12 @@
+# Changelog
+
+## 1.3.1 (Unreleased)
+
+### Changed
+- Standardize Chart.yaml metadata with keywords and annotations
+- Add comprehensive .helmignore file
+- Update chart icon URL
+
 ## 1.2.0 (April 16, 2025)
 ### Changed
 - Forward SIGTERM in entrypoint script in ts2phc and phc2sys to ensure clean shutdown.

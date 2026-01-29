@@ -10,7 +10,7 @@ apiVersion: v2
 name: influxdb3
 description: Single-node InfluxDB 3 Core time-series database for metrics storage
 kubeVersion: ">= 1.24.0-0"
-icon: https://influxdata.github.io/branding/img/downloads/influxdata-logo--symbol--pool-alpha.svg
+icon: https://influxdata.github.io/branding/img/downloads/influxdata-logo--full--castle.svg
 home: https://www.influxdata.com/products/influxdb/
 sources:
 - https://github.com/srsran/srsRAN_Project_helm

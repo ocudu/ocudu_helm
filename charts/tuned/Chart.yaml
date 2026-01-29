@@ -10,7 +10,7 @@ apiVersion: v2
 name: tuned
 description: Deploy tuned system optimization profiles on Kubernetes nodes for low-latency and real-time workloads
 kubeVersion: ">= 1.24.0-0"
-icon: https://www.redhat.com/cms/managed-files/Logo-RedHat-D-Color-RGB.svg
+icon: https://avatars.githubusercontent.com/u/12718395
 home: https://tuned-project.org/
 sources:
 - https://github.com/srsran/srsRAN_Project_helm
