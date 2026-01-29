@@ -52,13 +52,19 @@ spec:
           configMap:
             name: {{ include "srsran-cudu.mainConfigmapName" . }}
         {{- end }}
-        {{- if .Values.debugging.enabled }}
-        - name: srs-host-volume
+        {{- if .Values.persistence.enabled }}
+          {{- if eq .Values.persistence.type "pvc" }}
+        - name: srs-logs
+          persistentVolumeClaim:
+            claimName: {{ include "srsran-cudu.fullname" . }}-logs
+          {{- else if eq .Values.persistence.type "hostPath" }}
+        - name: srs-logs
           hostPath:
-            path: {{ .Values.debugging.hostPath }}
-            type: DirectoryOrCreate
+            path: {{ .Values.persistence.hostPath.path }}
+            type: {{ .Values.persistence.hostPath.type }}
+          {{- end }}
         {{- end }}
-        {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-1Gi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-1Gi")) }}
+          {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-1Gi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-1Gi")) }}
         - name: hugepage-1gi
           emptyDir:
             medium: HugePages-1Gi
@@ -104,9 +110,9 @@ spec:
             - name: RESOURCE_EXTENDED
               value: {{ .Values.sriovConfig.extendedResourceName | quote }}
           {{- end }}
-          {{- if and .Values.debugging .Values.debugging.enabled }}
+          {{- if .Values.persistence.enabled }}
             - name: PRESERVE_OLD_LOGS
-              value: {{ .Values.debugging.preserveOldLogs | quote }}
+              value: {{ .Values.persistence.preserveOldLogs | quote }}
           {{- end }}
             - name: ENABLE_SRS_O1
               value: '{{ default false .Values.o1.enable_srs_o1 }}'
@@ -122,9 +128,9 @@ spec:
             - name: config-volume
               mountPath: /etc/config/
             {{- end }}
-            {{- if .Values.debugging.enabled }}
-            - name: srs-host-volume
-              mountPath: {{ .Values.debugging.containerPath }}
+            {{- if .Values.persistence.enabled }}
+            - name: srs-logs
+              mountPath: {{ .Values.persistence.mountPath }}
             {{- end }}
             {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-1Gi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-1Gi")) }}
             - name: hugepage-1gi

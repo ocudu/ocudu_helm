@@ -78,6 +78,79 @@ resources:
 
 **Note**: If you define hugepages in resources but your cluster doesn't have them configured, the deployment will fail with a scheduling error. Always verify cluster support first.
 
+## Storage Configuration
+
+The chart supports two storage types for debugging logs: **PersistentVolumeClaim (PVC)** and **hostPath**. Choose based on your cluster environment.
+
+### Storage Type Comparison
+
+| Feature | PVC | hostPath |
+|---------|-----|----------|
+| **Best for** | Cloud environments | Bare-metal clusters |
+| **Dynamic provisioning** | ✅ Yes (with StorageClass) | ❌ No |
+| **Portability** | ✅ High (cluster-managed) | ⚠️ Node-specific |
+| **Setup complexity** | Low (automatic) | Medium (manual paths) |
+| **Production use** | ✅ Recommended | ✅ Acceptable |
+
+### Using PVC Storage (Recommended for Cloud)
+
+Check available StorageClasses in your cluster:
+
+```bash
+kubectl get storageclass
+```
+
+Configure PVC storage in `values.yaml`:
+
+```yaml
+persistence:
+  enabled: true
+  type: pvc
+  pvc:
+    storageClassName: ""  # Use default StorageClass
+    accessMode: ReadWriteOnce
+    size: 10Gi
+  mountPath: "/tmp"
+```
+
+**With specific StorageClass:**
+```yaml
+persistence:
+  enabled: true
+  type: pvc
+  pvc:
+    storageClassName: "fast-ssd"  # Your StorageClass name
+    accessMode: ReadWriteOnce
+    size: 10Gi
+```
+
+### Using hostPath Storage (Bare-metal)
+
+For bare-metal or when you need direct host access:
+
+```yaml
+persistence:
+  enabled: true
+  type: hostPath
+  hostPath:
+    path: "/mnt/debugging-logs"
+    type: DirectoryOrCreate
+  mountPath: "/tmp"
+```
+
+**Important**: Ensure the host path exists or can be created on all worker nodes where the pod may be scheduled.
+
+### Disabling Persistent Storage
+
+For testing or when logs aren't needed:
+
+```yaml
+persistence:
+  enabled: false
+```
+
+**Warning**: Logs will be lost when the pod restarts.
+
 ## Choosing a Container Image
 
 Select the appropriate container image based on your CPU flags and architecture. We provide images with the following combinations:

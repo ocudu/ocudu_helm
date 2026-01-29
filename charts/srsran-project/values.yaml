@@ -185,19 +185,57 @@ metricsService:
   # -- Target port (container port)
   targetPort: 8001
 
-# -- Debugging configuration
-# Enables persistent log storage on the host for troubleshooting
-debugging:
-  # -- Enable debugging log persistence
+# -- Persistent storage configuration
+# The chart supports both PVC (with StorageClass) and hostPath storage for debugging logs
+persistence:
+  # -- Enable persistent storage for debugging logs
+  # When disabled, logs are stored in ephemeral pod storage (lost on pod restart)
+  # @default -- `true`
   enabled: true
+  
+  # -- Storage type: "pvc" or "hostPath"
+  # - "pvc": Uses PersistentVolumeClaim with dynamic provisioning (recommended for cloud)
+  # - "hostPath": Direct mount from host filesystem (recommended for bare-metal)
+  # @default -- `hostPath`
+  type: hostPath
+  
+  # -- PVC configuration (used when type is "pvc")
+  pvc:
+    # -- Storage class name for dynamic provisioning
+    # Leave empty to use the cluster's default StorageClass
+    # Check available: kubectl get storageclass
+    # @default -- `""` (cluster default)
+    storageClassName: ""
+    
+    # -- Access mode for the persistent volume
+    # ReadWriteOnce: Volume can be mounted read-write by a single node
+    # @default -- `ReadWriteOnce`
+    accessMode: ReadWriteOnce
+    
+    # -- Storage size for the persistent volume
+    # @default -- `10Gi`
+    size: 10Gi
+  
+  # -- hostPath configuration (used when type is "hostPath")
+  hostPath:
+    # -- Path on the host node where logs will be stored
+    # Ensure this path exists or can be created on worker nodes
+    # @default -- `/mnt/debugging-logs`
+    path: "/mnt/debugging-logs"
+    
+    # -- hostPath type (DirectoryOrCreate, Directory, etc.)
+    # DirectoryOrCreate: Creates directory if it doesn't exist
+    # @default -- `DirectoryOrCreate`
+    type: DirectoryOrCreate
+  
+  # -- Mount path inside the container where logs are written
+  # @default -- `/tmp`
+  mountPath: "/tmp"
+  
   # -- Preserve logs from previous runs (append mode)
+  # When true, logs are appended; when false, logs are overwritten
+  # @default -- `true`
   preserveOldLogs: true
-  # -- Storage capacity for log volume
-  storageCapacity: "100Mi"
-  # -- Host path for log storage
-  hostPath: "/mnt/debugging-logs"
-  # -- Container path where logs are written
-  containerPath: "/tmp"
 
 # -- O1 interface configuration
 # Enables NETCONF-based management interface for the gNB
