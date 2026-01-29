@@ -77,7 +77,7 @@ spec:
             - name: ptp4l-run-volume
               mountPath: "/var/run"
               readOnly: false
-          {{- if and (.Values.livenessProbe.enabled) (eq "1" (default .Values.config.serverOnly "0")) }}
+          {{- if and (.Values.livenessProbe.enabled) (ne (default "0" (.Values.config.serverOnly | toString)) "1") }}
           livenessProbe:
             exec:
               command:
@@ -86,7 +86,7 @@ spec:
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
           {{- end }}
-          {{- if and (.Values.startupProbe.enabled) (eq "1" (default .Values.config.serverOnly "0")) }}
+          {{- if and (.Values.startupProbe.enabled) (ne (default "0" (.Values.config.serverOnly | toString)) "1") }}
           startupProbe:
             exec:
               command:
@@ -95,7 +95,7 @@ spec:
             failureThreshold: {{ .Values.startupProbe.failureThreshold }}
             periodSeconds: {{ .Values.startupProbe.periodSeconds }}
           {{- end }}
-          {{- if and (.Values.readinessProbe.enabled) (eq "1" (default .Values.config.serverOnly "0")) }}
+          {{- if and (.Values.readinessProbe.enabled) (ne (default "0" (.Values.config.serverOnly | toString)) "1") }}
           readinessProbe:
             exec:
               command:

@@ -2,11 +2,14 @@
 
 ## 1.3.1 (Unreleased)
 
+### Fixed
+- Fix ptp4l probe conditions - probes now work correctly in server mode (serverOnly: 0)
+
 ### Changed
 - Standardize Chart.yaml metadata with keywords and annotations
 - Add comprehensive .helmignore file
 - Update chart icon URL
-- **Major documentation improvements**:
+- Documentation improvements:
   - Add prominent PoC/Demo warning with limitations
   - Document hostNetwork and privileged requirements and rationale
   - Add prerequisites section (hardware timestamping verification)
