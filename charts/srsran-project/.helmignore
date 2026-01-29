@@ -23,21 +23,21 @@
 .idea/
 *.tmproj
 .vscode/
+.settings/
 
 # CI/CD files
 .gitlab-ci.yml
 .gitlab/
 
-# Documentation (not needed in chart package)
-CONTRIBUTING.md
-OWNERS
-OWNERS_ALIASES
-
-# Examples and test data (optional - keep values examples in package)
-examples/
-test-values/
-*.test.yaml
 
 # OS files
 .DS_Store
 Thumbs.db
+.AppleDouble
+.LSOverride
+
+# Temporary files
+*.log
+*.lock
+.*.swp
+.*.swo
