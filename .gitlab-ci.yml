@@ -103,19 +103,6 @@ grafana-deployment chart:
     strategy: depend
   needs: []
 
-metrics_server chart:
-  stage: child
-  rules:
-    - if: $ON_MR
-      changes:
-        paths:
-          - .gitlab/ci/helm_utils.yml
-          - charts/metrics_server/**/*
-  trigger:
-    include: charts/metrics_server/.gitlab-ci.yml
-    strategy: depend
-  needs: []
-
 rt-tests chart:
   stage: child
   rules:
