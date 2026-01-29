@@ -1,3 +1,4 @@
+{{- if .Values.podDisruptionBudget.enabled }}
 #
 # Copyright 2021-2025 Software Radio Systems Limited
 #
@@ -6,10 +7,9 @@
 # the distribution.
 #
 
-{{- if .Values.podDisruptionBudget.enabled }}
-{{- if .Capabilities.APIVersions.Has "policy/v1" -}}
+{{- if .Capabilities.APIVersions.Has "policy/v1" }}
 apiVersion: policy/v1
-{{- else -}}
+{{- else }}
 apiVersion: policy/v1beta1
 {{- end }}
 kind: PodDisruptionBudget
