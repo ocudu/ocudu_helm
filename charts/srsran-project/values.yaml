@@ -29,12 +29,16 @@ imagePullSecrets:
   - name: regcred
 
 # -- Override the name of the chart
-# @default -- `srsran-project-cudu`
-nameOverride: "srsran-project-cudu"
+# Leaving empty allows Helm to use the chart name for resource naming
+# @default -- Chart name (`srsran-cu-du`)
+nameOverride: ""
 
 # -- Override the full name of resources
-# @default -- `srsran-project-cudu-chart`
-fullnameOverride: "srsran-project-cudu-chart"
+# IMPORTANT: Keep empty to allow multiple instances in the same namespace
+# When empty, Helm generates unique names using: <release-name>-<chart-name>
+# Example: "gnb1-srsran-cu-du", "gnb2-srsran-cu-du"
+# @default -- `<release-name>-<chart-name>`
+fullnameOverride: ""
 
 # -- ConfigMap name overrides for different components
 # Allows customization of ConfigMap names for advanced use cases
@@ -54,7 +58,9 @@ serviceAccount:
   # @default -- `{}` (no annotations)
   annotations: {}
   # -- Service account name
-  name: "srsadmin-gnb"
+  # When empty, uses the release name for uniqueness across multiple instances
+  # @default -- `<release-name>-srsran-cu-du`
+  name: ""
 
 # -- RBAC (Role-Based Access Control) configuration
 rbac:

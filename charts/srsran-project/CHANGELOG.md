@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.4.0 (Unreleased)
+
+### Changed
+- Remove hardcoded `fullnameOverride` and `nameOverride` to support multiple instances in same namespace
+- Remove hardcoded ServiceAccount name to support multiple instances
+- Resource names now use `<release-name>-srsran-cu-du` pattern for uniqueness
+- Users can now deploy multiple gNB instances (e.g., gnb1, gnb2) in the same namespace without conflicts
+
+### Migration Guide
+- If you relied on hardcoded names (`srsran-project-cudu-chart`, `srsadmin-gnb`), you may need to:
+  - Update RBAC references to use new ServiceAccount names
+  - Update any external tools/scripts that reference the old resource names
+  - Use `fullnameOverride` in your values if you need to maintain old names
+
 ## 2.3.1 (November 06, 2025)
 
 ### Changed
