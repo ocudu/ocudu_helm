@@ -8,7 +8,19 @@
 
 apiVersion: v2
 name: grafana-deployment
-description: A Helm chart to deploy Grafana for srsRAN
+description: Monitoring stack with Grafana, Telegraf, and InfluxDB3 for srsRAN metrics visualization
+kubeVersion: ">= 1.24.0-0"
+icon: https://grafana.com/static/img/menu/grafana2.svg
+home: https://docs.srsran.com/
+sources:
+- https://github.com/srsran/srsRAN_Project_helm
+keywords:
+- grafana
+- telegraf
+- influxdb
+- monitoring
+- metrics
+- srsran
 type: application
 version: 1.3.0
 appVersion: "9.2.10"

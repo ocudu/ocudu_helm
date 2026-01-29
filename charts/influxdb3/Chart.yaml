@@ -8,7 +8,21 @@
 
 apiVersion: v2
 name: influxdb3
-version: 1.0.0
-description: A simple, single-node InfluxDB 3 Helm chart
-appVersion: "3.1.0-core"
+description: Single-node InfluxDB 3 Core time-series database for metrics storage
+kubeVersion: ">= 1.24.0-0"
+icon: https://influxdata.github.io/branding/img/downloads/influxdata-logo--symbol--pool-alpha.svg
+home: https://www.influxdata.com/products/influxdb/
+sources:
+- https://github.com/srsran/srsRAN_Project_helm
+- https://github.com/influxdata/influxdb
+keywords:
+- influxdb
+- influxdb3
+- timeseries
+- database
+- metrics
+- monitoring
+- srsran
 type: application
+version: 1.0.0
+appVersion: "3.1.0-core"

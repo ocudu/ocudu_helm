@@ -8,7 +8,24 @@
 
 apiVersion: v2
 name: onap-smo-lite
-description: Lightweight ONAP SMO stack with SDNC web UI, SDNR controller, and SDNR database.
+description: Lightweight ONAP SMO stack with SDNC web UI, SDNR controller, SDNR database, and VES collector for O1 management
+kubeVersion: ">= 1.24.0-0"
+icon: https://www.onap.org/wp-content/uploads/sites/20/2017/02/logo_onap_2017.png
+home: https://www.onap.org/
+sources:
+- https://github.com/srsran/srsRAN_Project_helm
+- https://github.com/onap/sdnc-oam
+keywords:
+- onap
+- smo
+- sdnr
+- sdnc
+- netconf
+- ves
+- o1
+- management
+- srsran
+- demo
 type: application
 version: 0.3.0
 appVersion: "1.0.0"
