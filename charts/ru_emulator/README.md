@@ -14,6 +14,8 @@ A Helm chart for deploying the srsRAN Radio Unit (O-RU) emulator
 This chart deploys an O-RU (Open Radio Unit) emulator that communicates with DU units via the OpenFronthaul protocol. It simulates a real Radio Unit for testing and development purposes.
 
 > **⚠️ Important**: This chart requires a container image with the `ru_emulator` binary. The standard srsRAN Project image does not include this binary. You must build or obtain a specific RU emulator image before deploying.
+>
+> **ℹ️ SR-IOV Status**: SR-IOV support is fully implemented with automatic BDF/MAC detection via the entrypoint script. However, it remains **untested end-to-end** due to the missing `ru_emulator` binary in standard images. The SR-IOV resource allocation and configuration replacement logic have been verified in live cluster testing.
 
 **Capabilities**:
 - OpenFronthaul protocol support
@@ -25,10 +27,18 @@ This chart deploys an O-RU (Open Radio Unit) emulator that communicates with DU 
 
 Before installing, ensure your environment meets these requirements:
 
-1. **Kubernetes**: >= 1.24.0
-2. **Network**: Physical network interface for OpenFronthaul communication
-3. **Privileges**: Chart requires `hostNetwork: true` and `privileged: true` for DPDK and NIC access
-4. **Node Selection**: Use `nodeSelector` to target nodes with appropriate hardware
+1. **Container Image**: A container image with the `/usr/local/bin/ru_emulator` binary is required
+   - The default srsRAN Project image does **not** include this binary
+   - You must specify a custom image in `values.yaml`
+2. **Kubernetes**: >= 1.24.0
+3. **Network Configuration** (choose one):
+   - **hostNetwork mode**: Physical network interface for OpenFronthaul communication
+   - **SR-IOV mode** (recommended for production): SR-IOV device plugin deployed in cluster
+4. **Privileges**:
+   - **hostNetwork mode**: Requires `hostNetwork: true` and `privileged: true`
+   - **SR-IOV mode**: Reduced privileges with specific capabilities (no full privileged mode)
+5. **Node Selection**: Use `nodeSelector` to target nodes with appropriate hardware
+   - For SR-IOV: Nodes must have SR-IOV-capable NICs with VFs configured
 
 ## Installing the Chart
 
@@ -75,10 +85,13 @@ The command removes all Kubernetes components associated with the chart.
 | `image.repository` | string | `"srsran/ru-emulator"` | Container image repository |
 | `image.tag` | string | Chart appVersion | Image tag |
 | `image.pullPolicy` | string | `"IfNotPresent"` | Image pull policy |
-| `network.hostNetwork` | bool | `true` | **REQUIRED**: Enable host network for direct NIC access |
-| `securityContext.privileged` | bool | `true` | **REQUIRED**: Enable privileged mode for DPDK |
+| `network.hostNetwork` | bool | `true` | Enable host network (required when SR-IOV disabled) |
+| `securityContext.privileged` | bool | `true` | Enable privileged mode (required for DPDK with hostNetwork) |
+| `sriovConfig.enabled` | bool | `false` | Enable SR-IOV device plugin integration |
+| `sriovConfig.extendedResourceName` | string | `"intel.com/intel_sriov_netdevice"` | SR-IOV resource name from device plugin |
+| `sriovConfig.vfCount` | int | `1` | Number of SR-IOV VFs to request |
 | `config.ru_emu.cells` | list | See values.yaml | Cell configuration (interfaces, MAC addresses, VLAN) |
-| `replicaCount` | int | `32` | Number of emulated RU instances |
+| `replicaCount` | int | `1` | Number of emulated RU instances |
 | `resources` | object | `{}` | CPU/memory limits and requests |
 | `nodeSelector` | object | `{}` | Node selector for pod assignment |
 | `tolerations` | list | `[]` | Tolerations for pod assignment |
@@ -90,23 +103,34 @@ For the full list of available parameters, see [`values.yaml`](values.yaml).
 
 ## Common Configuration Examples
 
-### Single Cell Emulator
+### hostNetwork Mode (Testing/Development)
 
 ```yaml
 image:
   repository: <your-ru-emulator-image>  # REQUIRED: Custom image with ru_emulator binary
   tag: "latest"
 
+network:
+  hostNetwork: true
+
+sriovConfig:
+  enabled: false
+
 config:
   ru_emu:
     cells:
     - bandwidth: 100
-      network_interface: enp1s0f0
+      network_interface: enp1s0f0  # Physical interface name
       ru_mac_addr: 50:7c:6f:45:44:33
       du_mac_addr: 00:11:22:33:44:00
       vlan_tag: 6
 
 replicaCount: 1
+
+securityContext:
+  privileged: true
+  capabilities:
+    add: ["SYS_NICE", "NET_ADMIN"]
 
 resources:
   limits:
@@ -120,7 +144,57 @@ nodeSelector:
   kubernetes.io/hostname: worker-node-1
 ```
 
-### Multi-Cell with Higher Resources
+### SR-IOV Mode (Production)
+
+```yaml
+image:
+  repository: <your-ru-emulator-image>
+  tag: "latest"
+
+network:
+  hostNetwork: false  # Disable for SR-IOV
+
+sriovConfig:
+  enabled: true
+  extendedResourceName: "intel.com/intel_sriov_netdevice"
+  vfCount: 1
+
+config:
+  ru_emu:
+    cells:
+    - bandwidth: 100
+      network_interface: ""  # Auto-detected from SR-IOV VF PCI address
+      ru_mac_addr: 50:7c:6f:45:44:33
+      du_mac_addr: ""  # Auto-detected from dmesg
+      vlan_tag: 6
+
+replicaCount: 1
+
+# Reduced privileges with SR-IOV
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    add:
+      - IPC_LOCK
+      - SYS_ADMIN
+      - SYS_RAWIO
+      - NET_RAW
+      - SYS_NICE
+  privileged: false
+
+resources:
+  limits:
+    cpu: 4
+    memory: 4Gi
+  requests:
+    cpu: 4
+    memory: 4Gi
+
+nodeSelector:
+  kubernetes.io/hostname: worker-node-1
+```
+
+### Multi-Cell Load Testing
 
 ```yaml
 replicaCount: 8
@@ -136,23 +210,54 @@ resources:
 
 ## Architecture & Design
 
-### Why hostNetwork and privileged are Required
+### Network Modes
 
-**`hostNetwork: true`** is mandatory because:
+The RU emulator supports two deployment modes:
+
+**1. hostNetwork Mode (Testing/Development)**
+- `network.hostNetwork: true`
+- `sriovConfig.enabled: false`
 - Direct access to physical network interfaces
-- DPDK requires raw socket access
-- OpenFronthaul uses Layer 2 Ethernet frames
+- Requires `privileged: true`
+- Simpler setup, suitable for testing
 
-**`privileged: true`** is mandatory because:
+**2. SR-IOV Mode (Production)**
+- `network.hostNetwork: false`
+- `sriovConfig.enabled: true`
+- Uses SR-IOV Virtual Functions (VFs)
+- Reduced privileges (no privileged mode needed)
+- Better isolation and security
+- Requires SR-IOV device plugin in cluster
+
+### How SR-IOV Auto-Detection Works
+
+When SR-IOV is enabled, the entrypoint script automatically:
+
+1. **Detects VF PCI Address**: Reads from environment variable set by SR-IOV device plugin
+   - Example: `PCIDEVICE_INTEL_COM_INTEL_SRIOV_NETDEVICE=0000:01:10.0`
+2. **Extracts MAC Address**: Queries `dmesg` for the VF's MAC address
+3. **Updates Configuration**: Replaces `network_interface` and `du_mac_addr` in config file
+4. **Launches Emulator**: Starts with auto-configured network settings
+
+This eliminates manual configuration of PCI addresses and MAC addresses.
+
+### Why Privileges are Required
+
+**hostNetwork Mode**: `privileged: true` because:
 - DPDK initialization and hugepage access
 - Network interface configuration (`SYS_NICE`, `NET_ADMIN` capabilities)
-- Hardware timestamping for synchronization
+- Direct hardware access for OpenFronthaul
+
+**SR-IOV Mode**: Reduced privileges (`privileged: false`) with specific capabilities:
+- `IPC_LOCK`: Lock memory pages for DPDK
+- `SYS_ADMIN`, `SYS_RAWIO`: Device access
+- `NET_RAW`, `SYS_NICE`: Network operations and RT scheduling
 
 ### Deployment Model
 
 - **Deployment**: Stateless replicas for load testing
-- **Default replicas**: 32 (configurable)
-- **hostNetwork**: Shares host network namespace
+- **Default replicas**: 1 (increase for load testing)
+- **Scaling**: Can scale horizontally for multi-cell scenarios
 
 ## Troubleshooting
 

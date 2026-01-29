@@ -36,6 +36,10 @@ spec:
         - name: config-volume
           configMap:
             name: {{ include "ru-emulator.configmapName" . }}
+        - name: entrypoint-volume
+          configMap:
+            name: {{ include "ru-emulator.configmapName" . }}
+            defaultMode: 0755
         {{- if .Values.config.dpdk }}
         - name: hugepage-1gi
           emptyDir:
@@ -47,8 +51,26 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if or .Values.resources .Values.sriovConfig.enabled }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- if .Values.resources }}
+            {{- $res := .Values.resources }}
+            {{- if and .Values.sriovConfig.enabled (not .Values.network.hostNetwork) }}
+            {{- $limits := default dict $res.limits }}
+            {{- $requests := default dict $res.requests }}
+            {{- $_ := set $limits .Values.sriovConfig.extendedResourceName (toString .Values.sriovConfig.vfCount) }}
+            {{- $_ := set $requests .Values.sriovConfig.extendedResourceName (toString .Values.sriovConfig.vfCount) }}
+            {{- $_ := set $res "limits" $limits }}
+            {{- $_ := set $res "requests" $requests }}
+            {{- end }}
+            {{- toYaml $res | nindent 12 }}
+            {{- else if and .Values.sriovConfig.enabled (not .Values.network.hostNetwork) }}
+            limits:
+              {{ .Values.sriovConfig.extendedResourceName }}: {{ .Values.sriovConfig.vfCount | quote }}
+            requests:
+              {{ .Values.sriovConfig.extendedResourceName }}: {{ .Values.sriovConfig.vfCount | quote }}
+            {{- end }}
+          {{- end }}
           {{- if and .Values.sriovConfig .Values.sriovConfig.enabled }}
           env:
             - name: RESOURCE_EXTENDED
@@ -57,12 +79,14 @@ spec:
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
+            - name: entrypoint-volume
+              mountPath: /entrypoint
             {{- if .Values.config.dpdk }}
             - name: hugepage-1gi
               mountPath: /hugepages-1Gi
             {{- end }}
-          command: [ "/usr/local/bin/ru_emulator" ]
-          args: [ "-c", "/etc/config/ru_emulator.yaml" ]
+          command: [ "/entrypoint/entrypoint.sh" ]
+          args: [ "/etc/config/ru_emulator.yaml" ]
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

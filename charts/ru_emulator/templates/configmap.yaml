@@ -11,6 +11,8 @@ kind: ConfigMap
 metadata:
   name: {{ include "ru-emulator.configmapName" . }}
 data:
+  entrypoint.sh: |
+{{ .Files.Get "resources/entrypoint.sh" | indent 4 }}
   ru_emulator.yaml: |
     {{- if .Values.config.log }}
     log:

@@ -1,6 +1,38 @@
 # Changelog
 
-## 1.1.1 (Unreleased)
+## 1.2.0 (Unreleased)
+
+### Added
+- **SR-IOV Support Enhancement**: Full SR-IOV device plugin integration with automatic resource injection
+- `sriovConfig.vfCount` parameter for requesting multiple SR-IOV VFs
+- **Entrypoint Script**: Complete rewrite (216 lines) with structured logging and proper SR-IOV handling
+- Automatic VF PCI address (BDF) detection and replacement in config
+- Automatic MAC address extraction from dmesg and replacement in config
+- Comprehensive SR-IOV mode documentation with production-ready examples
+- Network modes comparison (hostNetwork vs SR-IOV) in Architecture section
+- SR-IOV auto-detection workflow documentation
+
+### Changed
+- **Deployment Template**: Now uses entrypoint script for all deployments (hostNetwork and SR-IOV)
+- **ConfigMap**: Includes entrypoint.sh with proper executable permissions
+- Enhanced `sriovConfig` section in values.yaml with detailed comments and examples
+- Updated deployment template with SR-IOV resource request logic (matching srsran-project implementation)
+- Enhanced README with separate hostNetwork and SR-IOV configuration examples
+- Updated Architecture & Design section with detailed network modes explanation
+- Enhanced Prerequisites section documenting both deployment modes
+- Updated Key Parameters table with SR-IOV configuration options
+- Improved security context documentation for SR-IOV mode (reduced privileges)
+
+### Fixed
+- Entrypoint script now correctly handles YAML structure with separate line for list marker (`-`)
+- Proper replacement of network_interface with BDF and du_mac_addr with MAC
+- Structured logging with timestamps (INFO/WARN/ERROR/FATAL)
+- Signal handling for graceful shutdown (SIGTERM/SIGINT)
+
+### Notes
+- **Untested End-to-End**: SR-IOV implementation verified up to config replacement (BDF and MAC correctly detected and replaced). Full functional testing requires a custom container image containing the `/usr/local/bin/ru_emulator` binary (not present in standard srsRAN images). The entrypoint script and SR-IOV resource allocation are confirmed working through live cluster testing.
+
+## 1.1.1 (2026-01-29)
 
 ### Changed
 - Standardize Chart.yaml metadata with complete fields

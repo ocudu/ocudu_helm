@@ -114,13 +114,26 @@ network:
   hostNetwork: true
 
 # -- SR-IOV configuration
-# Single-cell SR-IOV support for high-performance networking
+# Provides high-performance network interfaces via SR-IOV Virtual Functions (VFs)
+# When enabled, the entrypoint script automatically detects VF PCI address and MAC
 sriovConfig:
   # -- Enable SR-IOV network device plugin
+  # Requires SR-IOV device plugin deployed in cluster
+  # When enabled, set network.hostNetwork: false
   enabled: false
-  # -- Extended resource name for SR-IOV devices
-  # This must match your SR-IOV device plugin configuration
+  
+  # -- Extended resource name from SR-IOV device plugin
+  # This must match the resource name configured in your SR-IOV device plugin
+  # Common values:
+  #   - intel.com/intel_sriov_netdevice (Intel NICs)
+  #   - mellanox.com/cx5_sriov_switchdev (Mellanox NICs)
+  # Check available resources: kubectl get node <node-name> -o json | jq '.status.allocatable'
   extendedResourceName: "intel.com/intel_sriov_netdevice"
+  
+  # -- Number of SR-IOV VFs to request per pod
+  # For single-cell emulator, typically 1
+  # @default -- `1`
+  vfCount: 1
 
 # -- RU emulator configuration
 # OpenFronthaul Radio Unit emulator settings
