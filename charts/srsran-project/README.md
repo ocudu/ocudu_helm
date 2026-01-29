@@ -10,11 +10,73 @@ Before deploying the srsRAN Project CU/DU on a node, ensure the following requir
 
 2. **Interface Binding**: The interface connected to the Radio Unit (RU) must be bound to a DPDK-compatible driver such as `igb_uio` or `vfio-pci`. For detailed instructions on interface binding, please refer to the DPDK documentation at [DPDK Interface Binding Guide](https://doc.dpdk.org/guides/tools/devbind.html).
 
-3. **Hugepages**: The system has to have at least 8Gi of 1Gi sized Hugepages available. For detailed instructions on hugepages, please refer to the documentation of your operating system.
+3. **Hugepages** (Optional): For using DPDK, it's required to configure hugepages on the node. The chart supports both 1Gi and 2Mi hugepages, but they are disabled by default. See the [Hugepages Configuration](#hugepages-configuration) section below for details.
 
 ## Configuration of the srsRAN Project CU/DU
 
 The configuration file for the srsran Project CU/DU is located in the root directory of this Helm chart, its named `gnb-config.yml`. To configure the application, refer to the documentation provided at [srsRAN Project User Manual](https://docs.srsran.com/projects/project/en/latest/user_manuals/source/running.html). The config file will be mounted as a ConfigMap into the container on runtime.
+
+## Hugepages Configuration
+
+Hugepages are **optional** but recommended for DPDK-based deployments to achieve optimal performance. The chart automatically detects and configures hugepage volumes when you define `hugepages-1Gi` or `hugepages-2Mi` in your resource limits or requests.
+
+### Checking Cluster Support
+
+Before using hugepages, verify your cluster has them configured:
+
+```bash
+# Check if hugepages are available on cluster nodes
+kubectl get nodes -o json | jq '.items[].status.capacity | select(.["hugepages-1Gi"] or .["hugepages-2Mi"])'
+
+# Alternative: Check on the node directly
+cat /proc/meminfo | grep HugePages
+```
+
+### Using Hugepages
+
+Simply define hugepages in your resource configuration. The chart will automatically create the necessary volumes and mounts:
+
+**With 1Gi hugepages (recommended for DPDK):**
+```yaml
+resources:
+  limits:
+    cpu: 12
+    memory: 16Gi
+    hugepages-1Gi: 2Gi
+  requests:
+    cpu: 12
+    memory: 16Gi
+    hugepages-1Gi: 2Gi
+```
+
+**With 2Mi hugepages (alternative):**
+```yaml
+resources:
+  limits:
+    cpu: 12
+    memory: 16Gi
+    hugepages-2Mi: 1Gi
+  requests:
+    cpu: 12
+    memory: 16Gi
+    hugepages-2Mi: 1Gi
+```
+
+### Deploying Without Hugepages
+
+Simply omit hugepages from your resource configuration:
+
+```yaml
+resources:
+  limits:
+    cpu: 12
+    memory: 16Gi
+  requests:
+    cpu: 12
+    memory: 16Gi
+```
+
+**Note**: If you define hugepages in resources but your cluster doesn't have them configured, the deployment will fail with a scheduling error. Always verify cluster support first.
 
 ## Choosing a Container Image
 

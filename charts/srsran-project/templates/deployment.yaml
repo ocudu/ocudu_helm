@@ -58,12 +58,12 @@ spec:
             path: {{ .Values.debugging.hostPath }}
             type: DirectoryOrCreate
         {{- end }}
-        {{- if .Values.resources.enable_hugepages_1gi }}
+        {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-1Gi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-1Gi")) }}
         - name: hugepage-1gi
           emptyDir:
             medium: HugePages-1Gi
         {{- end }}
-        {{- if .Values.resources.enable_hugepages_2mi }}
+        {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-2Mi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-2Mi")) }}
         - name: hugepage-2mi
           emptyDir:
             medium: HugePages-2Mi
@@ -126,11 +126,11 @@ spec:
             - name: srs-host-volume
               mountPath: {{ .Values.debugging.containerPath }}
             {{- end }}
-            {{- if .Values.resources.enable_hugepages_1gi }}
+            {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-1Gi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-1Gi")) }}
             - name: hugepage-1gi
               mountPath: /hugepages-1Gi
             {{- end }}
-            {{- if .Values.resources.enable_hugepages_2mi }}
+            {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-2Mi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-2Mi")) }}
             - name: hugepage-2mi
               mountPath: /hugepages-2Mi
             {{- end }}
