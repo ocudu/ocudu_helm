@@ -164,9 +164,13 @@ Check if N2 or N3 are defined. If defined, use external core.
 */}}
 {{- define "useExtCore" -}}
 {{- with .Values.service -}}
-  {{- $p := default (dict) .ports -}}
-  {{- if or (hasKey $p "n2") (hasKey $p "n3") -}}
-    "true"
+  {{- if and .enabled .ports -}}
+    {{- $p := .ports -}}
+    {{- if or (and (hasKey $p "n2") (index $p "n2" "enabled")) (and (hasKey $p "n3") (index $p "n3" "enabled")) -}}
+      "true"
+    {{- else -}}
+      "false"
+    {{- end -}}
   {{- else -}}
     "false"
   {{- end -}}

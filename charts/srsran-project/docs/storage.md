@@ -113,6 +113,8 @@ persistence:
 
 **⚠️ Warning**: Logs will be lost when the pod restarts.
 
+> **Note**: When `persistence.enabled: false`, the volume for debugging logs is not mounted. If your gNB config specifies `log.filename: /tmp/debugging-logs/gnb.log`, the directory `/tmp/debugging-logs/` won't exist. Either enable persistence or change the log path to `/tmp/gnb.log` in your config.
+
 ## Common Scenarios
 
 ### Cloud Deployment (EKS, GKE, AKS)

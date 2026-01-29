@@ -5,6 +5,10 @@
 ### Added
 - Entrypoint script validates HAL `eal_args` present when SR-IOV devices detected
 
+### Fixed
+- LoadBalancer service now correctly respects `service.enabled: false` when determining `USE_EXT_CORE`
+- Log file paths must exist when `persistence.enabled: false` (use `/tmp/` for ephemeral logs)
+
 ### Changed
 - Remove hardcoded `fullnameOverride` and `nameOverride` to support multiple instances in same namespace
 - Remove hardcoded ServiceAccount name to support multiple instances
