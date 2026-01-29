@@ -103,8 +103,18 @@ o1:
     securityContext: {}
   netconfServer:
     service:
+      # -- Service type (ClusterIP, NodePort, or LoadBalancer)
       type: NodePort
+      # -- NodePort (when type is NodePort)
       nodePort: 30830
+      # -- LoadBalancer IP address (optional, when type is LoadBalancer)
+      # loadBalancerIP: ""
+      # -- LoadBalancer class (optional, for clusters with multiple LB implementations)
+      # loadBalancerClass: ""
+      # -- External traffic policy (Cluster or Local)
+      # externalTrafficPolicy: Cluster
+      # -- Session affinity (None or ClientIP)
+      # sessionAffinity: None
     image:
       repository: registry.gitlab.com/softwareradiosystems/srsran_5g_enterprise/netconf
       pullPolicy: IfNotPresent

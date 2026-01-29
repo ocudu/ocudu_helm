@@ -16,6 +16,20 @@ metadata:
     app.kubernetes.io/component: o1-netconf
 spec:
   type: {{ .Values.o1.netconfServer.service.type | default "NodePort" }}
+  {{- if eq (.Values.o1.netconfServer.service.type | default "NodePort") "LoadBalancer" }}
+  {{- if .Values.o1.netconfServer.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.o1.netconfServer.service.loadBalancerIP }}
+  {{- end }}
+  {{- if .Values.o1.netconfServer.service.loadBalancerClass }}
+  loadBalancerClass: {{ .Values.o1.netconfServer.service.loadBalancerClass }}
+  {{- end }}
+  {{- with .Values.o1.netconfServer.service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ . }}
+  {{- end }}
+  {{- end }}
+  {{- with .Values.o1.netconfServer.service.sessionAffinity }}
+  sessionAffinity: {{ . }}
+  {{- end }}
   selector:
     {{- include "srsran-cudu.selectorLabels" . | nindent 4 }}
   ports:

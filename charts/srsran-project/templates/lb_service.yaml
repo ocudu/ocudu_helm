@@ -1,4 +1,4 @@
-{{- if and .Values.service .Values.service.type (eq .Values.service.type "LoadBalancer") }}
+{{- if and .Values.service.enabled (eq .Values.service.type "LoadBalancer") }}
 #
 # Copyright 2021-2025 Software Radio Systems Limited
 #
@@ -10,25 +10,43 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: srsran-project-cudu-lb-service
+  name: {{ include "srsran-cudu.fullname" . }}-lb
   labels:
-    nf-type: srsran-project-cudu-lb-service
+    {{- include "srsran-cudu.labels" . | nindent 4 }}
+    app.kubernetes.io/component: n2-n3
 spec:
   type: {{ .Values.service.type }}
-  loadBalancerIP: {{ .Values.service.LoadBalancerIP }}
+  {{- if .Values.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
+  {{- end }}
+  {{- if .Values.service.loadBalancerClass }}
+  loadBalancerClass: {{ .Values.service.loadBalancerClass }}
+  {{- end }}
+  {{- with .Values.service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ . }}
+  {{- end }}
+  {{- with .Values.service.sessionAffinity }}
+  sessionAffinity: {{ . }}
+  {{- end }}
   ports:
-    {{ if .Values.service.ports.n2 }}
+    {{- if .Values.service.ports.n2.enabled }}
     - name: n2
       port: {{ .Values.service.ports.n2.port }}
-      targetPort: {{ .Values.service.ports.n2.outport }}
+      targetPort: {{ .Values.service.ports.n2.targetPort | default .Values.service.ports.n2.port }}
       protocol: {{ .Values.service.ports.n2.protocol }}
-    {{ end }}
-    {{ if .Values.service.ports.n3 }}
+      {{- if .Values.service.ports.n2.nodePort }}
+      nodePort: {{ .Values.service.ports.n2.nodePort }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.service.ports.n3.enabled }}
     - name: n3
       port: {{ .Values.service.ports.n3.port }}
-      targetPort: {{ .Values.service.ports.n3.outport }}
+      targetPort: {{ .Values.service.ports.n3.targetPort | default .Values.service.ports.n3.port }}
       protocol: {{ .Values.service.ports.n3.protocol }}
-    {{ end }}
+      {{- if .Values.service.ports.n3.nodePort }}
+      nodePort: {{ .Values.service.ports.n3.nodePort }}
+      {{- end }}
+    {{- end }}
   selector:
-    nf-type: srsran-project-cudu-lb-service
+    {{- include "srsran-cudu.selectorLabels" . | nindent 4 }}
 {{- end }}

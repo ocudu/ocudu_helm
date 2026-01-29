@@ -16,10 +16,19 @@ metadata:
     app.kubernetes.io/component: metrics
 spec:
   type: {{ .Values.metricsService.type | default "ClusterIP" }}
-  {{- if and (.Values.metricsService.type) (eq .Values.metricsService.type "LoadBalancer") }}
+  {{- if eq .Values.metricsService.type "LoadBalancer" }}
   {{- if .Values.metricsService.loadBalancerIP }}
-  loadBalancerIP: {{ .Values.metricsService.loadBalancerIP | quote }}
+  loadBalancerIP: {{ .Values.metricsService.loadBalancerIP }}
   {{- end }}
+  {{- if .Values.metricsService.loadBalancerClass }}
+  loadBalancerClass: {{ .Values.metricsService.loadBalancerClass }}
+  {{- end }}
+  {{- with .Values.metricsService.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ . }}
+  {{- end }}
+  {{- end }}
+  {{- with .Values.metricsService.sessionAffinity }}
+  sessionAffinity: {{ . }}
   {{- end }}
   selector:
     {{- include "srsran-cudu.selectorLabels" . | nindent 4 }}

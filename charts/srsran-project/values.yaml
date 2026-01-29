@@ -201,14 +201,101 @@ affinity: {}
 metricsService:
   # -- Enable metrics service
   enabled: false
-  # -- Service type (ClusterIP or LoadBalancer)
+
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
   type: ClusterIP
-  # -- LoadBalancer IP address (when type is LoadBalancer)
-  # loadBalancerIP: "10.0.0.123"
+
+  # -- LoadBalancer IP address (optional, when type is LoadBalancer)
+  # Leave empty for automatic assignment
+  # Example: "10.0.0.101"
+  # @default -- `""` (auto-assign)
+  loadBalancerIP: ""
+
+  # -- LoadBalancer class (optional, for clusters with multiple LB implementations)
+  # Example: "metallb" or "cloud-provider-lb"
+  # @default -- `""` (use default)
+  loadBalancerClass: ""
+
+  # -- External traffic policy (Cluster or Local)
+  # Only applies when type is LoadBalancer or NodePort
+  # - Cluster: Load balances across all nodes (default)
+  # - Local: Preserves source IP, only routes to local pods
+  # @default -- `Cluster`
+  externalTrafficPolicy: Cluster
+
+  # -- Session affinity (None or ClientIP)
+  # @default -- `None`
+  sessionAffinity: None
+
   # -- Service port (must match the port in gnb-config.yml)
   port: 8001
+
   # -- Target port (container port)
   targetPort: 8001
+
+# -- LoadBalancer service configuration for N2/N3 interfaces
+# Used for exposing gNB to external 5G Core network
+# ref: https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer
+service:
+  # -- Enable LoadBalancer service for N2/N3 interfaces
+  # When enabled, creates a LoadBalancer service for external 5G Core connectivity
+  enabled: false
+
+  # -- Service type (only LoadBalancer is supported by this template)
+  # @default -- `LoadBalancer`
+  type: LoadBalancer
+
+  # -- LoadBalancer IP address (optional, cluster-dependent)
+  # Leave empty for automatic assignment
+  # Example: "10.0.0.100"
+  # @default -- `""` (auto-assign)
+  loadBalancerIP: ""
+
+  # -- LoadBalancer class (optional, for clusters with multiple LB implementations)
+  # Example: "metallb" or "cloud-provider-lb"
+  # @default -- `""` (use default)
+  loadBalancerClass: ""
+
+  # -- External traffic policy (Cluster or Local)
+  # - Cluster: Load balances across all nodes (default)
+  # - Local: Preserves source IP, only routes to local pods
+  # @default -- `Cluster`
+  externalTrafficPolicy: Cluster
+
+  # -- Session affinity (None or ClientIP)
+  # @default -- `None`
+  sessionAffinity: None
+
+  # -- Port configuration for N2 and N3 interfaces
+  ports:
+    # -- N2 interface (NGAP - control plane to AMF)
+    n2:
+      # -- Enable N2 port
+      enabled: true
+      # -- External port
+      port: 38412
+      # -- Container target port (must match gnb-config.yml)
+      # @default -- Same as port
+      targetPort: 38412
+      # -- Protocol (SCTP for NGAP)
+      protocol: SCTP
+      # -- NodePort (optional, only used if service type is NodePort)
+      # nodePort: 30412
+
+    # -- N3 interface (GTP-U - user plane to UPF)
+    n3:
+      # -- Enable N3 port
+      enabled: true
+      # -- External port
+      port: 2152
+      # -- Container target port (must match gnb-config.yml)
+      # @default -- Same as port
+      targetPort: 2152
+      # -- Protocol (UDP for GTP-U)
+      protocol: UDP
+      # -- NodePort (optional, only used if service type is NodePort)
+      # nodePort: 30152
 
 # -- Persistent storage configuration
 # The chart supports both PVC (with StorageClass) and hostPath storage for debugging logs

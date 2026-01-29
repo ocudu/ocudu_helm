@@ -90,6 +90,48 @@ resources:
     memory: 16Gi
 ```
 
+**External 5G Core with LoadBalancer**:
+```yaml
+# N2/N3 Service - Expose gNB to external 5G Core
+service:
+  enabled: true
+  type: LoadBalancer
+  loadBalancerIP: "10.0.0.100"  # Optional, cluster-dependent
+  loadBalancerClass: "metallb"  # Optional, for multiple LB providers
+  externalTrafficPolicy: Local  # Preserves source IP
+  sessionAffinity: None
+  ports:
+    n2:  # NGAP control plane to AMF
+      enabled: true
+      port: 38412
+      protocol: SCTP
+    n3:  # GTP-U user plane to UPF
+      enabled: true
+      port: 2152
+      protocol: UDP
+
+# Metrics Service - Expose metrics to external Telegraf
+metricsService:
+  enabled: true
+  type: LoadBalancer
+  loadBalancerIP: "10.0.0.102"  # Optional
+  loadBalancerClass: "metallb"  # Optional
+  externalTrafficPolicy: Cluster
+  port: 8001
+
+# O1 Service - Expose NETCONF to external ONAP SMO
+o1:
+  enable_srs_o1: true
+  netconfServer:
+    service:
+      type: LoadBalancer
+      loadBalancerIP: "10.0.0.103"  # Optional
+      loadBalancerClass: "metallb"  # Optional
+      externalTrafficPolicy: Cluster
+```
+
+> **Note**: LoadBalancer services require a LoadBalancer controller (e.g., MetalLB, cloud provider) in your cluster. Without one, services will remain in `<pending>` state. For clusters without LoadBalancer support, use `NodePort` instead.
+
 ## Container Images
 
 Select the appropriate container image based on your CPU:
@@ -118,6 +160,21 @@ Find images at: [Docker Hub - softwareradiosystems](https://hub.docker.com/u/sof
 | `podDisruptionBudget.enabled` | bool | `true` | Enable PodDisruptionBudget |
 | `podDisruptionBudget.unhealthyPodEvictionPolicy` | string | `"AlwaysAllow"` | Pod eviction policy |
 | `networkPolicy.enabled` | bool | `false` | Enable NetworkPolicy (only works with hostNetwork: false) |
+| `service.enabled` | bool | `false` | Enable LoadBalancer service for N2/N3 interfaces |
+| `service.type` | string | `"LoadBalancer"` | Service type: `LoadBalancer`, `NodePort`, or `ClusterIP` |
+| `service.loadBalancerIP` | string | `""` | LoadBalancer IP address (optional, cluster-dependent) |
+| `service.loadBalancerClass` | string | `""` | LoadBalancer class (optional, for multiple LB providers) |
+| `service.externalTrafficPolicy` | string | `"Cluster"` | External traffic policy: `Cluster` or `Local` |
+| `service.sessionAffinity` | string | `"None"` | Session affinity: `None` or `ClientIP` |
+| `metricsService.enabled` | bool | `false` | Enable metrics service |
+| `metricsService.type` | string | `"ClusterIP"` | Service type: `LoadBalancer`, `NodePort`, or `ClusterIP` |
+| `metricsService.loadBalancerIP` | string | `""` | LoadBalancer IP (when type is LoadBalancer) |
+| `metricsService.loadBalancerClass` | string | `""` | LoadBalancer class (optional) |
+| `metricsService.externalTrafficPolicy` | string | `"Cluster"` | External traffic policy |
+| `o1.enable_srs_o1` | bool | `false` | Enable O1 interface (NETCONF management) |
+| `o1.netconfServer.service.type` | string | `"NodePort"` | O1 service type |
+| `o1.netconfServer.service.loadBalancerIP` | string | `""` | LoadBalancer IP (when type is LoadBalancer) |
+| `o1.netconfServer.service.loadBalancerClass` | string | `""` | LoadBalancer class (optional) |
 | `persistence.enabled` | bool | `true` | Enable persistent storage for logs |
 | `persistence.type` | string | `"hostPath"` | Storage type: `pvc` or `hostPath` |
 | `persistence.pvc.storageClassName` | string | `""` | StorageClass for PVC (empty = default) |

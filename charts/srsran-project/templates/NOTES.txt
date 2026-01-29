@@ -81,25 +81,25 @@ O1 NETCONF Service:
    {{- end }}
 {{- end }}
 
-{{- if and .Values.service .Values.service.type (eq .Values.service.type "LoadBalancer") }}
+{{- if and .Values.service.enabled (eq .Values.service.type "LoadBalancer") }}
 
-5G Core LoadBalancer Service:
-   Service: srsran-project-cudu-lb-service
+🌐 5G Core LoadBalancer Service:
+   Service: {{ include "srsran-cudu.fullname" . }}-lb
    Type:    LoadBalancer
-   {{- if .Values.service.LoadBalancerIP }}
-   IP:      {{ .Values.service.LoadBalancerIP }}
+   {{- if .Values.service.loadBalancerIP }}
+   IP:      {{ .Values.service.loadBalancerIP }}
    {{- end }}
 
    Ports:
-   {{- if .Values.service.ports.n2 }}
+   {{- if .Values.service.ports.n2.enabled }}
    - N2 (Control): {{ .Values.service.ports.n2.port }}/{{ .Values.service.ports.n2.protocol }}
    {{- end }}
-   {{- if .Values.service.ports.n3 }}
+   {{- if .Values.service.ports.n3.enabled }}
    - N3 (User):    {{ .Values.service.ports.n3.port }}/{{ .Values.service.ports.n3.protocol }}
    {{- end }}
 
    Get LoadBalancer IP:
-   kubectl get svc srsran-project-cudu-lb-service -n {{ .Release.Namespace }}
+   kubectl get svc {{ include "srsran-cudu.fullname" . }}-lb -n {{ .Release.Namespace }}
 {{- end }}
 
 ────────────────────────────────────────────────────────────────────────────────
