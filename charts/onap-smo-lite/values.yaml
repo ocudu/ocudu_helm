@@ -8,6 +8,12 @@
 
 # -- Global configuration shared across all components
 global:
+  # -- Kubernetes cluster domain suffix (MANDATORY - must match your cluster)
+  # This is used to construct service FQDNs (e.g., service.namespace.svc.cluster.local)
+  # Common values: "cluster.local" (default K8s), "srsk8s.bcn" (example custom domain)
+  # @default -- "srsk8s.bcn" (MUST be changed to match your cluster)
+  clusterDomain: "srsk8s.bcn"
+  
   # -- Image pull secrets for private registries
   # @default -- `[]` (no pull secrets)
   imagePullSecrets: []
@@ -50,8 +56,9 @@ sdncWeb:
     # -- Enable OAuth authentication
     enableOAuth: false
     # -- SDNR backend host URL
-    # WARNING: Contains hardcoded cluster domain - update for your cluster
-    sdnrHost: "onap-smo-sdnr.onap.svc.srsk8s.bcn"
+    # Uses global.clusterDomain to construct the FQDN
+    # @default -- "onap-smo-sdnr.onap.svc.{{ .Values.global.clusterDomain }}"
+    sdnrHost: "onap-smo-sdnr.onap.svc.{{ .Values.global.clusterDomain }}"
   
   # -- Ingress configuration
   ingress:
@@ -123,9 +130,6 @@ sdnr:
     domain: ""
     # -- Enable OAuth authentication
     enableOAuth: "false"
-    # -- Elasticsearch database URL
-    # WARNING: Contains hardcoded cluster domain - update for your cluster
-    sdnrDbUrl: "http://onap-smo-sdnrdb.onap.svc.srsk8s.bcn:9200"
     # -- Database type
     sdnrDbType: ELASTICSEARCH
     # -- Enable device manager
@@ -142,6 +146,10 @@ sdnr:
     sdnrAsyncPoolSize: "200"
     # -- Enable NETCONF call home
     sdnrNetconfCallHomeEnabled: "true"
+    # -- Elasticsearch database URL
+    # Uses global.clusterDomain to construct the FQDN
+    # @default -- "http://onap-smo-sdnrdb.onap.svc.{{ .Values.global.clusterDomain }}:9200"
+    sdnrDbUrl: "http://onap-smo-sdnrdb.onap.svc.{{ .Values.global.clusterDomain }}:9200"
   
   # -- Persistence configuration
   persistence:
@@ -207,7 +215,7 @@ sdnr:
       VES_COLLECTOR_TRUST_ALL_CERTS=false
       VES_COLLECTOR_USERNAME=sample1
       VES_COLLECTOR_PASSWORD=sample1
-      VES_COLLECTOR_IP=onap-smo-ves-collector.onap.svc.srsk8s.bcn
+      VES_COLLECTOR_IP=onap-smo-ves-collector.onap.svc.{{ .Values.global.clusterDomain }}
       VES_COLLECTOR_PORT=8443
       VES_COLLECTOR_VERSION=v7
       REPORTING_ENTITY_NAME=ONAP SDN-R
@@ -238,13 +246,13 @@ sdnrRegistrar:
     fetchPause=5000
 
     [general]
-    baseUrl=http://onap-smo-sdnr.onap.svc.srsk8s.bcn:8181
+    baseUrl=http://onap-smo-sdnr.onap.svc.{{ .Values.global.clusterDomain }}:8181
     sdnrUser=root
     sdnrPasswd=root
 
     [strimzi-kafka]
     strimziEnabled=true
-    bootstrapServers=onap-smo-kafka.onap.svc.srsk8s.bcn:9092
+    bootstrapServers=onap-smo-kafka.onap.svc.{{ .Values.global.clusterDomain }}:9092
     securityProtocol=PLAINTEXT
     saslMechanism=PLAIN
     saslJaasConfig=PLAIN
@@ -396,8 +404,9 @@ kafka:
     # -- Listeners
     listeners: PLAINTEXT://0.0.0.0:9092
     # -- Advertised listeners
-    # WARNING: Contains hardcoded cluster domain - update for your cluster
-    advertisedListeners: "PLAINTEXT://onap-smo-kafka.onap.svc.srsk8s.bcn:9092"
+    # Uses global.clusterDomain to construct the FQDN
+    # @default -- "PLAINTEXT://onap-smo-kafka.onap.svc.{{ .Values.global.clusterDomain }}:9092"
+    advertisedListeners: "PLAINTEXT://onap-smo-kafka.onap.svc.{{ .Values.global.clusterDomain }}:9092"
     # -- Replication factor
     replicationFactor: 1
     # -- Number of partitions
@@ -410,8 +419,9 @@ kafka:
     # -- Enable CADI (AAF authentication)
     enableCadi: "false"
     # -- Zookeeper connection string
-    # WARNING: Contains hardcoded cluster domain - update for your cluster
-    KAFKA_ZOOKEEPER_CONNECT: "onap-smo-zookeeper.onap.svc.srsk8s.bcn:2181"
+    # Uses global.clusterDomain to construct the FQDN
+    # @default -- "onap-smo-zookeeper.onap.svc.{{ .Values.global.clusterDomain }}:2181"
+    KAFKA_ZOOKEEPER_CONNECT: "onap-smo-zookeeper.onap.svc.{{ .Values.global.clusterDomain }}:2181"
     # -- Zookeeper connection timeout
     KAFKA_ZOOKEEPER_CONNECTION_TIMEOUT_MS: "40000"
     # -- Zookeeper session timeout
@@ -521,8 +531,9 @@ vesCollector:
   # -- Environment variables
   env:
     # -- Kafka bootstrap servers
-    # WARNING: Contains hardcoded cluster domain - update for your cluster
-    bootstrapServers: "onap-smo-kafka.onap.svc.srsk8s.bcn:9092"
+    # Uses global.clusterDomain to construct the FQDN
+    # @default -- "onap-smo-kafka.onap.svc.{{ .Values.global.clusterDomain }}:9092"
+    bootstrapServers: "onap-smo-kafka.onap.svc.{{ .Values.global.clusterDomain }}:9092"
     # -- DMaaP host (empty = use Kafka)
     dmaapHost: ""
   

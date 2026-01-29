@@ -1,63 +1,177 @@
 # ONAP SMO Lite
 
+> **⚠️ Integration PoC - Demo Only - No Support Provided**
+> 
+> This chart is provided **as-is** for integration testing and demonstration purposes only.
+> It contains hardcoded configurations and is not intended for production use.
+> Deploy as-is with no expectation of support or maintenance.
 
-A Helm chart for deploying a lightweight ONAP SMO stack for O1 management demonstrations
+## Overview
 
-This Helm chart deploys a minimal ONAP SMO stack consisting of the SDNC web UI, SDNR controller, SDNR Elasticsearch database, Kafka/Zookeeper messaging, ONAP VES collector for event forwarding, and an optional Kafka UI for topic inspection.
+A lightweight ONAP Service Management and Orchestration (SMO) stack for O1 management interface demonstrations with srsRAN gNodeB.
 
-## Components
+This chart deploys a minimal ONAP SMO environment consisting of:
+- **SDNC Web UI** - Web interface for SDN-R controller
+- **SDN-R Controller** - OpenDaylight-based RAN management controller
+- **Elasticsearch** - Database backend for SDN-R
+- **Kafka + Zookeeper** - Event messaging backbone
+- **VES Collector** - ONAP VES (Virtual Event Streaming) event collector
+- **Kafka UI** - Web interface for Kafka topic inspection (optional)
 
-- **sdnc-web** – Presents the SDNR web UI and forwards traffic to the controller.
-- **sdnr** – SDN controller instance with SDNR features enabled.
-- **sdnrdb** – Single-node Elasticsearch backend consumed by SDNR.
-- **kafka** – Single broker used as the messaging backbone for SDNR notifications.
-- **zookeeper** – Zookeeper instance backing the Kafka broker.
-- **ves-collector** – ONAP DCAE VES collector connected to Kafka for VES events.
-- **kafka-ui** – Lightweight web UI to inspect Kafka topics and consumer groups.
+## Prerequisites
 
-## Quick Start
+- Kubernetes >= 1.24.0
+- Helm >= 3.0.0
+- Sufficient cluster resources (minimum 4 CPU cores, 8GB RAM recommended)
 
+### ⚠️ Mandatory Configuration: Cluster Domain
+
+**You MUST configure `global.clusterDomain` to match your Kubernetes cluster's DNS zone.**
+
+By default, the chart uses `srsk8s.bcn` which is specific to the development environment. 
+Most Kubernetes clusters use `cluster.local` as the default domain.
+
+**Find your cluster domain:**
 ```bash
-helm install onap-smo ./
+# Check your cluster's DNS configuration
+kubectl get configmap coredns -n kube-system -o yaml | grep kubernetes
+
+# Common values:
+# - cluster.local (default Kubernetes)
+# - your-custom-domain (custom installations)
 ```
 
-By default the chart provisions Kubernetes `Deployment` objects for all three workloads with in-cluster `Service` discovery and shareable configuration served through `ConfigMap` and `Secret` resources. Supply your own credentials by pointing `sdnr.adminCredentials.existingSecret` to a pre-created secret containing `username` and `password` keys.
+**Configure before installation:**
+```bash
+# Option 1: Via command line
+helm install onap-smo-lite ./charts/onap-smo-lite \
+  --set global.clusterDomain="cluster.local" \
+  --namespace onap --create-namespace
+
+# Option 2: Via values file
+# Create custom-values.yaml with:
+#   global:
+#     clusterDomain: "cluster.local"
+helm install onap-smo-lite ./charts/onap-smo-lite \
+  -f custom-values.yaml \
+  --namespace onap --create-namespace
+```
+
+## Installation
+
+### Basic Installation
+
+**Important**: Set `global.clusterDomain` to match your cluster (see Prerequisites above).
+
+```bash
+# Install with cluster.local (most common)
+helm install onap-smo-lite ./charts/onap-smo-lite \
+  --set global.clusterDomain="cluster.local" \
+  --namespace onap \
+  --create-namespace
+```
+
+### Access the Web Interfaces
+
+After installation, access the UIs via NodePort services:
+
+- **SDN-R Web UI**: `http://<node-ip>:30080` (default credentials: root/root)
+- **Kafka UI**: `http://<node-ip>:30085` (if enabled)
+
+### Verifying Installation
+
+```bash
+# Check all pods are running
+kubectl get pods -n onap
+
+# View services
+kubectl get svc -n onap
+```
+
+Expected pods: sdnc-web, sdnr, sdnrdb (Elasticsearch), kafka, zookeeper, ves-collector, kafka-ui (if enabled)
 
 ## Configuration
 
-### Chart Parameters
+### Key Parameters
 
-| Parameter | Description | Default |
-|-------|-------------|---------|
-| `sdncWeb.image.repository` | Container image repository for the web UI | `nexus3.onap.org:10001/onap/sdnc-web-image` |
-| `sdncWeb.image.tag` | Container image tag for the web UI | `3.1.1-STAGING-latest` |
-| `sdncWeb.ingress.enabled` | Expose UI via ingress | `false` |
-| `sdncWeb.service.type` | Kubernetes service type for sdnc-web | `NodePort` |
-| `sdncWeb.service.nodePort` | NodePort used when service type is `NodePort` | `30080` |
-| `sdnr.image.repository` | Container image repository for the SDNR controller | `nexus3.onap.org:10001/onap/sdnc-image` |
-| `sdnr.image.tag` | Container image tag for the SDNR controller | `3.1.1-STAGING-latest` |
-| `sdnr.adminCredentials` | Inline username/password (autogenerated secret if no existing secret) | `root/root` |
-| `sdnr.config.*` | Device manager and registrar property files | Preconfigured for in-cluster VES/SDNR/Kafka endpoints |
-| `sdnrdb.image.repository` | Elasticsearch image repository | `docker.elastic.co/elasticsearch/elasticsearch-oss` |
-| `sdnrdb.image.tag` | Elasticsearch image tag | `7.9.3` |
-| `sdnrdb.persistence.enabled` | Persist ES data using PVC | `false` |
-| `kafka.image.repository` | Container image repository for Kafka broker | `quay.io/strimzi/kafka` |
-| `kafka.service.port` | Kafka listener port | `9092` |
-| `kafka.auth.enabled` | Enable SASL/JAAS auth configuration | `false` |
-| `zookeeper.image.repository` | Container image repository for Zookeeper | `quay.io/strimzi/kafka` |
-| `zookeeper.service.port` | Zookeeper client port | `2181` |
-| `vesCollector.image.repository` | Container image repository for the VES collector | `nexus3.onap.org:10001/onap/org.onap.dcaegen2.collectors.ves.vescollector` |
-| `vesCollector.env.bootstrapServers` | Kafka bootstrap servers used by the collector | `onap-smo-kafka.onap.svc.srsk8s.bcn:9092` |
-| `vesCollector.credentials.username/password` | VES collector basic-auth credentials | `sample1/sample1` |
-| `kafkaUi.enabled` | Toggle deployment of the Kafka UI | `true` |
-| `kafkaUi.service.type` | Service type for Kafka UI | `NodePort` |
-| `kafkaUi.ingress.enabled` | Expose Kafka UI through an ingress | `false` |
+| Parameter | Description | Default | Required |
+|-----------|-------------|---------|----------|
+| **`global.clusterDomain`** | **Kubernetes cluster DNS zone** | `srsk8s.bcn` | **✅ YES** |
+| `sdncWeb.service.nodePort` | NodePort for SDN-R Web UI access | `30080` | No |
+| `sdnr.adminCredentials.username` | SDN-R admin username | `root` | No |
+| `sdnr.adminCredentials.password` | SDN-R admin password | `root` | No |
+| `sdnrdb.persistence.enabled` | Enable persistent storage for Elasticsearch | `false` | No |
+| `kafka.auth.enabled` | Enable Kafka authentication | `false` | No |
+| `kafkaUi.enabled` | Deploy Kafka UI | `true` | No |
+| `kafkaUi.service.nodePort` | NodePort for Kafka UI access | `30085` | No |
+| `vesCollector.credentials.username` | VES Collector username | `sample1` | No |
+| `vesCollector.credentials.password` | VES Collector password | `sample1` | No |
 
-> **Note:** The chart defaults assume the Kubernetes DNS zone suffix `srsk8s.bcn`. Change the service hostnames accordingly if your cluster uses a different cluter domain.
+### Mandatory Configuration
 
-Refer to [`values.yaml`](values.yaml) for the complete list of tunables.
+**`global.clusterDomain`** - This parameter MUST be set to match your Kubernetes cluster's DNS zone.
 
-## Production Use
+The chart uses this to construct Fully Qualified Domain Names (FQDNs) for inter-service communication:
+- SDNC Web → SDN-R Controller
+- SDN-R → Elasticsearch Database
+- Kafka broker advertised listeners
+- VES Collector → Kafka
+- SDN-R Registrar → Kafka
 
-This chart is intended for **development, testing, and demonstration purposes only**.
-It has not been hardened for production use. Use in production environments at your own risk.
+**Common values:**
+- `cluster.local` - Standard Kubernetes default
+- `your-domain.com` - Custom cluster installations
+
+**Example:**
+```bash
+# For standard Kubernetes clusters
+--set global.clusterDomain="cluster.local"
+```
+
+See [`values.yaml`](values.yaml) for the complete list of configuration options.
+
+## Uninstalling
+
+```bash
+helm uninstall onap-smo-lite --namespace onap
+```
+
+## Troubleshooting
+
+### Pods Not Starting
+
+Check pod status and logs:
+```bash
+kubectl get pods -n onap
+kubectl describe pod <pod-name> -n onap
+kubectl logs <pod-name> -n onap
+```
+
+### Service Connection Issues
+
+Verify services are accessible:
+```bash
+kubectl get svc -n onap
+```
+
+Ensure the hardcoded cluster domain in `values.yaml` matches your cluster's DNS zone.
+
+### Elasticsearch Issues
+
+If sdnrdb (Elasticsearch) fails to start, check resource limits and ensure single-node discovery mode is enabled.
+
+## Integration with srsRAN gNodeB
+
+To integrate with srsRAN O1 interface:
+
+1. Deploy this chart in a namespace (e.g., `onap`)
+2. Configure srsRAN gNodeB O1 settings to point to:
+   - NETCONF server: SDN-R NETCONF port
+   - VES Collector: `http://onap-smo-ves-collector.onap.svc.cluster.local:8443`
+3. Access SDN-R Web UI to view connected network functions
+
+Refer to srsRAN documentation for O1 configuration details.
+
+## Support
+
+**This chart is provided as-is with no support.** It is intended solely for integration testing and demonstrations. For production ONAP deployments, refer to official ONAP documentation.
