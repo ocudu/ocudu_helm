@@ -45,6 +45,12 @@ cd charts/srsran-project
 helm install my-gnb ./
 ```
 
+After installation, Helm will display **post-install notes** with:
+- Deployment configuration summary
+- Service access information
+- Verification commands
+- Next steps and documentation links
+
 ### Basic Configuration Examples
 
 **Production deployment with SR-IOV (default)**:
