@@ -1,81 +1,173 @@
 # rt-tests
 
-A Helm chart for deploying rt-tests real-time performance testing tools
+![PoC/Demo](https://img.shields.io/badge/status-PoC%2FDemo-yellow)
+
+A Helm chart for deploying real-time performance testing tools (cyclictest, stress-ng)
+
+> **⚠️ PoC/Demo Chart - Not Production Ready**
+>
+> This chart is intended for **development, testing, and demonstration purposes only**.
+> It has not been hardened for production use. Use in production environments at your own risk.
+
+## Overview
+
+This chart deploys real-time latency testing tools as a Kubernetes Job to measure system real-time performance and latency characteristics critical for 5G RAN workloads.
+
+**Tools Included**:
+- **cyclictest**: Measures real-time kernel latency
+- **stress-ng**: Applies system load during testing
+
+## Prerequisites
+
+Before installing, ensure your environment meets these requirements:
+
+1. **Kubernetes**: >= 1.24.0
+2. **Privileges**: Chart requires `privileged: true` for real-time scheduling and memory locking
+3. **Resources**: Dedicated CPU cores recommended for accurate measurements
 
 ## Installing the Chart
 
-To install the chart with the release name `my-release`:
-
-```console
+**Basic installation**:
+```bash
 cd charts/rt-tests
-helm install my-release ./
+helm install rt-tests-srs ./
+```
+
+**With custom configuration**:
+```bash
+helm install rt-tests-srs ./ -f my-values.yaml
+```
+
+## Verifying Installation
+
+Check job status and results:
+```bash
+# Check job status
+kubectl get jobs
+
+# View test output
+kubectl logs job/rt-tests-chart-job
+
+# Wait for completion
+kubectl wait --for=condition=complete --timeout=300s job/rt-tests-chart-job
 ```
 
 ## Uninstalling the Chart
 
-To uninstall/delete the my-release deployment:
-
-```console
-helm delete my-release
+```bash
+helm uninstall rt-tests-srs
 ```
 
-The command removes all the Kubernetes components associated with the chart and deletes the release.
+The command removes all Kubernetes components associated with the chart.
 
 ## Configuration
 
-### Chart Parameters
+### Key Parameters
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `affinity` | object | `{}` | Pod affinity configuration |
-| annotations | object | `{}` | Annotations for the Deployment |
-| securityContext | object | `{}` | Container security context (allowPrivilegeEscalation, etc.) |
-| fullnameOverride | string | `""` | Overrides the chart's computed fullname |
-| interfaceName | string | `{}` | Name of the interface to be used for ptp4l |
-| image.pullPolicy | string | `"IfNotPresent"` | Image pull policy |
-| image.pullSecrets | list | `[]` | Image pull secrets |
-| image.repository | string | `"softwareradiosystems/rt-tests"` | Image repository |
-| image.tag | string | `""` | Image tag |
-| nameOverride | string | `""` | Overrides the chart's name |
-| nodeSelector | object | `{}` | nodeSelector configuration |
-| podAnnotations | object | `{}` | Annotations for the Deployment Pods |
-| podSecurityContext | object | `{}` | Pod security context (runAsUser, etc.) |
-| resources | object | `{}` | Resource limits and requests config |
-| serviceAccount.annotations | object | `{}` | Annotations for service account |
-| serviceAccount.create | bool | `true` | Toggle to create ServiceAccount |
-| serviceAccount.name | string | `nil` | Service account name |
-| tolerations | list | `[]` | Tolerations applied to Pods |
-| hostOutputFolder | string | `"/var/lib/rt-tests"` | Path to store results in the host |
-| config | section | `[]` | Configuration for the rt-tests tool |
+| `image.repository` | string | `"softwareradiosystems/rt-tests"` | Container image repository |
+| `image.tag` | string | Chart appVersion | Image tag |
+| `image.pullPolicy` | string | `"IfNotPresent"` | Image pull policy |
+| `securityContext.privileged` | bool | `true` | **REQUIRED**: Enable privileged mode for RT scheduling |
+| `hostOutputFolder` | string | `"/var/lib/rt-tests"` | Host path to store test results |
+| `config.rt_tests.yml` | string | See values.yaml | Test configuration (tools and arguments) |
+| `resources` | object | `{}` | CPU/memory limits and requests |
+| `nodeSelector` | object | `{}` | Node selector for pod assignment |
+| `tolerations` | list | `[]` | Tolerations for pod assignment |
+| `affinity` | object | `{}` | Affinity rules for pod assignment |
 
-### Config
+### Complete Parameter List
 
-The configuration file rt_tests.yml is used to specify the tools that will run in parallel within the container. Each entry in the file corresponds to an executable (the tool to run) and the arguments that will be passed to it.
+For the full list of available parameters, see [`values.yaml`](values.yaml).
 
-For example:
+## Common Configuration Examples
 
-```yml
+### Short Test Run (30 seconds)
+
+```yaml
+config:
+  rt_tests.yml: |-
+    stress-ng: "--cpu 4 --timeout 30s"
+    cyclictest: "--mlockall --priority 95 --distance 0 --threads 4 --histogram 25 --quiet --duration 30s"
+
+resources:
+  limits:
+    cpu: 4
+    memory: 500Mi
+  requests:
+    cpu: 4
+    memory: 500Mi
+```
+
+### Long Duration Test (12 hours)
+
+```yaml
 config:
   rt_tests.yml: |-
     stress-ng: "--matrix 0 -t 12h"
     cyclictest: "-m -p95 -d0 -a 1-15 -t 16 -h400 -D 12h"
+
+nodeSelector:
+  kubernetes.io/hostname: worker-node-1
 ```
 
-In this example:
+## Architecture & Design
 
-- stress-ng will be executed with the arguments --matrix 0 -t 12h.
-- cyclictest will be executed with the arguments -m -p95 -d0 -a 1-15 -t 16 -h400 -D 12h.
+### Why privileged mode is Required
 
-Notes:
+**`privileged: true`** is mandatory because:
+- Access to real-time scheduling policies (SCHED_FIFO)
+- Memory locking (mlockall) to prevent page faults
+- Accurate latency measurements without kernel interference
 
-- The script launches each defined process in parallel, allowing all specified tools to run simultaneously.
-- The container will remain active until all launched processes have completed. Once all the tools finish their execution, the container will terminate.
-- Only binaries available in the container's PATH can be executed.
-- You can modify the rt_tests.yml file to add, remove, or adjust the entries as needed.
+### Deployment Model
 
-This configuration allows you to automate and manage multiple tests or tools, such as performance or stress tests, efficiently within the container.
+- **Job**: Runs once to completion
+- **Parallel execution**: stress-ng and cyclictest run simultaneously
+- **Results**: Stored in `hostOutputFolder` and pod logs
 
-## Production Use
+## Troubleshooting
 
-This chart is intended for **development, testing, and demonstration purposes only**.
-It has not been hardened for production use. Use in production environments at your own risk.
+### Job fails with permission errors
+```bash
+# Check security context
+kubectl describe job rt-tests-chart-job | grep -A5 "Security Context"
+
+# Ensure privileged mode is enabled
+# securityContext.privileged: true must be set
+```
+
+### High latency results
+```bash
+# Verify CPU isolation
+kubectl describe node <node-name> | grep -A10 "Allocated resources"
+
+# Common causes:
+# - No dedicated CPU cores (enable Static CPU Manager config in Kubernetes)
+# - System under heavy load
+# - No RT Kernel or no CPU isolation
+# - Incorrect resource requests/limits
+```
+
+### Job doesn't complete
+```bash
+# Check pod status
+kubectl get pods -l job-name=rt-tests-chart-job
+
+# View logs
+kubectl logs job/rt-tests-chart-job
+
+# Common issues:
+# - Insufficient resources
+# - Node scheduling issues
+```
+
+## Support
+
+- **Documentation**: [srsRAN Project Docs](https://docs.srsran.com)
+- **rt-tests**: [rt-tests Wiki](https://wiki.linuxfoundation.org/realtime/documentation/howto/tools/rt-tests)
+
+## License
+
+AGPL-3.0 - See LICENSE file for details
