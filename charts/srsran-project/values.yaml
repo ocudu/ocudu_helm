@@ -254,22 +254,16 @@ o1:
 
 # -- gNB configuration file
 # This is the main srsRAN gNB configuration in YAML format
-# For detailed documentation, see: https://docs.srsran.com
+# For detailed documentation, see: https://docs.srsran.com/projects/project/en/latest/
 config:
   # -- Main gNB configuration file
   # @default -- See values.yaml for complete example
   gnb-config.yml: |-
-    # CU-CP (Control Plane) configuration
     cu_cp:
-      # AMF (Access and Mobility Management Function) connection
       amf:
-        # AMF IP address (5G Core)
         addr: 127.0.1.100
-        # AMF SCTP port
         port: 38412
-        # Local bind address for N2 interface
         bind_addr: 127.0.0.1
-        # Supported tracking areas
         supported_tracking_areas:
           - tac: 7
             plmn_list:
@@ -278,133 +272,72 @@ config:
                 tai_slice_support_list:
                   - sst: 1
 
-    # RU (Radio Unit) OpenFronthaul configuration
     ru_ofh:
-      # Timing advance parameters (in microseconds)
-      # T1a: DL control plane timing window
       t1a_max_cp_dl: 535
       t1a_min_cp_dl: 286
-      # T1a: UL control plane timing window
       t1a_max_cp_ul: 535
       t1a_min_cp_ul: 286
-      # T1a: User plane timing window
       t1a_max_up: 390
       t1a_min_up: 80
-      # T4a: Timing advance adjustment range
       ta4_max: 500
       ta4_min: 25
-      # Enable PRACH control plane messages
       is_prach_cp_enabled: false
-      # IQ data compression configuration
-      # Method: none, bfp (block floating point), bfp_sel
-      # Uplink compression
       compr_method_ul: bfp
       compr_bitwidth_ul: 9
-      # Downlink compression
       compr_method_dl: bfp
       compr_bitwidth_dl: 9
-      # PRACH compression
       compr_method_prach: bfp
       compr_bitwidth_prach: 9
-      # Use static compression headers (optimization)
       enable_ul_static_compr_hdr: true
       enable_dl_static_compr_hdr: true
-      # IQ data scaling factor
       iq_scaling: 5.5
-      # Cell configuration (OpenFronthaul interface per cell)
       cells:
-        # Network interface name for O-RU communication
         - network_interface: enp1s0f0
-          # RU MAC address (destination)
           ru_mac_addr: 70:b3:d5:e1:5b:06
-          # DU MAC address (source, this gNB)
           du_mac_addr: 80:61:5f:0d:df:aa
-          # VLAN tag for control plane traffic
           vlan_tag_cp: 5
-          # VLAN tag for user plane traffic
           vlan_tag_up: 5
-          # PRACH port IDs (antenna ports for random access)
           prach_port_id: [4, 5]
-          # Downlink port IDs (antenna ports for DL transmission)
           dl_port_id: [0, 1, 2, 3]
-          # Uplink port IDs (antenna ports for UL reception)
           ul_port_id: [0, 1]
 
-    # Cell configuration (radio parameters)
     cell_cfg:
-      # Downlink ARFCN (Absolute Radio Frequency Channel Number)
-      # 637212 = 3489.48 MHz (Band 78)
       dl_arfcn: 637212
-      # Frequency band (3GPP band number)
       band: 78
-      # Channel bandwidth in MHz
       channel_bandwidth_MHz: 100
-      # Common subcarrier spacing (kHz)
       common_scs: 30
-      # PLMN (Public Land Mobile Network) identifier
-      # Format: MCCMNC (3-digit MCC + 2/3-digit MNC)
       plmn: "00101"
-      # Tracking Area Code
       tac: 7
-      # Physical Cell ID (0-1007)
       pci: 1
-      # Number of downlink antennas
       nof_antennas_dl: 4
-      # Number of uplink antennas
       nof_antennas_ul: 2
-      # PRACH (Physical Random Access Channel) configuration
       prach:
-        # PRACH configuration index (3GPP TS 38.211)
         prach_config_index: 7
-        # Root sequence index for Zadoff-Chu sequences
         prach_root_sequence_index: 1
-        # Zero correlation zone (for preamble separation)
         zero_correlation_zone: 0
-        # PRACH frequency start offset (PRBs)
         prach_frequency_start: 0
-      # TDD UL/DL configuration (Time Division Duplex)
       tdd_ul_dl_cfg:
-        # DL/UL pattern period (ms)
         dl_ul_tx_period: 10
-        # Number of full DL slots per period
         nof_dl_slots: 7
-        # Number of DL symbols in partial slot
         nof_dl_symbols: 6
-        # Number of full UL slots per period
         nof_ul_slots: 2
-        # Number of UL symbols in partial slot
         nof_ul_symbols: 4
 
-    # Logging configuration
     log:
-      # Log file path
       filename: /tmp/gnb.log
-      # Global log level (debug, info, warning, error)
       all_level: warning
 
-    # PCAP (Packet Capture) configuration for debugging
     pcap:
-      # Enable MAC layer PCAP
       mac_enable: false
-      # MAC PCAP file path
       mac_filename: /tmp/gnb_mac.pcap
-      # Enable NGAP (N2 interface) PCAP
       ngap_enable: false
-      # NGAP PCAP file path
       ngap_filename: /tmp/gnb_ngap.pcap
 
-    # Metrics configuration
     metrics:
-      # Automatically start stdout metrics reporting
       autostart_stdout_metrics: true
-      # Enable JSON format for metrics
       enable_json: false
 
-    # Remote control interface (WebSocket)
     remote_control:
-      # Bind address for remote control
       bind_addr: 0.0.0.0
-      # Enable remote control interface
       enabled: false
-      # Remote control port (for Telegraf metrics collection)
       port: 8001
