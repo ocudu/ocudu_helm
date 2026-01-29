@@ -6,8 +6,19 @@
 # the distribution.
 #
 
-# -- Number of pod replicas
-# @default -- `1` (single instance per node)
+# ============================================================================
+# LinuxPTP Helm Chart Configuration
+# ============================================================================
+#
+# This chart deploys LinuxPTP for IEEE 1588 PTP time synchronization.
+# For detailed documentation, see README.md
+#
+# ⚠️  PoC/Demo Chart - Not Production Ready
+# This chart requires hostNetwork: true and privileged: true
+# ============================================================================
+
+# -- Number of pod replicas (DaemonSet uses 1 per node)
+# @default -- `1`
 replicaCount: 1
 
 # -- Container image configuration
@@ -16,14 +27,15 @@ image:
   repository: softwareradiosystems/linuxptp
   # -- Image pull policy
   pullPolicy: IfNotPresent
-  # -- Image tag
-  # @default -- Chart appVersion
+  # -- Image tag (overrides chart appVersion)
+  # @default -- Chart appVersion (`4.4.0`)
   tag: v4.4_1.2.0
 
 # -- Image pull secrets for private registries
-# @default -- See values.yaml
-imagePullSecrets:
-  - name: regcred
+# Remove or update if not using a private registry
+# @default -- `[]` (no pull secrets)
+imagePullSecrets: []
+  # - name: regcred
 
 # -- Override the name of the chart
 # @default -- `linuxptp-chart`
@@ -33,19 +45,18 @@ nameOverride: "linuxptp-chart"
 # @default -- `linuxptp-chart`
 fullnameOverride: "linuxptp-chart"
 
+# ============================================================================
+# Advanced Configuration (rarely needs modification)
+# ============================================================================
+
 # -- ConfigMap name overrides for different PTP components
-# Allows customization of ConfigMap names for advanced use cases
+# Leave empty to use auto-generated names (recommended)
 # @default -- `{}` (use generated names)
 configmap:
-  # -- ConfigMap name for ptp4l configuration
   linuxptpConfig: { nameOverride: "" }
-  # -- ConfigMap name for phc2sys entrypoint script
   phc2sysEntrypoint: { nameOverride: "" }
-  # -- ConfigMap name for ts2phc entrypoint script
   ts2phcEntrypoint: { nameOverride: "" }
-  # -- ConfigMap name for ts2phc configuration
   ts2phc: { nameOverride: "" }
-  # -- ConfigMap name for leap seconds file
   ts2phcLeapfile: { nameOverride: "" }
 
 # -- Service account configuration
@@ -65,17 +76,20 @@ podAnnotations: {}
 # @default -- `{}` (no pod security context)
 podSecurityContext: {}
 
+# ============================================================================
+# Security Context (REQUIRED for PTP - Do not modify)
+# ============================================================================
+
 # -- Container-level security context
-# LinuxPTP requires privileged access for PTP clock management
+# ⚠️  REQUIRED: LinuxPTP needs privileged access for PTP Hardware Clock (PHC) access
+# Cannot be disabled without breaking PTP functionality
 securityContext:
   # -- Additional capabilities for system operations
   capabilities:
     add: ["SYS_NICE", "NET_ADMIN"]
-  # -- Run container in privileged mode (required for PTP)
+  # -- Run container in privileged mode (required for /dev/ptp* access)
   privileged: true
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+  # Note: Cannot use readOnlyRootFilesystem due to /var/run requirements
 
 # -- Resource requests and limits
 # Example:
@@ -123,103 +137,86 @@ tolerations:
 # @default -- `{}` (no affinity rules)
 affinity: {}
 
+# ============================================================================
+# PTP Network Configuration (REQUIRED)
+# ============================================================================
+
 # -- Network interface list for PTP synchronization
-# Semicolon-separated list of interface names for ptp4l (LLS-C1 profile)
-# Each interface will run a separate ptp4l instance
-# Example: "ens3f0np0;ens3f1np1" for dual-interface setup
+# ⚠️  REQUIRED: Must be set to your PTP-capable network interface(s)
+# 
+# Format: Semicolon-separated list of interface names
+# Examples:
+#   - Single interface: "ens3f0np0"
+#   - Dual interface:   "ens3f0np0;ens3f1np1"
+#
+# Verify interface supports hardware timestamping:
+#   ethtool -T <interface> | grep "PTP Hardware Clock"
+#
+# @default -- `"ens3f1np1"` (update for your environment)
 interfaceNameList: "ens3f1np1"
 
+# ============================================================================
+# Health Probes
+# ============================================================================
+
 # -- Startup probe configuration
-# Allows time for PTP to establish initial synchronization
+# Allows time for PTP to establish initial synchronization (can take 5+ minutes)
 startupProbe:
-  # -- Enable startup probe
   enabled: true
-  # -- Number of failures before giving up
-  failureThreshold: 30
-  # -- Probe interval in seconds
+  failureThreshold: 30  # 30 * 10s = 5 minutes
   periodSeconds: 10
 
 # -- Liveness probe configuration
 # Checks if PTP daemon is still running
 livenessProbe:
-  # -- Enable liveness probe
   enabled: true
-  # -- Initial delay before first probe
   initialDelaySeconds: 5
-  # -- Probe interval in seconds
   periodSeconds: 5
 
 # -- Readiness probe configuration
 # Checks if PTP synchronization is healthy
 readinessProbe:
-  # -- Enable readiness probe
   enabled: true
-  # -- Initial delay before first probe
   initialDelaySeconds: 5
-  # -- Probe interval in seconds
   periodSeconds: 5
 
+# ============================================================================
+# Optional: NTP Initial Synchronization For Host On Startup 
+# ============================================================================
+
 # -- NTP time synchronization before PTP
-# Optional: Sync PHC (PTP Hardware Clock) to NTP time before starting PTP service
-# Useful for initial time alignment
+# Optional: Sync PHC (PTP Hardware Clock) to NTP time before starting PTP
+# Useful for cold starts when system time is far from correct time
+# @default -- `false` (disabled)
 ntp:
-  # -- Enable NTP synchronization at startup
   enabled: false
-  # -- NTP server address
   server: "pool.ntp.org"
+
+# ============================================================================
+# PTP Protocol Configuration (IEEE 1588-2019, ITU-T G.8275.x)
+# ============================================================================
 
 # -- PTP configuration parameters
 # Based on IEEE 1588-2019 and ITU-T G.8275.x telecom profile
+# Most users can leave these at default values
+# Refer to the official GitHub repo for more info: https://github.com/richardcochran/linuxptp
 config:
-  # -- Dataset comparison method for BMCA (Best Master Clock Algorithm)
-  # G.8275.x is the telecom profile for phase/time synchronization
   dataset_comparison: "G.8275.x"
-  # -- Local priority for default dataset (0-255)
-  # Lower values have higher priority in clock selection
   G.8275.defaultDS.localPriority: "128"
-  # -- Maximum steps removed from grandmaster
-  # Limits PTP clock hierarchy depth
   maxStepsRemoved: "255"
-  # -- Announce message interval (log base 2)
-  # -3 = 125ms, -4 = 62.5ms
   logAnnounceInterval: "-3"
-  # -- Sync message interval (log base 2)
-  # -4 = 62.5ms (typical for 5G)
   logSyncInterval: "-4"
-  # -- Delay request message interval (log base 2)
-  # -4 = 62.5ms
   logMinDelayReqInterval: "-4"
-  # -- Server-only mode (0=slave, 1=master)
-  # 0 allows acting as PTP slave
   serverOnly: "0"
-  # -- Local priority for port dataset (0-255)
   G.8275.portDS.localPriority: "128"
-  # -- Destination MAC address for PTP messages
-  # 01:80:C2:00:00:0E is for PTP over L2
   ptp_dst_mac: "01:80:C2:00:00:0E"
-  # -- Network transport type
-  # L2 = Layer 2 Ethernet (hardware timestamping)
   network_transport: "L2"
-  # -- PTP domain number (0-255)
-  # 24 is common for telecom applications
   domainNumber: "24"
-  
-  # -- ts2phc configuration for GNSS synchronization
-  # Synchronizes PHC to external time source (GPS/GNSS)
   ts2phc:
-    # -- Enable ts2phc daemon
     enabled: false
-    # -- Use syslog for logging
     use_syslog: 0
-    # -- Verbose output level
     verbose: 1
-    # -- Logging level (0-7, 7=most verbose)
     logging_level: 7
-    # -- PPS pulse width in nanoseconds
     ts2phc_pulsewidth: 100000000
-    # -- GNSS NMEA serial port device
-    # For GNSS module providing PPS and NMEA time
     ts2phc_nmea_serialport: /dev/gnss0
-    # -- External timestamp polarity
-    # rising or falling edge
     ts2phc_extts_polarity: rising

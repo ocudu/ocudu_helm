@@ -8,7 +8,7 @@
 
 apiVersion: v2
 name: linuxptp
-description: Chart for deploying Linuxptp DaemonSet
+description: LinuxPTP (PTP4l/PHC2SYS/TS2PHC) for IEEE 1588 precise time synchronization (PoC/Demo)
 kubeVersion: ">= 1.24.0-0"
 icon: https://linuxptp.nwtime.org/images/logo.png
 home: https://linuxptp.nwtime.org/

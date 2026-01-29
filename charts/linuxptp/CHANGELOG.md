@@ -6,6 +6,15 @@
 - Standardize Chart.yaml metadata with keywords and annotations
 - Add comprehensive .helmignore file
 - Update chart icon URL
+- **Major documentation improvements**:
+  - Add prominent PoC/Demo warning with limitations
+  - Document hostNetwork and privileged requirements and rationale
+  - Add prerequisites section (hardware timestamping verification)
+  - Add verification and troubleshooting sections
+  - Add common configuration examples
+  - Reorganize values.yaml with clear sections and better comments
+  - Remove imagePullSecrets default (now empty by default)
+- Update Chart.yaml description for clarity
 
 ## 1.2.0 (April 16, 2025)
 ### Changed
