@@ -6,8 +6,27 @@
 # the distribution.
 #
 
+# ============================================================================
+# Grafana Monitoring Stack for srsRAN
+# ============================================================================
+#
+# This chart bundles three components for complete metrics monitoring:
+#   - Grafana (visualization)
+#   - Telegraf (metrics collection)
+#   - InfluxDB3 (time-series storage)
+#
+# ⚠️  PoC/Demo Chart - Not Production Ready
+#
+# Dependencies (pinned versions):
+#   - grafana: 9.2.10 (from https://grafana.github.io/helm-charts)
+#   - telegraf: 1.8.60 (from https://helm.influxdata.com/)
+#   - influxdb3: 1.0.0 (local chart)
+#
+# Run `helm dependency build` before installing!
+# ============================================================================
+
 # -- Grafana configuration (upstream chart values)
-# This chart deploys Grafana for visualization of srsRAN metrics
+# This configures the Grafana deployment for srsRAN metrics visualization
 grafana:
   # -- Container image configuration
   image:

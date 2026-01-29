@@ -5,17 +5,65 @@
 > This chart is intended for **development, testing, and demonstration purposes only**.
 > It has not been hardened for production use. Use in production environments at your own risk.
 
-A Helm chart for deploying Grafana monitoring stack with InfluxDB 3 and Telegraf
+## Overview
 
-This Helm chart deploys Grafana with srsRAN dashboards using InfluxDB 3 and Telegraf for metrics collection and visualization.
+A Helm chart for deploying a complete monitoring stack for srsRAN metrics visualization.
+
+**Stack Components**:
+- **Grafana** (v9.2.10): Visualization and dashboards
+- **InfluxDB 3 Core** (v3.1.0): Time-series database
+- **Telegraf** (v1.8.60): Metrics collection agent
+
+**Custom Features**:
+- Pre-configured srsRAN dashboards
+- Real-time metrics collection (1s interval)
+- Optimized for 5G RAN KPIs
+
+## Prerequisites
+
+Before installing:
+
+1. **Dependencies**: Chart requires internet access to pull upstream Helm charts
+   ```bash
+   helm dependency build charts/grafana-srsran/
+   ```
+
+2. **Storage**: If using persistent storage for InfluxDB3
+   ```bash
+   # Create directory on target node
+   sudo mkdir -p /mnt/influxdb3
+   sudo chown -R 1000:1000 /mnt/influxdb3
+   ```
+
+3. **Metrics Source**: Configure Telegraf to point to your srsRAN metrics endpoint
 
 ## Installing the Chart
 
-To install the chart with the release name `grafana`:
-
-```console
+**Build dependencies first**:
+```bash
 cd charts/grafana-srsran
-helm install grafana ./
+helm dependency build
+```
+
+**Basic installation**:
+```bash
+helm install grafana ./ --namespace srsran --create-namespace
+```
+
+**With custom values**:
+```bash
+helm install grafana ./ -n srsran -f my-values.yaml
+```
+
+**Access Grafana**:
+```bash
+# If using NodePort (default)
+kubectl get svc -n srsran grafana
+
+# Forward port for local access
+kubectl port-forward -n srsran svc/grafana 3000:80
+# Then access: http://localhost:3000
+# Default credentials: admin / admin1234
 ```
 
 ## Uninstalling the Chart
@@ -28,7 +76,53 @@ helm delete grafana
 
 The command removes all the Kubernetes components associated with the chart and deletes the release.
 
+## Component Versions
+
+This chart uses pinned versions for reproducible deployments:
+
+| Component | Version | Upstream Chart | Purpose |
+|-----------|---------|----------------|---------|
+| Grafana | 9.2.10 | grafana/grafana | Visualization |
+| Telegraf | 1.8.60 | influxdata/telegraf | Metrics collection |
+| InfluxDB3 | 1.0.0 | srsran/influxdb3 | Time-series storage |
+
+> **Note**: These versions are tested together. Upgrading requires testing the full stack.
+
 ## Configuration
+
+### Key Configuration Examples
+
+**Custom Admin Credentials** (REQUIRED for any deployment):
+```yaml
+grafana:
+  env:
+    GF_SECURITY_ADMIN_USER: "myadmin"
+    GF_SECURITY_ADMIN_PASSWORD: "MySecurePassword123!"
+```
+
+**Custom Metrics Endpoint**:
+```yaml
+telegraf:
+  env:
+    - name: WS_URL
+      value: "my-gnb-metrics.namespace.svc.cluster.local:8001"
+```
+
+**Persistent Storage for InfluxDB3**:
+```yaml
+influxdb3:
+  persistence:
+    enabled: true
+    size: 100Gi  # Increase for longer retention
+    hostPath: /mnt/influxdb3  # Or use PVC
+```
+
+**Disable Anonymous Access** (recommended):
+```yaml
+grafana:
+  env:
+    GF_AUTH_ANONYMOUS_ENABLED: "false"
+```
 
 ### Chart Parameters
 
@@ -74,9 +168,91 @@ The command removes all the Kubernetes components associated with the chart and 
 | telegraf.env.TELEGRAF_BUFFER_LIMIT | string | `"10000"` | Buffer limit |
 | telegraf.service.enabled | bool | `false` | Enable Telegraf service |
 
-For more information about Grafana configuration, please refer to the [Grafana Documentation](https://grafana.com/docs/).
+For complete parameter documentation, see the upstream chart documentation:
+- [Grafana Helm Chart](https://github.com/grafana/helm-charts/tree/main/charts/grafana)
+- [Telegraf Helm Chart](https://github.com/influxdata/helm-charts/tree/master/charts/telegraf)
+- [InfluxDB3 Helm Chart](../influxdb3)
 
-## Production Use
+## Custom Dashboards
 
-This chart is intended for **development, testing, and demonstration purposes only**.
-It has not been hardened for production use. Use in production environments at your own risk.
+The Grafana image includes pre-configured srsRAN dashboards:
+- **Home Dashboard**: Overview of gNB metrics
+- **srsRAN Metrics**: Detailed 5G RAN KPIs
+
+**Dashboards included in custom image**:
+```
+grafana.image.repository: softwareradiosystems/grafana
+grafana.image.tag: "11c9bbabb6__2025-09-15"
+```
+
+**To add custom dashboards**:
+1. Build custom Grafana image with your dashboards in `/etc/dashboards/`
+2. Update `grafana.image.repository` and `grafana.image.tag`
+3. Configure dashboard path in `grafana.env.GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH`
+
+## Troubleshooting
+
+### Grafana not accessible
+```bash
+# Check service
+kubectl get svc -n srsran grafana
+
+# Check pods
+kubectl get pods -n srsran -l app.kubernetes.io/name=grafana
+
+# Check logs
+kubectl logs -n srsran -l app.kubernetes.io/name=grafana
+```
+
+### No metrics in Grafana
+```bash
+# 1. Check Telegraf is collecting
+kubectl logs -n srsran -l app.kubernetes.io/name=telegraf | grep "error\|warn"
+
+# 2. Verify metrics endpoint is reachable
+kubectl exec -n srsran -it deployment/grafana-telegraf -- curl http://WS_URL
+
+# 3. Check InfluxDB3 is receiving data
+kubectl logs -n srsran -l app.kubernetes.io/name=influxdb3
+```
+
+### Dependencies not found
+```bash
+# Rebuild dependencies
+cd charts/grafana-srsran
+helm dependency build
+
+# Check charts/ directory was created
+ls -la charts/
+```
+
+## Architecture
+
+```
+┌─────────────┐      metrics        ┌──────────────┐
+│  srsRAN gNB │ ──────────────────> │  Telegraf    │
+│  (metrics)  │  :8001 websocket    │ (collector)  │
+└─────────────┘                     └──────┬───────┘
+                                           │ write
+                                           v
+                                    ┌──────────────┐
+                                    │  InfluxDB3   │
+                                    │  (storage)   │
+                                    └──────┬───────┘
+                                           │ query
+                                           v
+                                    ┌──────────────┐
+                                    │   Grafana    │
+                                    │ (visualize)  │
+                                    └──────────────┘
+```
+
+## Support
+
+- **Grafana Docs**: [grafana.com/docs](https://grafana.com/docs/)
+- **InfluxDB Docs**: [docs.influxdata.com](https://docs.influxdata.com/)
+- **Telegraf Docs**: [docs.influxdata.com](https://docs.influxdata.com/telegraf/v1/)
+
+## License
+
+AGPL-3.0 - See LICENSE file for details
