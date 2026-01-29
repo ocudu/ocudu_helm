@@ -1,0 +1,102 @@
+#
+# Copyright 2021-2025 Software Radio Systems Limited
+#
+# By using this file, you agree to the terms and conditions set
+# forth in the LICENSE file which can be found at the top level of
+# the distribution.
+#
+
+{{- if and .Values.networkPolicy.enabled (not .Values.network.hostNetwork) }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "srsran-cudu.fullname" . }}
+  labels:
+    {{- include "srsran-cudu.labels" . | nindent 4 }}
+  annotations:
+    description: "Network policy for gNB (only effective when hostNetwork: false)"
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "srsran-cudu.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  
+  ingress:
+    {{- if .Values.networkPolicy.ingress.fiveGCore.enabled }}
+    # Allow traffic from 5G Core (N2/N3 interfaces)
+    - from:
+      {{- toYaml .Values.networkPolicy.ingress.fiveGCore.from | nindent 6 }}
+      ports:
+        - protocol: SCTP
+          port: 38412  # N2 interface (NGAP)
+        - protocol: UDP
+          port: 2152   # N3 interface (GTP-U)
+    {{- end }}
+    
+    {{- if and .Values.metricsService.enabled .Values.networkPolicy.ingress.monitoring.enabled }}
+    # Allow traffic from monitoring systems (Telegraf)
+    - from:
+      {{- toYaml .Values.networkPolicy.ingress.monitoring.from | nindent 6 }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.metricsService.port }}
+    {{- end }}
+    
+    {{- if and .Values.o1.enable_srs_o1 .Values.networkPolicy.ingress.management.enabled }}
+    # Allow traffic from management systems (NETCONF/O1)
+    - from:
+      {{- toYaml .Values.networkPolicy.ingress.management.from | nindent 6 }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.o1.o1Port | default 830 }}
+    {{- end }}
+    
+    {{- range .Values.networkPolicy.ingress.custom }}
+    # Custom ingress rule
+    - {{ toYaml . | nindent 6 }}
+    {{- end }}
+  
+  egress:
+    {{- if .Values.networkPolicy.egress.fiveGCore.enabled }}
+    # Allow traffic to 5G Core (AMF/UPF)
+    - to:
+      {{- toYaml .Values.networkPolicy.egress.fiveGCore.to | nindent 6 }}
+      ports:
+        - protocol: SCTP
+          port: 38412  # AMF (N2)
+        - protocol: UDP
+          port: 2152   # UPF (N3/GTP-U)
+    {{- end }}
+    
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    
+    {{- if .Values.networkPolicy.egress.monitoring.enabled }}
+    # Allow traffic to monitoring systems
+    - to:
+      {{- toYaml .Values.networkPolicy.egress.monitoring.to | nindent 6 }}
+      ports:
+        - protocol: TCP
+          port: 8086  # InfluxDB
+        {{- if .Values.o1.enable_srs_o1 }}
+        - protocol: TCP
+          port: 8443  # VES Collector
+        {{- end }}
+    {{- end }}
+    
+    {{- range .Values.networkPolicy.egress.custom }}
+    # Custom egress rule
+    - {{ toYaml . | nindent 6 }}
+    {{- end }}
+{{- end }}

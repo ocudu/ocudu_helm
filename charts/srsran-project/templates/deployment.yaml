@@ -80,10 +80,26 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ template "srsran-cudu.image" .Values.image }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- if .Values.resources }}
+          {{- if or .Values.resources .Values.sriovConfig.enabled }}
           resources:
+            {{- if .Values.resources }}
             {{- $res := .Values.resources }}
-            {{- toYaml (omit $res "enable_hugepages_1gi" "enable_hugepages_2mi") | nindent 12 }}
+            {{- $cleanRes := omit $res "enable_hugepages_1gi" "enable_hugepages_2mi" }}
+            {{- if and .Values.sriovConfig.enabled (not .Values.network.hostNetwork) }}
+            {{- $limits := default dict $cleanRes.limits }}
+            {{- $requests := default dict $cleanRes.requests }}
+            {{- $_ := set $limits .Values.sriovConfig.extendedResourceName (toString .Values.sriovConfig.vfCount) }}
+            {{- $_ := set $requests .Values.sriovConfig.extendedResourceName (toString .Values.sriovConfig.vfCount) }}
+            {{- $_ := set $cleanRes "limits" $limits }}
+            {{- $_ := set $cleanRes "requests" $requests }}
+            {{- end }}
+            {{- toYaml $cleanRes | nindent 12 }}
+            {{- else if and .Values.sriovConfig.enabled (not .Values.network.hostNetwork) }}
+            limits:
+              {{ .Values.sriovConfig.extendedResourceName }}: {{ .Values.sriovConfig.vfCount | quote }}
+            requests:
+              {{ .Values.sriovConfig.extendedResourceName }}: {{ .Values.sriovConfig.vfCount | quote }}
+            {{- end }}
           {{- end }}
           {{- if .Values.o1.enable_srs_o1 }}
           livenessProbe:

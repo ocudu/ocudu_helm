@@ -12,6 +12,206 @@ Before deploying the srsRAN Project CU/DU on a node, ensure the following requir
 
 3. **Hugepages** (Optional): For using DPDK, it's required to configure hugepages on the node. The chart supports both 1Gi and 2Mi hugepages, but they are disabled by default. See the [Hugepages Configuration](#hugepages-configuration) section below for details.
 
+## Network Deployment Modes
+
+The gNB supports two network deployment modes with different characteristics:
+
+### Mode 1: SR-IOV with CNI (Default - Production)
+
+**Recommended for production deployments** with network isolation and security:
+
+```yaml
+network:
+  hostNetwork: false  # Uses CNI network (default)
+
+sriovConfig:
+  enabled: true  # Enabled by default
+  extendedResourceName: "intel.com/intel_sriov_netdevice"
+  vfCount: 1
+
+networkPolicy:
+  enabled: true  # Optional, for traffic control
+```
+
+**Characteristics**:
+- ✅ NetworkPolicy support for traffic control
+- ✅ Better network isolation and security
+- ✅ Multi-tenant friendly
+- ✅ Production-grade networking
+- ⚠️ Requires SR-IOV setup (see below)
+
+**Use for**: Production deployments, regulated environments, multi-tenant clusters
+
+### Mode 2: Host Network (Fallback - Convenience)
+
+**For quick setup on bare-metal** when SR-IOV is not available:
+
+```yaml
+network:
+  hostNetwork: true  # Uses host network namespace
+
+sriovConfig:
+  enabled: false  # Not needed with hostNetwork
+  
+# NetworkPolicy has no effect when hostNetwork: true
+```
+
+**Characteristics**:
+- ✅ Simple setup, direct hardware access
+- ✅ No SR-IOV device plugin needed
+- ✅ Works immediately on bare-metal
+- ⚠️ NetworkPolicy does NOT apply (bypasses pod networking)
+- ⚠️ Less network isolation
+
+**Use for**: Development, testing, bare-metal convenience deployments
+
+## SR-IOV Setup Instructions
+
+SR-IOV (Single Root I/O Virtualization) provides high-performance network interfaces to pods. This is the recommended approach for production deployments.
+
+### Prerequisites
+
+- Host system supports SR-IOV
+- Virtual Functions (VFs) configured on network cards
+- VFs bound to DPDK-compatible driver (vfio-pci recommended)
+- Kubernetes or k3s cluster deployed
+
+### SR-IOV Components Required
+
+1. **Multus CNI** - Enables multiple network interfaces
+2. **SR-IOV CNI Plugin** - Handles VF attachment
+3. **SR-IOV Device Plugin** - Exposes VFs as Kubernetes resources
+
+### Setup Steps
+
+#### 1. Configure Virtual Functions on Host
+
+```bash
+# Identify your network device
+lspci -nn | grep Ethernet
+
+# Example: Configure 4 VFs on device 01:00.0
+echo 4 > /sys/class/net/eth0/device/sriov_numvfs
+
+# Bind VFs to vfio-pci driver
+modprobe vfio-pci
+echo "8086 154c" > /sys/bus/pci/drivers/vfio-pci/new_id  # Replace with your device ID
+```
+
+#### 2. Deploy SR-IOV Components
+
+```bash
+# Install Multus CNI
+kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-cni/master/deployments/multus-daemonset-thick.yml
+
+# Install SR-IOV CNI
+kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/sriov-cni/master/images/sriov-cni-daemonset.yaml
+
+# Install SR-IOV Device Plugin with ConfigMap
+# Create ConfigMap for your device configuration
+kubectl apply -f sriov-configmap.yaml
+kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/sriov-network-device-plugin/master/deployments/sriovdp-daemonset.yaml
+```
+
+#### 3. Verify SR-IOV Resources
+
+```bash
+# Check if SR-IOV resources are available
+kubectl get nodes -o json | jq '.items[].status.allocatable' | grep intel.com/intel_sriov
+
+# Check node capacity
+kubectl describe node <node-name> | grep -A 5 "Allocatable"
+
+# Expected output should show:
+#   intel.com/intel_sriov_netdevice: 4
+```
+
+#### 4. Create SR-IOV Network Attachment
+
+```yaml
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: sriov-net1
+spec:
+  config: '{
+    "type": "sriov",
+    "cniVersion": "0.3.1",
+    "name": "sriov-network",
+    "ipam": {
+      "type": "host-local",
+      "subnet": "10.56.217.0/24",
+      "routes": [{
+        "dst": "0.0.0.0/0"
+      }],
+      "gateway": "10.56.217.1"
+    }
+  }'
+```
+
+Apply the network attachment:
+```bash
+kubectl apply -f sriov-network-attachment.yaml
+```
+
+### Verifying SR-IOV Setup
+
+Test with a simple pod:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sriov-test
+  annotations:
+    k8s.v1.cni.cncf.io/networks: sriov-net1
+spec:
+  containers:
+  - name: test
+    image: busybox
+    command: ["sleep", "3600"]
+    resources:
+      requests:
+        intel.com/intel_sriov_netdevice: '1'
+      limits:
+        intel.com/intel_sriov_netdevice: '1'
+```
+
+Check the pod has the SR-IOV interface:
+```bash
+kubectl exec sriov-test -- ip link show
+```
+
+### Troubleshooting SR-IOV
+
+**VFs not showing up**:
+```bash
+# Check VF configuration
+ip link show
+lspci | grep Virtual
+
+# Verify driver binding
+lspci -k -s <VF_BDF>
+```
+
+**Device plugin not working**:
+```bash
+# Check device plugin logs
+kubectl logs -n kube-system -l app=sriovdp --tail=50
+
+# Verify ConfigMap
+kubectl get configmap -n kube-system sriovdp-config -o yaml
+```
+
+**Pod not getting VF**:
+```bash
+# Check resource availability
+kubectl describe node <node-name> | grep intel.com/intel_sriov
+
+# Check pod events
+kubectl describe pod <pod-name>
+```
+
 ## Configuration of the srsRAN Project CU/DU
 
 The configuration file for the srsran Project CU/DU is located in the root directory of this Helm chart, its named `gnb-config.yml`. To configure the application, refer to the documentation provided at [srsRAN Project User Manual](https://docs.srsran.com/projects/project/en/latest/user_manuals/source/running.html). The config file will be mounted as a ConfigMap into the container on runtime.
@@ -77,6 +277,100 @@ resources:
 ```
 
 **Note**: If you define hugepages in resources but your cluster doesn't have them configured, the deployment will fail with a scheduling error. Always verify cluster support first.
+
+## NetworkPolicy Configuration
+
+NetworkPolicy provides network-level security by controlling traffic to and from the gNB pod. **This only works when `hostNetwork: false`** (SR-IOV mode).
+
+### Checking NetworkPolicy Support
+
+```bash
+# Check if your cluster supports NetworkPolicy
+kubectl api-versions | grep networking.k8s.io/v1
+
+# Check if a NetworkPolicy controller is installed
+kubectl get pods -n kube-system | grep -E 'calico|cilium|weave'
+```
+
+### Enabling NetworkPolicy
+
+```yaml
+network:
+  hostNetwork: false  # Required for NetworkPolicy
+
+networkPolicy:
+  enabled: true
+
+  ingress:
+    fiveGCore:
+      enabled: true
+      from:
+        - podSelector:
+            matchLabels:
+              app: open5gs
+        - ipBlock:
+            cidr: 10.0.0.0/8  # Your 5G core network CIDR
+
+    monitoring:
+      enabled: true
+      from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+
+  egress:
+    fiveGCore:
+      enabled: true
+      to:
+        - podSelector:
+            matchLabels:
+              app: open5gs
+        - ipBlock:
+            cidr: 10.0.0.0/8
+```
+
+### Custom Network Rules
+
+Add custom ingress/egress rules as needed:
+
+```yaml
+networkPolicy:
+  ingress:
+    custom:
+      - from:
+          - podSelector:
+              matchLabels:
+                app: custom-monitoring
+        ports:
+          - protocol: TCP
+            port: 9090
+
+  egress:
+    custom:
+      - to:
+          - podSelector:
+              matchLabels:
+                app: external-service
+        ports:
+          - protocol: TCP
+            port: 8080
+```
+
+### Important Notes
+
+⚠️ **NetworkPolicy Limitations**:
+- Only works when `hostNetwork: false` (SR-IOV mode)
+- When `hostNetwork: true`, pod uses host network and bypasses NetworkPolicy
+- Requires a NetworkPolicy controller (Calico, Cilium, Weave, etc.)
+- Not all clusters have NetworkPolicy support enabled
+
+### Default Allowed Traffic
+
+When NetworkPolicy is enabled, the following traffic is allowed by default:
+- **Ingress**: From 5G Core (N2/N3), monitoring systems, O1 management (if enabled)
+- **Egress**: To 5G Core, DNS, monitoring systems
+
+All other traffic is denied unless explicitly allowed.
 
 ## Storage Configuration
 

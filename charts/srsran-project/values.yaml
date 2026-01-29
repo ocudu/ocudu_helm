@@ -64,41 +64,34 @@ podAnnotations: {}
 # @default -- `{}` (no pod security context)
 podSecurityContext: {}
 
-# -- Container-level security context (for non-LoadBalancer mode)
+# -- Container-level security context (for non-SR-IOV Device Plugin mode)
 # This configuration requires privileged mode for DPDK with kernel drivers
+# Uncomment this and comment the below when using SR-IOV Device Plugin with SR-IOV
 # Use this when hostNetwork is enabled
-securityContext:
-  # -- Additional capabilities for system operations
-  capabilities:
-    add: ["SYS_NICE", "NET_ADMIN"]
-  # -- Run container in privileged mode (required for DPDK igb_uio)
-  privileged: true
-
-# -- Alternative security context for LoadBalancer mode
-# This configuration uses vfio-pci driver which doesn't require privileged mode
-# Uncomment this and comment the above when using LoadBalancer services
 # securityContext:
-#   # Prevent privilege escalation
-#   allowPrivilegeEscalation: false
 #   capabilities:
-#     add:
-#       # Lock memory pages (required for DPDK)
-#       - IPC_LOCK
-#       # System administration (for DPDK setup)
-#       - SYS_ADMIN
-#       # Raw I/O operations (for DPDK)
-#       - SYS_RAWIO
-#       # Raw socket operations
-#       - NET_RAW
-#       # Set process priority (for real-time scheduling)
-#       - SYS_NICE
+#     add: ["SYS_NICE", "NET_ADMIN"]
+#   privileged: true
+
+# -- Alternative security context for SR-IOV Device Plugin enabled (hostNetwork: false)
+# This configuration uses vfio-pci driver which doesn't require privileged mode
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    add:
+      - IPC_LOCK
+      - SYS_ADMIN
+      - SYS_RAWIO
+      - NET_RAW
+      - SYS_NICE
 
 # -- Network configuration
 network:
   # -- Enable host network mode
-  # Provides direct access to host network interfaces for DPDK
-  # Disable this when using LoadBalancer services with SR-IOV
-  hostNetwork: true
+  # false (default): Uses CNI network with SR-IOV for production (NetworkPolicy supported)
+  # true: Uses host network namespace directly (simple setup, NetworkPolicy NOT supported)
+  # @default -- `false`
+  hostNetwork: false
 
 # -- Resource requests and limits
 # Hugepages are automatically configured when defined in limits or requests.
@@ -243,14 +236,146 @@ o1:
   # -- Enable O1 interface containers (NETCONF server + O1 adapter)
   enable_srs_o1: false
 
-# -- SR-IOV configuration (optional)
-# Enables SR-IOV network device plugin for high-performance networking
-# Uncomment to use SR-IOV instead of DPDK with hostNetwork
-# sriovConfig:
-#   # Enable SR-IOV plugin
-#   enabled: false
-#   # Extended resource name (must match your SR-IOV device plugin)
-#   extendedResourceName: "intel.com/intel_sriov_netdevice"
+# -- SR-IOV configuration
+# Required when network.hostNetwork is false (default)
+# Provides high-performance network interfaces via SR-IOV Virtual Functions (VFs)
+# See README.md for SR-IOV setup instructions
+sriovConfig:
+  # -- Enable SR-IOV network device plugin
+  # Must be true when hostNetwork is false
+  # Requires SR-IOV device plugin deployed in cluster
+  # @default -- `true`
+  enabled: true
+
+  # -- Extended resource name from SR-IOV device plugin
+  # This must match the resource name configured in your SR-IOV device plugin
+  # Common values:
+  #   - intel.com/intel_sriov_netdevice (Intel NICs)
+  #   - mellanox.com/cx5_sriov_switchdev (Mellanox NICs)
+  # Check available resources: kubectl get node <node-name> -o json | jq '.status.allocatable'
+  # @default -- `intel.com/intel_sriov_netdevice`
+  extendedResourceName: "intel.com/intel_sriov_netdevice"
+
+  # -- Number of SR-IOV VFs to request
+  # @default -- `1`
+  vfCount: 1
+
+# -- NetworkPolicy configuration
+# Restricts network traffic to/from the gNB pod for enhanced security
+# IMPORTANT: NetworkPolicy only works when network.hostNetwork is false
+# When hostNetwork is true, the pod uses the host's network namespace and
+# bypasses Kubernetes NetworkPolicy entirely
+networkPolicy:
+  # -- Enable NetworkPolicy
+  # Only effective when network.hostNetwork is false
+  # Check cluster support: kubectl api-versions | grep networking.k8s.io/v1
+  # @default -- `false`
+  enabled: false
+
+  # -- Ingress rules (incoming traffic to gNB)
+  ingress:
+    # -- Allow traffic from 5G Core (N2/N3 interfaces)
+    fiveGCore:
+      # -- Enable 5G Core ingress
+      # @default -- `true`
+      enabled: true
+      # -- Source selectors for 5G Core traffic
+      # @default -- See values.yaml
+      from:
+        - podSelector:
+            matchLabels:
+              app: open5gs
+        - ipBlock:
+            cidr: 10.0.0.0/8  # Adjust for your core network CIDR
+
+    # -- Allow traffic from monitoring systems
+    monitoring:
+      # -- Enable monitoring ingress
+      # @default -- `true`
+      enabled: true
+      # -- Source selectors for monitoring traffic
+      # @default -- See values.yaml
+      from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+        - podSelector:
+            matchLabels:
+              app: telegraf
+
+    # -- Allow traffic from management systems (O1/NETCONF)
+    management:
+      # -- Enable management ingress
+      # @default -- `false`
+      enabled: false
+      # -- Source selectors for management traffic
+      # @default -- See values.yaml
+      from:
+        - namespaceSelector:
+            matchLabels:
+              name: management
+        - podSelector:
+            matchLabels:
+              app: onap-smo
+
+    # -- Custom ingress rules
+    # Add additional ingress rules as needed
+    # Example:
+    # custom:
+    #   - from:
+    #       - podSelector:
+    #           matchLabels:
+    #             app: custom-app
+    #     ports:
+    #       - protocol: TCP
+    #         port: 9000
+    # @default -- `[]`
+    custom: []
+
+  # -- Egress rules (outgoing traffic from gNB)
+  egress:
+    # -- Allow traffic to 5G Core
+    fiveGCore:
+      # -- Enable 5G Core egress
+      # @default -- `true`
+      enabled: true
+      # -- Destination selectors for 5G Core traffic
+      # @default -- See values.yaml
+      to:
+        - podSelector:
+            matchLabels:
+              app: open5gs
+        - ipBlock:
+            cidr: 10.0.0.0/8  # Adjust for your core network CIDR
+
+    # -- Allow traffic to monitoring systems
+    monitoring:
+      # -- Enable monitoring egress
+      # @default -- `true`
+      enabled: true
+      # -- Destination selectors for monitoring traffic
+      # @default -- See values.yaml
+      to:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+        - podSelector:
+            matchLabels:
+              app: influxdb
+
+    # -- Custom egress rules
+    # Add additional egress rules as needed
+    # Example:
+    # custom:
+    #   - to:
+    #       - podSelector:
+    #           matchLabels:
+    #             app: custom-service
+    #     ports:
+    #       - protocol: TCP
+    #         port: 8080
+    # @default -- `[]`
+    custom: []
 
 # -- gNB configuration file
 # This is the main srsRAN gNB configuration in YAML format
