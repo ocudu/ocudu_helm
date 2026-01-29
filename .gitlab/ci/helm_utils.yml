@@ -6,11 +6,6 @@
 # the distribution.
 #
 
-include:
-  - project: softwareradiosystems/ci/tools
-    ref: "21"
-    file: .gitlab/ci-shared/setup/all.yml
-
 .helm lint:
   image:
     name: alpine/helm:3.15.2

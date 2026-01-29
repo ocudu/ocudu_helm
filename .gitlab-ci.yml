@@ -6,22 +6,43 @@
 # the distribution.
 #
 
+spec:
+  inputs:
+    ocudu_path:
+      type: string
+      default: ocudu/ocudu
+      description: "OCUDU repository path."
+    ocudu_ref:
+      type: string
+      default: dev
+      description: "OCUDU reference branch or tag."
+---
 include:
-  - project: softwareradiosystems/ci/tools
-    ref: "21"
-    file: .gitlab/ci-shared/setup/all.yml
-  - project: softwareradiosystems/ci/tools
-    ref: "21"
-    file: .gitlab/ci-shared/features/all.yml
-  - project: softwareradiosystems/ci/tools
-    ref: "21"
-    file: .gitlab/ci-shared/tools/tagger.yml
+  - project: $[[ inputs.ocudu_path ]]
+    ref: $[[ inputs.ocudu_ref ]]
+    file: .gitlab/ci-shared/workflow.yml
+  - project: $[[ inputs.ocudu_path ]]
+    ref: $[[ inputs.ocudu_ref ]]
+    file: .gitlab/ci-shared/static.yml
+  - project: $[[ inputs.ocudu_path ]]
+    ref: $[[ inputs.ocudu_ref ]]
+    file: .gitlab/ci-shared/gitlab_settings/.gitlab-ci.yml
+    inputs:
+      ocudu_path: $[[ inputs.ocudu_path ]]
+      ocudu_ref: $[[ inputs.ocudu_ref ]]
+
+variables:
+  OCUDU_REGISTRY_URI: ${CI_TEMPLATE_REGISTRY_HOST}/$[[ inputs.ocudu_path ]]
 
 stages:
   - ci
   - static
   - child
   - release
+
+headers:
+  stage: ci
+  extends: .headers
 
 ################################################################################
 ## Images
@@ -43,7 +64,11 @@ linuxptp image:
           - images/linuxptp/**/*
         compare_to: refs/tags/latest
   trigger:
-    include: images/linuxptp/.gitlab-ci.yml
+    include:
+      - local: images/linuxptp/.gitlab-ci.yml
+        inputs:
+          ocudu_path: $[[ inputs.ocudu_path ]]
+          ocudu_ref: $[[ inputs.ocudu_ref ]]
     strategy: depend
   needs: []
 
@@ -62,7 +87,11 @@ rt-tests image:
           - images/rt-tests/**/*
         compare_to: refs/tags/latest
   trigger:
-    include: images/rt-tests/.gitlab-ci.yml
+    include:
+      - local: images/rt-tests/.gitlab-ci.yml
+        inputs:
+          ocudu_path: $[[ inputs.ocudu_path ]]
+          ocudu_ref: $[[ inputs.ocudu_ref ]]
     strategy: depend
   needs: []
 
@@ -82,7 +111,11 @@ tuned image:
           - images/tuned/**/*
         compare_to: refs/tags/latest
   trigger:
-    include: images/tuned/.gitlab-ci.yml
+    include:
+      - local: images/tuned/.gitlab-ci.yml
+        inputs:
+          ocudu_path: $[[ inputs.ocudu_path ]]
+          ocudu_ref: $[[ inputs.ocudu_ref ]]
     strategy: depend
   needs: []
 
@@ -154,16 +187,3 @@ srsran-project chart:
     include: charts/srsran-project/.gitlab-ci.yml
     strategy: depend
   needs: []
-
-################################################################################
-## Tags
-################################################################################
-
-create-latest-tag:
-  extends: .create-tag
-  stage: release
-  rules:
-    - if: $ON_DEFAULT_BRANCH
-  script:
-    - delete_tag_if_exist latest
-    - create_tag latest

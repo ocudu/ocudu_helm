@@ -6,14 +6,21 @@
 # the distribution.
 #
 
+spec:
+  inputs:
+    ocudu_path:
+      type: string
+      default: ocudu/ocudu
+      description: "OCUDU repository path."
+    ocudu_ref:
+      type: string
+      default: dev
+      description: "OCUDU reference branch or tag."
+---
 include:
-  - project: softwareradiosystems/ci/tools
-    ref: "21"
-    file: .gitlab/ci-shared/setup/all.yml
-  - project: softwareradiosystems/ci/tools
-    ref: "21"
-    file: .gitlab/ci-shared/tools/docker.yml
-
+  - project: $[[ inputs.ocudu_path ]]
+    ref: $[[ inputs.ocudu_ref ]]
+    file: .gitlab/ci-shared/docker.yml
 stages:
   - test
   - publish
