@@ -76,18 +76,34 @@ service:
 persistence:
   # -- Enable persistent storage
   enabled: true
-  # -- Access mode for PersistentVolumeClaim
-  # Use ReadWriteOnce for single-node access
-  accessMode: ReadWriteOnce
-  # -- Size of the persistent volume
-  size: 50Gi
+  
+  # -- Storage type: 'pvc' for PersistentVolumeClaim or 'hostPath' for direct host access
+  # - pvc: Use for cloud environments with dynamic provisioning
+  # - hostPath: Use for bare-metal with direct host access
+  type: hostPath
+  
   # -- Mount path for data directory inside container
   mountPath: /var/lib/influxdb3
   # -- Mount path for plugins directory inside container
   pluginMountPath: /var/lib/influxdb3-plugins
-  # -- Host path for storage (when using hostPath volumes)
-  # Only used if PVC is not available or disabled
-  hostPath: /mnt/influxdb3
+  
+  # PVC configuration (when type: pvc)
+  pvc:
+    # -- Storage class for dynamic provisioning (empty uses cluster default)
+    storageClassName: ""
+    # -- Access mode for PersistentVolumeClaim
+    accessMode: ReadWriteOnce
+    # -- Size of the data persistent volume
+    size: 50Gi
+    # -- Size of the plugins persistent volume
+    pluginsSize: 1Gi
+  
+  # hostPath configuration (when type: hostPath)
+  hostPath:
+    # -- Path on host for data directory
+    path: /mnt/influxdb3
+    # -- hostPath type
+    pathType: DirectoryOrCreate
 
 # -- Environment variables for InfluxDB3 configuration
 env:
@@ -110,5 +126,12 @@ args:
   - --node-id=node0
   # HTTP API bind address and port
   - --http-bind=0.0.0.0:8081
-  # Disable authentication (suitable for demos/PoC only)
+  # Disable authentication (⚠️ suitable for demos/PoC only)
+  # For production, remove --without-auth and configure token-based authentication
   - --without-auth
+  # Retention policy (optional, uncomment to enable)
+  # Controls how long data is retained before automatic deletion
+  # Examples:
+  #   - --retention-period=30d  # Keep data for 30 days
+  #   - --retention-period=90d  # Keep data for 90 days
+  #   - --retention-period=1y   # Keep data for 1 year

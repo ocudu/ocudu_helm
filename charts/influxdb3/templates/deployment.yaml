@@ -57,23 +57,27 @@ spec:
       volumes:
         - name: data
 {{- if .Values.persistence.enabled }}
-{{- if .Values.persistence.hostPath }}
-          hostPath:
-            path: {{ .Values.persistence.hostPath }}
-            type: DirectoryOrCreate
-{{- else }}
+  {{- if eq .Values.persistence.type "pvc" }}
           persistentVolumeClaim:
-            claimName: influxdb3-pvc
-{{- end }}
+            claimName: {{ include "influxdb3.fullname" . }}-data
+  {{- else if eq .Values.persistence.type "hostPath" }}
+          hostPath:
+            path: {{ .Values.persistence.hostPath.path }}
+            type: {{ .Values.persistence.hostPath.pathType }}
+  {{- end }}
+{{- else }}
+          emptyDir: {}
 {{- end }}
         - name: plugins
 {{- if .Values.persistence.enabled }}
-{{- if .Values.persistence.hostPath }}
-          hostPath:
-            path: {{ .Values.persistence.hostPath }}-plugins
-            type: DirectoryOrCreate
-{{- else }}
+  {{- if eq .Values.persistence.type "pvc" }}
           persistentVolumeClaim:
-            claimName: influxdb3-plugins-pvc
-{{- end }}
+            claimName: {{ include "influxdb3.fullname" . }}-plugins
+  {{- else if eq .Values.persistence.type "hostPath" }}
+          hostPath:
+            path: {{ .Values.persistence.hostPath.path }}-plugins
+            type: {{ .Values.persistence.hostPath.pathType }}
+  {{- end }}
+{{- else }}
+          emptyDir: {}
 {{- end }}
