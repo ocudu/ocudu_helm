@@ -518,6 +518,17 @@ main() {
     DEVICE_LIST="${!resource_var}"
     if [ -n "$DEVICE_LIST" ]; then
         log_info "SR-IOV devices detected: $DEVICE_LIST"
+        
+        # Validate that HAL eal_args are present when using SR-IOV
+        if ! grep -q "^[[:space:]]*hal:" "$config_file"; then
+            log_fatal "SR-IOV devices detected but no 'hal' section found in config. When using SR-IOV, the gNB config MUST include 'hal.eal_args' for DPDK configuration."
+        fi
+        
+        if ! grep -q "^[[:space:]]*eal_args:" "$config_file"; then
+            log_fatal "SR-IOV devices detected but 'hal.eal_args' not found in config. When using SR-IOV, the gNB config MUST include 'hal.eal_args' for DPDK configuration."
+        fi
+        
+        log_info "SR-IOV HAL configuration validated"
     else
         log_info "No SR-IOV devices detected"
     fi

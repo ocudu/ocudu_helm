@@ -2,6 +2,9 @@
 
 ## 2.4.0 (Unreleased)
 
+### Added
+- Entrypoint script validates HAL `eal_args` present when SR-IOV devices detected
+
 ### Changed
 - Remove hardcoded `fullnameOverride` and `nameOverride` to support multiple instances in same namespace
 - Remove hardcoded ServiceAccount name to support multiple instances
