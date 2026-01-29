@@ -7,6 +7,7 @@
 #
 
 # -- Number of pod replicas
+# For load testing, increase this value
 # @default -- `1` (single instance)
 replicaCount: 1
 
