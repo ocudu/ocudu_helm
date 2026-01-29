@@ -20,7 +20,14 @@ keywords:
 - influxdb
 - monitoring
 - metrics
+- observability
+- visualization
 - srsran
+annotations:
+  artifacthub.io/category: monitoring-logging
+  artifacthub.io/license: AGPL-3.0
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "true"
 type: application
 version: 1.3.0
 appVersion: "9.2.10"

@@ -13,10 +13,19 @@ kubeVersion: ">= 1.16.0-0"
 icon: https://wiki.linuxfoundation.org/_media/wiki/logo.png
 home: https://wiki.linuxfoundation.org/realtime/documentation/howto/tools/rt-tests
 sources:
-  - https://web.git.kernel.org/pub/scm/utils/rt-tests/rt-tests.git/
+- https://web.git.kernel.org/pub/scm/utils/rt-tests/rt-tests.git/
 keywords:
-  - rt-tests
-  - srsran
+- rt-tests
+- realtime
+- performance
+- testing
+- latency
+- srsran
+annotations:
+  artifacthub.io/category: latency-testing
+  artifacthub.io/license: AGPL-3.0
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "true"
 type: application
 version: 1.0.0
 appVersion: "2.8"

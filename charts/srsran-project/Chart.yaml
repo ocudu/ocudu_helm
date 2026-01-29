@@ -20,7 +20,15 @@ keywords:
 - oran
 - vran
 - gnb
+- ran
 - mobile
+- telecom
+- networking
+annotations:
+  artifacthub.io/category: networking
+  artifacthub.io/license: AGPL-3.0
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "false"
 type: application
 version: 2.3.1
 appVersion: "25.04"

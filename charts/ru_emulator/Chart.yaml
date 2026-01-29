@@ -24,6 +24,12 @@ keywords:
 - openfronthaul
 - 5g
 - testing
+- ran
+annotations:
+  artifacthub.io/category: openfronthaul
+  artifacthub.io/license: AGPL-3.0
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "true"
 type: application
 version: 1.1.0
 appVersion: "2024.10.0"

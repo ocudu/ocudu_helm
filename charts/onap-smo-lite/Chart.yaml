@@ -24,8 +24,14 @@ keywords:
 - ves
 - o1
 - management
+- orchestration
 - srsran
 - demo
+annotations:
+  artifacthub.io/category: 5g-orchestration
+  artifacthub.io/license: AGPL-3.0
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "true"
 type: application
 version: 0.3.0
 appVersion: "1.0.0"

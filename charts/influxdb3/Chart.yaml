@@ -22,7 +22,13 @@ keywords:
 - database
 - metrics
 - monitoring
+- storage
 - srsran
+annotations:
+  artifacthub.io/category: database
+  artifacthub.io/license: AGPL-3.0
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "true"
 type: application
 version: 1.0.0
 appVersion: "3.1.0-core"
