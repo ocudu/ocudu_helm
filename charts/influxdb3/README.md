@@ -30,6 +30,13 @@ podSecurityContext:
 ## Installing the Chart
 
 **Basic installation** (hostPath storage):
+
+**From OCI registry**:
+```bash
+helm install influxdb3 oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/influxdb3 --version 2.0.0
+```
+
+**From local chart**:
 ```bash
 helm install influxdb3 ./charts/influxdb3
 ```
