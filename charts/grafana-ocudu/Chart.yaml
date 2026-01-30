@@ -1,5 +1,5 @@
 #
-# Copyright 2021-2025 Software Radio Systems Limited
+# Copyright 2021-2026 Software Radio Systems Limited
 #
 # By using this file, you agree to the terms and conditions set
 # forth in the LICENSE file which can be found at the top level of
@@ -7,13 +7,13 @@
 #
 
 apiVersion: v2
-name: grafana-deployment
-description: Monitoring stack with Grafana, Telegraf, and InfluxDB3 for srsRAN metrics visualization
+name: grafana-ocudu
+description: Monitoring stack with Grafana, Telegraf, and InfluxDB3 for OCUDU metrics visualization
 kubeVersion: ">= 1.24.0-0"
 icon: https://grafana.com/static/img/menu/grafana2.svg
-home: https://docs.srsran.com/
+home: https://gitlab.com/ocudu/ocudu_elements/ocudu_helm
 sources:
-- https://github.com/srsran/srsRAN_Project_helm
+- https://gitlab.com/ocudu/ocudu_elements/ocudu_helm
 keywords:
 - grafana
 - telegraf
@@ -22,14 +22,14 @@ keywords:
 - metrics
 - observability
 - visualization
-- srsran
+- ocudu
 annotations:
   artifacthub.io/category: monitoring-logging
-  artifacthub.io/license: AGPL-3.0
+  artifacthub.io/license: MIT
   artifacthub.io/operator: "false"
   artifacthub.io/prerelease: "true"
 type: application
-version: 1.3.0
+version: 2.0.0
 appVersion: "9.2.10"
 
 dependencies:
@@ -42,6 +42,6 @@ dependencies:
     version: "1.8.60"
     alias: telegraf
   - name: influxdb3
-    repository: "https://srsran.github.io/srsRAN_Project_helm/"
-    version: "1.0.0"
+    repository: "oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm"
+    version: "2.0.0"
     alias: influxdb3

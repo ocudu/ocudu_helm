@@ -7,7 +7,7 @@
 
 ## Overview
 
-A Helm chart for deploying a complete monitoring stack for srsRAN metrics visualization.
+A Helm chart for deploying a complete monitoring stack for OCUDU metrics visualization.
 
 **Stack Components**:
 - **Grafana** (v9.2.10): Visualization and dashboards
@@ -15,7 +15,7 @@ A Helm chart for deploying a complete monitoring stack for srsRAN metrics visual
 - **Telegraf** (v1.8.60): Metrics collection agent
 
 **Custom Features**:
-- Pre-configured srsRAN dashboards
+- Pre-configured OCUDU dashboards
 - Real-time metrics collection (1s interval)
 - Optimized for 5G RAN KPIs
 
@@ -25,7 +25,7 @@ Before installing:
 
 1. **Dependencies**: Chart requires internet access to pull upstream Helm charts
    ```bash
-   helm dependency build charts/grafana-srsran/
+   helm dependency build charts/grafana-ocudu/
    ```
 
 2. **Storage**: If using persistent storage for InfluxDB3
@@ -35,33 +35,41 @@ Before installing:
    sudo chown -R 1000:1000 /mnt/influxdb3
    ```
 
-3. **Metrics Source**: Configure Telegraf to point to your srsRAN metrics endpoint
+3. **Metrics Source**: Configure Telegraf to point to your OCUDU metrics endpoint
 
 ## Installing the Chart
 
 **Build dependencies first**:
 ```bash
-cd charts/grafana-srsran
+cd charts/grafana-ocudu
 helm dependency build
 ```
 
+
+**From OCI registry**:
+```bash
+helm install grafana-ocudu oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/grafana-ocudu --version 2.0.0 \
+  --namespace ocudu --create-namespace
+```
+
+**From local chart**:
 **Basic installation**:
 ```bash
-helm install grafana ./ --namespace srsran --create-namespace
+helm install grafana ./ --namespace ocudu --create-namespace
 ```
 
 **With custom values**:
 ```bash
-helm install grafana ./ -n srsran -f my-values.yaml
+helm install grafana ./ -n ocudu -f my-values.yaml
 ```
 
 **Access Grafana**:
 ```bash
 # If using NodePort (default)
-kubectl get svc -n srsran grafana
+kubectl get svc -n ocudu grafana
 
 # Forward port for local access
-kubectl port-forward -n srsran svc/grafana 3000:80
+kubectl port-forward -n ocudu svc/grafana 3000:80
 # Then access: http://localhost:3000
 # Default credentials: admin / admin1234
 ```
@@ -84,7 +92,7 @@ This chart uses pinned versions for reproducible deployments:
 |-----------|---------|----------------|---------|
 | Grafana | 9.2.10 | grafana/grafana | Visualization |
 | Telegraf | 1.8.60 | influxdata/telegraf | Metrics collection |
-| InfluxDB3 | 1.0.0 | srsran/influxdb3 | Time-series storage |
+| InfluxDB3 | 1.0.0 | ocudu/influxdb3 | Time-series storage |
 
 > **Note**: These versions are tested together. Upgrading requires testing the full stack.
 
@@ -136,9 +144,9 @@ grafana:
 | grafana.env.GF_AUTH_ANONYMOUS_ORG_ROLE | string | `"Viewer"` | Anonymous user role |
 | grafana.env.GF_SECURITY_ADMIN_USER | string | `"admin"` | Admin username |
 | grafana.env.GF_SECURITY_ADMIN_PASSWORD | string | `"admin1234"` | Admin password |
-| grafana.env.INFLUXDB3_EXTERNAL_URL | string | `"http://influxdb3.srsran.svc.cluster.local:8081"` | InfluxDB 3 external URL |
+| grafana.env.INFLUXDB3_EXTERNAL_URL | string | `"http://influxdb3.ocudu.svc.cluster.local:8081"` | InfluxDB 3 external URL |
 | grafana.env.INFLUXDB3_AUTH_TOKEN | string | `"fake-token-1234567890abcdef"` | InfluxDB 3 auth token |
-| grafana.env.INFLUXDB3_BUCKET | string | `"srsran"` | InfluxDB 3 bucket name |
+| grafana.env.INFLUXDB3_BUCKET | string | `"ocudu"` | InfluxDB 3 bucket name |
 | grafana.service.enabled | bool | `true` | Enable Grafana service |
 | grafana.service.type | string | `"NodePort"` | Service type |
 | grafana.service.port | int | `80` | Service port |
@@ -148,7 +156,7 @@ grafana:
 | influxdb3.image.tag | string | `"3.1.0-core"` | InfluxDB 3 image tag |
 | influxdb3.service.type | string | `"ClusterIP"` | InfluxDB 3 service type |
 | influxdb3.service.port | int | `8081` | InfluxDB 3 service port |
-| influxdb3.database.name | string | `"srsran"` | InfluxDB 3 database name |
+| influxdb3.database.name | string | `"ocudu"` | InfluxDB 3 database name |
 | influxdb3.persistence.enabled | bool | `true` | Enable InfluxDB 3 persistence |
 | influxdb3.persistence.type | string | `"hostPath"` | Persistence type |
 | influxdb3.persistence.hostPath | string | `"/mnt/influxdb3"` | Host path for data storage |
@@ -159,10 +167,10 @@ grafana:
 | telegraf.useImageConfig | bool | `true` | Use image config for Telegraf |
 | telegraf.image.repo | string | `"softwareradiosystems/telegraf"` | Telegraf image repository |
 | telegraf.image.tag | string | `"11c9bbabb6__2025-09-15"` | Telegraf image tag |
-| telegraf.env.WS_URL | string | `"srsran-project-cudu-chart-metrics.srsran.svc.cluster.local:8001"` | WebSocket URL |
-| telegraf.env.INFLUXDB3_EXTERNAL_URL | string | `"http://influxdb3.srsran.svc.cluster.local:8081"` | InfluxDB 3 URL for Telegraf |
+| telegraf.env.WS_URL | string | `"ocudu-gnb-metrics.ocudu.svc.cluster.local:8001"` | WebSocket URL |
+| telegraf.env.INFLUXDB3_EXTERNAL_URL | string | `"http://influxdb3.ocudu.svc.cluster.local:8081"` | InfluxDB 3 URL for Telegraf |
 | telegraf.env.INFLUXDB3_AUTH_TOKEN | string | `"fake-token-1234567890abcdef"` | InfluxDB 3 auth token for Telegraf |
-| telegraf.env.INFLUXDB3_BUCKET | string | `"srsran"` | InfluxDB 3 bucket for Telegraf |
+| telegraf.env.INFLUXDB3_BUCKET | string | `"ocudu"` | InfluxDB 3 bucket for Telegraf |
 | telegraf.env.TELEGRAF_INPUT_INTERVAL | string | `"1s"` | Input interval |
 | telegraf.env.TELEGRAF_OUTPUT_INTERVAL | string | `"1s"` | Output interval |
 | telegraf.env.TELEGRAF_BUFFER_LIMIT | string | `"10000"` | Buffer limit |
@@ -175,9 +183,9 @@ For complete parameter documentation, see the upstream chart documentation:
 
 ## Custom Dashboards
 
-The Grafana image includes pre-configured srsRAN dashboards:
+The Grafana image includes pre-configured OCUDU dashboards:
 - **Home Dashboard**: Overview of gNB metrics
-- **srsRAN Metrics**: Detailed 5G RAN KPIs
+- **OCUDU Metrics**: Detailed 5G RAN KPIs
 
 **Dashboards included in custom image**:
 ```
@@ -195,31 +203,31 @@ grafana.image.tag: "11c9bbabb6__2025-09-15"
 ### Grafana not accessible
 ```bash
 # Check service
-kubectl get svc -n srsran grafana
+kubectl get svc -n ocudu grafana
 
 # Check pods
-kubectl get pods -n srsran -l app.kubernetes.io/name=grafana
+kubectl get pods -n ocudu -l app.kubernetes.io/name=grafana
 
 # Check logs
-kubectl logs -n srsran -l app.kubernetes.io/name=grafana
+kubectl logs -n ocudu -l app.kubernetes.io/name=grafana
 ```
 
 ### No metrics in Grafana
 ```bash
 # 1. Check Telegraf is collecting
-kubectl logs -n srsran -l app.kubernetes.io/name=telegraf | grep "error\|warn"
+kubectl logs -n ocudu -l app.kubernetes.io/name=telegraf | grep "error\|warn"
 
 # 2. Verify metrics endpoint is reachable
-kubectl exec -n srsran -it deployment/grafana-telegraf -- curl http://WS_URL
+kubectl exec -n ocudu -it deployment/grafana-telegraf -- curl http://WS_URL
 
 # 3. Check InfluxDB3 is receiving data
-kubectl logs -n srsran -l app.kubernetes.io/name=influxdb3
+kubectl logs -n ocudu -l app.kubernetes.io/name=influxdb3
 ```
 
 ### Dependencies not found
 ```bash
 # Rebuild dependencies
-cd charts/grafana-srsran
+cd charts/grafana-ocudu
 helm dependency build
 
 # Check charts/ directory was created
@@ -230,7 +238,7 @@ ls -la charts/
 
 ```
 ┌─────────────┐      metrics        ┌──────────────┐
-│  srsRAN gNB │ ──────────────────> │  Telegraf    │
+│  OCUDU gNB  │ ──────────────────> │  Telegraf    │
 │  (metrics)  │  :8001 websocket    │ (collector)  │
 └─────────────┘                     └──────┬───────┘
                                            │ write
@@ -255,4 +263,4 @@ ls -la charts/
 
 ## License
 
-AGPL-3.0 - See LICENSE file for details
+MIT - See LICENSE file for details

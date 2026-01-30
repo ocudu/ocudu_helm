@@ -1,6 +1,27 @@
 # Changelog
 
-## 1.3.1 (Unreleased)
+## 2.0.0 (2026-01-29)
+
+### BREAKING CHANGES
+- **Chart Renamed**: `grafana-srsran` → `grafana-ocudu`
+- **License Changed**: AGPL-3.0 → MIT
+- **Repository Moved**: Updated home URL to GitLab (https://gitlab.com/ocudu/ocudu_elements/ocudu_helm)
+- **Dependency Updated**: influxdb3 chart now references GitLab repository (version 2.0.0)
+
+### Rebranding
+- Updated copyright headers to 2021-2026 Software Radio Systems Limited
+- Updated all URLs to point to new GitLab organization
+- Updated Chart.yaml metadata (name, home, sources, keywords: srsran → ocudu)
+- Updated documentation references from srsRAN to OCUDU
+- Updated influxdb3 dependency repository URL
+
+### Migration
+- Uninstall existing grafana-srsran deployment
+- Install new grafana-ocudu chart
+- Update dependency: `helm dependency update`
+- No functional changes to the monitoring stack
+
+## 1.3.1 (Final Pre-Rebranding Release)
 
 ### Changed
 - Enhanced PoC/Demo warning with specific limitations (auth, TLS, credentials)
@@ -35,5 +56,5 @@
 
 ## 0.1.0 (June 04, 2024)
 ### Added
-- Initial version of the srsRAN Grafana Helm chart
+- Initial version of the OCUDU Grafana Helm chart
 

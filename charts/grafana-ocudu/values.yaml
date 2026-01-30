@@ -1,5 +1,5 @@
 #
-# Copyright 2021-2025 Software Radio Systems Limited
+# Copyright 2021-2026 Software Radio Systems Limited
 #
 # By using this file, you agree to the terms and conditions set
 # forth in the LICENSE file which can be found at the top level of
@@ -7,7 +7,7 @@
 #
 
 # ============================================================================
-# Grafana Monitoring Stack for srsRAN
+# Grafana Monitoring Stack for OCUDU
 # ============================================================================
 #
 # This chart bundles three components for complete metrics monitoring:
@@ -26,14 +26,14 @@
 # ============================================================================
 
 # -- Grafana configuration (upstream chart values)
-# This configures the Grafana deployment for srsRAN metrics visualization
+# This configures the Grafana deployment for OCUDU metrics visualization
 grafana:
   # -- Container image configuration
   image:
     # -- Container image repository (custom build with dashboards)
     repository: softwareradiosystems/grafana
     # -- Image tag
-    # @default -- Matches srsRAN release version
+    # @default -- Matches OCUDU release version
     tag: "11c9bbabb6__2025-09-15"
   
   # -- Environment variables for Grafana configuration
@@ -157,7 +157,11 @@ influxdb3:
     # -- Persistence type (hostPath or pvc)
     type: hostPath
     # -- Host path for data storage
-    hostPath: /mnt/influxdb3
+    hostPath:
+      # -- Path on the host
+      path: /mnt/influxdb3
+      # -- Path type (DirectoryOrCreate, Directory, etc.)
+      pathType: DirectoryOrCreate
     # -- Access mode for PVC
     accessMode: ReadWriteOnce
     # -- Storage size
@@ -168,7 +172,7 @@ influxdb3:
     pluginMountPath: /var/lib/influxdb3-plugins
 
 # -- Telegraf configuration (subchart)
-# This deploys Telegraf agent for collecting metrics from srsRAN gNB
+# This deploys Telegraf agent for collecting metrics from OCUDU gNB
 telegraf:
   # -- Use custom image configuration
   useImageConfig: true
@@ -178,7 +182,7 @@ telegraf:
     # -- Container image repository (custom build with WebSocket input)
     repo: "softwareradiosystems/telegraf"
     # -- Image tag
-    # @default -- Matches srsRAN release version
+    # @default -- Matches OCUDU release version
     tag: "11c9bbabb6__2025-09-15"
   
   # -- Image pull secrets
@@ -192,7 +196,7 @@ telegraf:
   
   # -- Environment variables for Telegraf configuration
   env:
-    # -- WebSocket URL for srsRAN metrics endpoint
+    # -- WebSocket URL for OCUDU metrics endpoint
     - name: WS_URL
       value: "srsran-project-cudu-chart-metrics.srsran.svc.cluster.local:8001"
     # -- InfluxDB3 service URL
