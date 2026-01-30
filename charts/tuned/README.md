@@ -35,7 +35,7 @@ Before installing, ensure your environment meets these requirements:
 
 **From OCI registry**:
 ```bash
-helm install tuned-srs oci://ghcr.io/srsran/charts/tuned \
+helm install tuned-ocudu oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/tuned --version 1.0.0 \
   -n kube-system --create-namespace
 ```
 
@@ -235,4 +235,4 @@ kubectl get daemonset <release-name>-tuned -o yaml | grep -A2 REBOOT_ENABLED
 
 ## License
 
-AGPL-3.0 - See LICENSE file for details
+MIT - See LICENSE file for details

@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.0.0 (2026-01-29)
+
+### BREAKING CHANGES
+- **License Changed**: AGPL-3.0 → MIT
+- **Repository Moved**: Updated home URL to GitLab (https://gitlab.com/ocudu/ocudu_elements/ocudu_helm)
+- **Container Registry Changed**: Updated to GitLab Container Registry
+
+### Rebranding
+- Updated copyright headers to 2021-2026 Software Radio Systems Limited
+- Updated all URLs to point to new GitLab organization
+- Updated Chart.yaml metadata (home, sources, keywords: srsran → ocudu)
+- Updated documentation references from srsRAN to OCUDU
+
+### Migration
+- Update your values files to reference new image registry
+- No functional changes to the chart
+
+
 ## 0.5.1 (Unreleased)
 
 ### Changed
