@@ -1,5 +1,5 @@
 #
-# Copyright 2021-2025 Software Radio Systems Limited
+# Copyright 2021-2026 Software Radio Systems Limited
 #
 # By using this file, you agree to the terms and conditions set
 # forth in the LICENSE file which can be found at the top level of
@@ -7,15 +7,16 @@
 #
 
 apiVersion: v2
-name: srsran-cu-du
-description: Official srsRAN Project CU/DU Helm Chart
+name: ocudu-gnb
+description: OCUDU Project gNB (CU/DU Combined) Helm Chart
 kubeVersion: ">= 1.24.0-0"
-icon: https://docs.srsran.com/en/latest/_static/logo.png
-home: https://docs.srsran.com/projects/project/en/latest/
+icon: https://gitlab.com/ocudu/ocudu_elements/ocudu_helm/-/raw/main/docs/logo.png
+home: https://gitlab.com/ocudu/ocudu_elements/ocudu_helm
 sources:
-- https://github.com/srsran/srsran_project
+- https://gitlab.com/ocudu/ocudu_elements/ocudu_helm
+- https://gitlab.com/ocudu/ocudu
 keywords:
-- srsran
+- ocudu
 - 5g
 - oran
 - vran
@@ -24,11 +25,12 @@ keywords:
 - mobile
 - telecom
 - networking
+- cudu
 annotations:
   artifacthub.io/category: networking
-  artifacthub.io/license: AGPL-3.0
+  artifacthub.io/license: MIT
   artifacthub.io/operator: "false"
   artifacthub.io/prerelease: "false"
 type: application
-version: 2.4.0
+version: 3.0.0
 appVersion: "25.04"

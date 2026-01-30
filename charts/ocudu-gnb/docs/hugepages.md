@@ -1,6 +1,6 @@
 # Hugepages Configuration
 
-Hugepages are **optional** but recommended for DPDK-based deployments to achieve optimal performance. The chart automatically detects and configures hugepage volumes when you define `hugepages-1Gi` or `hugepages-2Mi` in your resource limits or requests.
+Hugepages are required for DPDK-based deployments to achieve optimal performance. The chart automatically detects and configures hugepage volumes when you define `hugepages-1Gi` or `hugepages-2Mi` in your resource limits or requests.
 
 ## Checking Cluster Support
 

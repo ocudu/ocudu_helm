@@ -1,6 +1,30 @@
 # Changelog
 
-## 2.4.0 (Unreleased)
+## 3.0.0 (2026-01-29)
+
+### BREAKING CHANGES
+- **Chart Renamed**: `srsran-project` → `ocudu-gnb` (no backward compatibility)
+- **License Changed**: AGPL-3.0 → MIT
+- **Repository Moved**: GitHub → GitLab (https://gitlab.com/ocudu/ocudu_elements/ocudu_helm)
+- **Container Registry Changed**: DockerHub → GitLab Container Registry
+  - New image: `registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-gnb`
+
+### Rebranding
+- All references updated from srsRAN to OCUDU throughout code and documentation
+- Updated copyright headers to 2021-2026 Software Radio Systems Limited
+- Updated all URLs to point to new GitLab organization
+- Updated Chart.yaml metadata (name, description, home, sources, keywords)
+- Updated all template helper names from `srsran-cudu.*` to `ocudu-gnb.*`
+- Updated all documentation files with OCUDU branding
+
+### Migration from srsRAN Chart
+This is a clean break from the srsRAN chart. To migrate:
+1. Uninstall existing srsRAN chart deployment
+2. Update your values files to reference new image registry
+3. Install OCUDU chart with new chart name: `ocudu-gnb`
+4. Note: Chart name change means all resource names will be different
+
+## 2.4.0 (Final srsRAN Release)
 
 ### Added
 - Entrypoint script validates HAL `eal_args` present when SR-IOV devices detected
@@ -12,7 +36,7 @@
 ### Changed
 - Remove hardcoded `fullnameOverride` and `nameOverride` to support multiple instances in same namespace
 - Remove hardcoded ServiceAccount name to support multiple instances
-- Resource names now use `<release-name>-srsran-cu-du` pattern for uniqueness
+- Resource names now use `<release-name>-ocudu-gnb` pattern for uniqueness
 - Users can now deploy multiple gNB instances (e.g., gnb1, gnb2) in the same namespace without conflicts
 
 ### Migration Guide
@@ -32,7 +56,7 @@
 - Package the CU/DU entrypoint helper in its own ConfigMap
 
 ### Changed
-- Update the default CU/DU example config to comply with srsRAN 25.04
+- Update the default CU/DU example config to comply with OCUDU 25.04
     - rotate log/pcap directories
     - derive HAL CPU sets from cgroup limits
     - map SR-IOV BDFs to cells before starting the gNB
@@ -93,7 +117,7 @@
 
 ## 1.0.0 (December 20, 2023)
 ### Added
-- Deploys the srsRAN gNB with configurable parameters
+- Deploys the OCUDU gNB with configurable parameters
 - Moved config over to values.yaml
 - Added autostart metrics
 

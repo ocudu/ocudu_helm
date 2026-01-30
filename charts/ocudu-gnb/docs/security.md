@@ -1,6 +1,6 @@
 # Security Configuration Guide
 
-This guide covers security aspects of deploying the srsRAN CU/DU Helm chart, including Pod Security Standards, RBAC, security contexts, and Pod Disruption Budgets.
+This guide covers security aspects of deploying the OCUDU CU/DU Helm chart, including Pod Security Standards, RBAC, security contexts, and Pod Disruption Budgets.
 
 ## Table of Contents
 
@@ -27,7 +27,7 @@ Kubernetes Pod Security Standards (PSS) define security policies at three levels
 
 ### Why Not Restricted?
 
-The srsRAN gNB requires specific Linux capabilities for real-time performance and hardware access:
+The OCUDU gNB requires specific Linux capabilities for real-time performance and hardware access:
 
 - `IPC_LOCK` - Lock memory pages for DPDK
 - `SYS_ADMIN` - Access DPDK devices
@@ -123,12 +123,12 @@ Check what the service account can do:
 ```bash
 # Check permissions
 kubectl auth can-i get configmaps \
-  --as=system:serviceaccount:srsran:srsadmin-gnb \
-  -n srsran
+  --as=system:serviceaccount:ocudu:ocudu-gnb \
+  -n ocudu
 
 # List RBAC resources
-kubectl get role,rolebinding -n srsran
-kubectl describe role srsadmin-gnb -n srsran
+kubectl get role,rolebinding -n ocudu
+kubectl describe role ocudu-gnb -n ocudu
 ```
 
 ---
@@ -272,8 +272,8 @@ podDisruptionBudget:
 
 ```bash
 # Check PDB status
-kubectl get pdb -n srsran
-kubectl describe pdb srsran-project-cudu-chart -n srsran
+kubectl get pdb -n ocudu
+kubectl describe pdb ocudu-gnb -n ocudu
 
 # During node drain, check if PDB is respected
 kubectl drain <node-name> --ignore-daemonsets
@@ -290,8 +290,8 @@ Apply PSS labels to your namespace based on the deployment mode:
 #### For Privileged Mode (hostNetwork: true)
 
 ```bash
-kubectl create namespace srsran
-kubectl label namespace srsran \
+kubectl create namespace ocudu
+kubectl label namespace ocudu \
   pod-security.kubernetes.io/enforce=privileged \
   pod-security.kubernetes.io/audit=privileged \
   pod-security.kubernetes.io/warn=privileged \
@@ -301,8 +301,8 @@ kubectl label namespace srsran \
 #### For Baseline Mode (SR-IOV, hostNetwork: false)
 
 ```bash
-kubectl create namespace srsran
-kubectl label namespace srsran \
+kubectl create namespace ocudu
+kubectl label namespace ocudu \
   pod-security.kubernetes.io/enforce=baseline \
   pod-security.kubernetes.io/audit=baseline \
   pod-security.kubernetes.io/warn=baseline \
@@ -384,21 +384,21 @@ resources:
 Deploy in dedicated namespace with appropriate PSS labels:
 
 ```bash
-kubectl create namespace srsran
-kubectl label namespace srsran pod-security.kubernetes.io/enforce=baseline
+kubectl create namespace ocudu
+kubectl label namespace ocudu pod-security.kubernetes.io/enforce=baseline
 ```
 
 ### 7. Regular Security Audits
 
 ```bash
 # Check security contexts
-kubectl get pod -n srsran -o jsonpath='{.items[*].spec.containers[*].securityContext}'
+kubectl get pod -n ocudu -o jsonpath='{.items[*].spec.containers[*].securityContext}'
 
 # Verify RBAC
-kubectl auth can-i --list --as=system:serviceaccount:srsran:srsadmin-gnb -n srsran
+kubectl auth can-i --list --as=system:serviceaccount:ocudu:ocudu-gnb -n ocudu
 
 # Check NetworkPolicies
-kubectl get networkpolicy -n srsran
+kubectl get networkpolicy -n ocudu
 ```
 
 ---
@@ -411,8 +411,8 @@ kubectl get networkpolicy -n srsran
 
 **Check**:
 ```bash
-kubectl describe pod <pod-name> -n srsran
-kubectl logs <pod-name> -n srsran
+kubectl describe pod <pod-name> -n ocudu
+kubectl logs <pod-name> -n ocudu
 ```
 
 **Common causes**:
@@ -429,12 +429,12 @@ kubectl logs <pod-name> -n srsran
 **Check**:
 ```bash
 kubectl auth can-i get configmaps \
-  --as=system:serviceaccount:srsran:srsadmin-gnb -n srsran
+  --as=system:serviceaccount:ocudu:ocudu-gnb -n ocudu
 ```
 
 **Solution**: Verify RBAC is enabled and service account is created:
 ```bash
-kubectl get sa,role,rolebinding -n srsran
+kubectl get sa,role,rolebinding -n ocudu
 ```
 
 ### Node Drain Blocked by PDB
@@ -443,8 +443,8 @@ kubectl get sa,role,rolebinding -n srsran
 
 **Check**:
 ```bash
-kubectl get pdb -n srsran
-kubectl describe pdb <pdb-name> -n srsran
+kubectl get pdb -n ocudu
+kubectl describe pdb <pdb-name> -n ocudu
 ```
 
 **Solution**: 

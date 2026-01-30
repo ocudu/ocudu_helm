@@ -1,5 +1,5 @@
 #
-# Copyright 2021-2025 Software Radio Systems Limited
+# Copyright 2021-2026 Software Radio Systems Limited
 #
 # By using this file, you agree to the terms and conditions set
 # forth in the LICENSE file which can be found at the top level of
@@ -9,13 +9,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "srsran-cudu.fullname" . }}
+  name: {{ include "ocudu-gnb.fullname" . }}
   labels:
-    {{- include "srsran-cudu.labels" . | nindent 4 }}
+    {{- include "ocudu-gnb.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      {{- include "srsran-cudu.selectorLabels" . | nindent 6 }}
+      {{- include "ocudu-gnb.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -23,9 +23,9 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "srsran-cudu.selectorLabels" . | nindent 8 }}
+        {{- include "ocudu-gnb.selectorLabels" . | nindent 8 }}
     spec:
-      serviceAccountName: {{ include "srsran-cudu.serviceAccountName" . }}
+      serviceAccountName: {{ include "ocudu-gnb.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       {{- if .Values.network.hostNetwork }}
@@ -34,9 +34,9 @@ spec:
       volumes:
         - name: entrypoint-volume-srsgnb
           configMap:
-            name: {{ include "srsran-cudu.entrypointConfigmapName" . }}
+            name: {{ include "ocudu-gnb.entrypointConfigmapName" . }}
             defaultMode: 0777
-        {{- if .Values.o1.enable_srs_o1 }}
+        {{- if .Values.o1.enable_ocudu_o1 }}
         - name: o1-gnb-config
           emptyDir:
             sizeLimit: 2Mi
@@ -45,18 +45,18 @@ spec:
             sizeLimit: 2Mi
         - name: o1-config-volume
           configMap:
-            name: {{ include "srsran-cudu.o1ConfigmapName" . }}
+            name: {{ include "ocudu-gnb.o1ConfigmapName" . }}
             defaultMode: 0777
         {{- else }}
         - name: config-volume
           configMap:
-            name: {{ include "srsran-cudu.mainConfigmapName" . }}
+            name: {{ include "ocudu-gnb.mainConfigmapName" . }}
         {{- end }}
         {{- if .Values.persistence.enabled }}
           {{- if eq .Values.persistence.type "pvc" }}
         - name: srs-logs
           persistentVolumeClaim:
-            claimName: {{ include "srsran-cudu.fullname" . }}-logs
+            claimName: {{ include "ocudu-gnb.fullname" . }}-logs
           {{- else if eq .Values.persistence.type "hostPath" }}
         - name: srs-logs
           hostPath:
@@ -78,7 +78,7 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ template "srsran-cudu.image" .Values.image }}"
+          image: "{{ template "ocudu-gnb.image" .Values.image }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- if or .Values.resources .Values.sriovConfig.enabled }}
           resources:
@@ -101,7 +101,7 @@ spec:
               {{ .Values.sriovConfig.extendedResourceName }}: {{ .Values.sriovConfig.vfCount | quote }}
             {{- end }}
           {{- end }}
-          {{- if .Values.o1.enable_srs_o1 }}
+          {{- if .Values.o1.enable_ocudu_o1 }}
           livenessProbe:
             httpGet:
               path: /config-healthy
@@ -130,14 +130,14 @@ spec:
             - name: PRESERVE_OLD_LOGS
               value: {{ .Values.persistence.preserveOldLogs | quote }}
           {{- end }}
-            - name: ENABLE_SRS_O1
-              value: '{{ default false .Values.o1.enable_srs_o1 }}'
+            - name: ENABLE_OCUDU_O1
+              value: '{{ default false .Values.o1.enable_ocudu_o1 }}'
           command: [ "/bin/bash" ]
           args: [ "-c", "/etc/entrypoint/entrypoint-srsgnb.sh /etc/config/gnb-config.yml" ]
           volumeMounts:
             - name: entrypoint-volume-srsgnb
               mountPath: /etc/entrypoint
-            {{- if .Values.o1.enable_srs_o1 }}
+            {{- if .Values.o1.enable_ocudu_o1 }}
             - name: o1-gnb-config
               mountPath: /etc/config/
             {{- else }}
@@ -156,7 +156,7 @@ spec:
             - name: hugepage-2mi
               mountPath: /hugepages-2Mi
             {{- end }}
-          {{- if .Values.o1.enable_srs_o1 }}
+          {{- if .Values.o1.enable_ocudu_o1 }}
           lifecycle:
             postStart:
               exec:
@@ -180,11 +180,11 @@ spec:
                     echo "Netconf server not available, last response: $response. Exiting postStart hook."
                     exit 1
           {{- end }}
-        {{- if .Values.o1.enable_srs_o1 }}
+        {{- if .Values.o1.enable_ocudu_o1 }}
         - name: srs-o1-adapter
           securityContext:
             {{- toYaml .Values.o1.o1Adapter.securityContext | nindent 12 }}
-          image: "{{ template "srsran-cudu.o1.o1Adapter.image" .Values.o1.o1Adapter.image }}"
+          image: "{{ template "ocudu-gnb.o1.o1Adapter.image" .Values.o1.o1Adapter.image }}"
           imagePullPolicy: {{ .Values.o1.o1Adapter.image.pullPolicy }}
           resources:
             {{- toYaml .Values.o1.o1Adapter.resources | nindent 12 }}
@@ -223,7 +223,7 @@ spec:
         - name: netconf-server
           securityContext:
             {{- toYaml .Values.o1.netconfServer.securityContext | nindent 12 }}
-          image: "{{ template "srsran-cudu.o1.netconfServer.image" .Values.o1.netconfServer.image }}"
+          image: "{{ template "ocudu-gnb.o1.netconfServer.image" .Values.o1.netconfServer.image }}"
           imagePullPolicy: {{ .Values.o1.netconfServer.image.pullPolicy }}
           resources:
             {{- toYaml .Values.o1.netconfServer.resources | nindent 12 }}

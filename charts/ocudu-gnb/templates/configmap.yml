@@ -6,18 +6,18 @@
 # the distribution.
 #
 
-{{- if .Values.o1.enable_srs_o1 }}
+{{- if .Values.o1.enable_ocudu_o1 }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "srsran-cudu.o1ConfigmapName" . }}
+  name: {{ include "ocudu-gnb.o1ConfigmapName" . }}
 data:
   {{- .Values.o1Config | toYaml | nindent 2 }}
 {{- else }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "srsran-cudu.mainConfigmapName" . }}
+  name: {{ include "ocudu-gnb.mainConfigmapName" . }}
 data:
   {{- .Values.config | toYaml | nindent 2 }}
 {{- end }}
@@ -25,6 +25,6 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "srsran-cudu.entrypointConfigmapName" . }}
+  name: {{ include "ocudu-gnb.entrypointConfigmapName" . }}
 data:
   entrypoint-srsgnb.sh: {{ tpl (.Files.Get "resources/entrypoint.sh") . | quote | default 000 }}

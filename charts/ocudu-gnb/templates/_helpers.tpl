@@ -1,5 +1,5 @@
 #
-# Copyright 2021-2025 Software Radio Systems Limited
+# Copyright 2021-2026 Software Radio Systems Limited
 #
 # By using this file, you agree to the terms and conditions set
 # forth in the LICENSE file which can be found at the top level of
@@ -9,7 +9,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "srsran-cudu.name" -}}
+{{- define "ocudu-gnb.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -18,7 +18,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "srsran-cudu.fullname" -}}
+{{- define "ocudu-gnb.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -34,73 +34,73 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Main configmap for normal mode (values.config)
 */}}
-{{- define "srsran-cudu.mainConfigmapName" -}}
+{{- define "ocudu-gnb.mainConfigmapName" -}}
 {{- with .Values.configmap }}
   {{- with .main }}
     {{- if .nameOverride }}
       {{- .nameOverride | trunc 63 | trimSuffix "-" -}}
     {{- else }}
-      {{- printf "%s-config" (include "srsran-cudu.fullname" $) | trunc 63 | trimSuffix "-" -}}
+      {{- printf "%s-config" (include "ocudu-gnb.fullname" $) | trunc 63 | trimSuffix "-" -}}
     {{- end }}
   {{- else }}
-    {{- printf "%s-config" (include "srsran-cudu.fullname" $) | trunc 63 | trimSuffix "-" -}}
+    {{- printf "%s-config" (include "ocudu-gnb.fullname" $) | trunc 63 | trimSuffix "-" -}}
   {{- end }}
 {{- else }}
-  {{- printf "%s-config" (include "srsran-cudu.fullname" .) | trunc 63 | trimSuffix "-" -}}
+  {{- printf "%s-config" (include "ocudu-gnb.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end }}
 {{- end }}
 
 {{/*
 O1 mode configmap (values.o1Config)
 */}}
-{{- define "srsran-cudu.o1ConfigmapName" -}}
+{{- define "ocudu-gnb.o1ConfigmapName" -}}
 {{- with .Values.configmap }}
   {{- with .o1 }}
     {{- if .nameOverride }}
       {{- .nameOverride | trunc 63 | trimSuffix "-" -}}
     {{- else }}
-      {{- printf "%s-o1-config" (include "srsran-cudu.fullname" $) | trunc 63 | trimSuffix "-" -}}
+      {{- printf "%s-o1-config" (include "ocudu-gnb.fullname" $) | trunc 63 | trimSuffix "-" -}}
     {{- end }}
   {{- else }}
-    {{- printf "%s-o1-config" (include "srsran-cudu.fullname" $) | trunc 63 | trimSuffix "-" -}}
+    {{- printf "%s-o1-config" (include "ocudu-gnb.fullname" $) | trunc 63 | trimSuffix "-" -}}
   {{- end }}
 {{- else }}
-  {{- printf "%s-o1-config" (include "srsran-cudu.fullname" .) | trunc 63 | trimSuffix "-" -}}
+  {{- printf "%s-o1-config" (include "ocudu-gnb.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end }}
 {{- end }}
 
 {{/*
 Entrypoint script configmap
 */}}
-{{- define "srsran-cudu.entrypointConfigmapName" -}}
+{{- define "ocudu-gnb.entrypointConfigmapName" -}}
 {{- with .Values.configmap }}
   {{- with .entrypoint }}
     {{- if .nameOverride }}
       {{- .nameOverride | trunc 63 | trimSuffix "-" -}}
     {{- else }}
-      {{- printf "%s-entrypoint" (include "srsran-cudu.fullname" $) | trunc 63 | trimSuffix "-" -}}
+      {{- printf "%s-entrypoint" (include "ocudu-gnb.fullname" $) | trunc 63 | trimSuffix "-" -}}
     {{- end }}
   {{- else }}
-    {{- printf "%s-entrypoint" (include "srsran-cudu.fullname" $) | trunc 63 | trimSuffix "-" -}}
+    {{- printf "%s-entrypoint" (include "ocudu-gnb.fullname" $) | trunc 63 | trimSuffix "-" -}}
   {{- end }}
 {{- else }}
-  {{- printf "%s-entrypoint" (include "srsran-cudu.fullname" .) | trunc 63 | trimSuffix "-" -}}
+  {{- printf "%s-entrypoint" (include "ocudu-gnb.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end }}
 {{- end }}
 
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "srsran-cudu.chart" -}}
+{{- define "ocudu-gnb.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "srsran-cudu.labels" -}}
-helm.sh/chart: {{ include "srsran-cudu.chart" . }}
-{{ include "srsran-cudu.selectorLabels" . }}
+{{- define "ocudu-gnb.labels" -}}
+helm.sh/chart: {{ include "ocudu-gnb.chart" . }}
+{{ include "ocudu-gnb.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -110,17 +110,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "srsran-cudu.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "srsran-cudu.name" . }}
+{{- define "ocudu-gnb.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "ocudu-gnb.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "srsran-cudu.serviceAccountName" -}}
+{{- define "ocudu-gnb.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "srsran-cudu.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "ocudu-gnb.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
@@ -129,7 +129,7 @@ Create the name of the service account to use
 {{/*
 Create the image path for the passed in image field of gnb image
 */}}
-{{- define "srsran-cudu.image" -}}
+{{- define "ocudu-gnb.image" -}}
 {{- if eq (substr 0 7 .tag) "sha256:" -}}
 {{- printf "%s@%s" .repository .tag -}}
 {{- else -}}
@@ -140,7 +140,7 @@ Create the image path for the passed in image field of gnb image
 {{/*
 Create the image path for the passed in image field of netconf-server image
 */}}
-{{- define "srsran-cudu.o1.netconfServer.image" -}}
+{{- define "ocudu-gnb.o1.netconfServer.image" -}}
 {{- if eq (substr 0 7 .tag) "sha256:" -}}
 {{- printf "%s@%s" .repository .tag -}}
 {{- else -}}
@@ -151,7 +151,7 @@ Create the image path for the passed in image field of netconf-server image
 {{/*
 Create the image path for the passed in image field of o1-adapter image
 */}}
-{{- define "srsran-cudu.o1.o1Adapter.image" -}}
+{{- define "ocudu-gnb.o1.o1Adapter.image" -}}
 {{- if eq (substr 0 7 .tag) "sha256:" -}}
 {{- printf "%s@%s" .repository .tag -}}
 {{- else -}}

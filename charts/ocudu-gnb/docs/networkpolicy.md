@@ -122,7 +122,7 @@ When NetworkPolicy is enabled, the following traffic is allowed by default:
 ### Ingress (Incoming)
 - **5G Core (N2/N3)**: SCTP port 38412, UDP port 2152
 - **Monitoring**: From monitoring namespace (when metricsService.enabled)
-- **Management (O1)**: NETCONF port (when o1.enable_srs_o1 is true)
+- **Management (O1)**: NETCONF port (when o1.enable_ocudu_o1 is true)
 
 ### Egress (Outgoing)
 - **5G Core**: To AMF/UPF

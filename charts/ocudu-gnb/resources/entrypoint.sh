@@ -494,9 +494,9 @@ main() {
     fi
     
     # Initialize
-    log_info "=== srsRAN gNB Entrypoint Script ==="
+    log_info "=== OCUDU gNB Entrypoint Script ==="
     log_info "Config file: $config_file"
-    log_info "ENABLE_SRS_O1: ${ENABLE_SRS_O1}"
+    log_info "ENABLE_OCUDU_O1: ${ENABLE_OCUDU_O1}"
     log_info "PRESERVE_OLD_LOGS: ${PRESERVE_OLD_LOGS}"
     log_info "HOSTNETWORK: ${HOSTNETWORK}"
     log_info "USE_EXT_CORE: ${USE_EXT_CORE}"
@@ -536,7 +536,7 @@ main() {
     # Main loop
     while true; do
         # Wait for O1 config if enabled
-        if [ "$ENABLE_SRS_O1" = "true" ]; then
+        if [ "$ENABLE_OCUDU_O1" = "true" ]; then
             log_info "O1 enabled, waiting for config file creation"
             local elapsed=0
             local timeout="${CONFIG_CREATE_TIMEOUT}"
@@ -568,7 +568,7 @@ main() {
         fi
         
         # Clean up O1 config for next iteration
-        if [ "$ENABLE_SRS_O1" = "true" ] && [ -f "$config_file" ]; then
+        if [ "$ENABLE_OCUDU_O1" = "true" ] && [ -f "$config_file" ]; then
             log_info "Removing O1 config for next iteration"
             rm -f "$config_file"
         fi
@@ -587,7 +587,7 @@ main() {
 # Set defaults
 PRESERVE_OLD_LOGS="${PRESERVE_OLD_LOGS:-false}"
 CONFIG_CREATE_TIMEOUT="${CONFIG_CREATE_TIMEOUT:-30}"
-ENABLE_SRS_O1="${ENABLE_SRS_O1:-false}"
+ENABLE_OCUDU_O1="${ENABLE_OCUDU_O1:-false}"
 HOSTNETWORK="${HOSTNETWORK:-true}"
 USE_EXT_CORE="${USE_EXT_CORE:-false}"
 

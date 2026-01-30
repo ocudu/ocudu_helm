@@ -1,5 +1,5 @@
 #
-# Copyright 2021-2025 Software Radio Systems Limited
+# Copyright 2021-2026 Software Radio Systems Limited
 #
 # By using this file, you agree to the terms and conditions set
 # forth in the LICENSE file which can be found at the top level of
@@ -7,7 +7,7 @@
 #
 
 ════════════════════════════════════════════════════════════════════════════════
-  srsRAN Project - 5G CU/DU Chart
+  OCUDU - 5G gNB (CU/DU Combined) Chart
 ════════════════════════════════════════════════════════════════════════════════
 
 ✓ Successfully deployed {{ .Chart.Name }} (version {{ .Chart.Version }})
@@ -20,24 +20,8 @@ DEPLOYMENT CONFIGURATION
 
 Network Mode:     {{ if .Values.network.hostNetwork }}hostNetwork (host networking){{ else }}CNI (container networking with SR-IOV){{ end }}
 Storage Type:     {{ if .Values.persistence.enabled }}{{ .Values.persistence.type | upper }} ({{ if eq .Values.persistence.type "pvc" }}dynamic provisioning{{ else }}host path{{ end }}){{ else }}Ephemeral (no persistence){{ end }}
-O1 Interface:     {{ if .Values.o1.enable_srs_o1 }}Enabled (NETCONF management){{ else }}Disabled{{ end }}
+O1 Interface:     {{ if .Values.o1.enable_ocudu_o1 }}Enabled (NETCONF management){{ else }}Disabled{{ end }}
 RBAC:             {{ if .Values.rbac.create }}Enabled (Role + RoleBinding){{ else }}Disabled{{ end }}
-
-────────────────────────────────────────────────────────────────────────────────
-VERIFICATION
-────────────────────────────────────────────────────────────────────────────────
-
-1. Check pod status:
-
-   kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
-
-2. View logs:
-
-   kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }} -f
-
-3. Check gNB configuration:
-
-   kubectl exec -n {{ .Release.Namespace }} deployment/{{ include "srsran-cudu.fullname" . }} -- cat /config/gnb_config.yaml
 
 ────────────────────────────────────────────────────────────────────────────────
 SERVICE ACCESS
@@ -46,45 +30,45 @@ SERVICE ACCESS
 {{- if .Values.metricsService.enabled }}
 
 Metrics Service (Telegraf/InfluxDB):
-   Service: {{ include "srsran-cudu.fullname" . }}-metrics
+   Service: {{ include "ocudu-gnb.fullname" . }}-metrics
    Port:    {{ .Values.metricsService.port }}
    Type:    {{ .Values.metricsService.type | default "ClusterIP" }}
 
    {{- if eq (.Values.metricsService.type | default "ClusterIP") "ClusterIP" }}
    Access within cluster:
-   {{ include "srsran-cudu.fullname" . }}-metrics.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.metricsService.port }}
+   {{ include "ocudu-gnb.fullname" . }}-metrics.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.metricsService.port }}
    {{- else if eq .Values.metricsService.type "NodePort" }}
    Access via NodePort:
-   kubectl get svc {{ include "srsran-cudu.fullname" . }}-metrics -n {{ .Release.Namespace }}
+   kubectl get svc {{ include "ocudu-gnb.fullname" . }}-metrics -n {{ .Release.Namespace }}
    {{- else if eq .Values.metricsService.type "LoadBalancer" }}
    Access via LoadBalancer:
-   kubectl get svc {{ include "srsran-cudu.fullname" . }}-metrics -n {{ .Release.Namespace }}
+   kubectl get svc {{ include "ocudu-gnb.fullname" . }}-metrics -n {{ .Release.Namespace }}
    {{- end }}
 {{- end }}
 
-{{- if and .Values.o1.enable_srs_o1 .Values.o1.netconfServer.service }}
+{{- if and .Values.o1.enable_ocudu_o1 .Values.o1.netconfServer.service }}
 
 O1 NETCONF Service:
-   Service: {{ include "srsran-cudu.fullname" . }}-o1
+   Service: {{ include "ocudu-gnb.fullname" . }}-o1
    Port:    {{ .Values.o1.o1Port }}
    Type:    {{ .Values.o1.netconfServer.service.type | default "NodePort" }}
 
    {{- if eq (.Values.o1.netconfServer.service.type | default "NodePort") "NodePort" }}
    Access via NodePort:
-   kubectl get svc {{ include "srsran-cudu.fullname" . }}-o1 -n {{ .Release.Namespace }}
+   kubectl get svc {{ include "ocudu-gnb.fullname" . }}-o1 -n {{ .Release.Namespace }}
    {{- if .Values.o1.netconfServer.service.nodePort }}
    NodePort: {{ .Values.o1.netconfServer.service.nodePort }}
    {{- end }}
    {{- else if eq .Values.o1.netconfServer.service.type "LoadBalancer" }}
    Access via LoadBalancer:
-   kubectl get svc {{ include "srsran-cudu.fullname" . }}-o1 -n {{ .Release.Namespace }}
+   kubectl get svc {{ include "ocudu-gnb.fullname" . }}-o1 -n {{ .Release.Namespace }}
    {{- end }}
 {{- end }}
 
 {{- if and .Values.service.enabled (eq .Values.service.type "LoadBalancer") }}
 
-🌐 5G Core LoadBalancer Service:
-   Service: {{ include "srsran-cudu.fullname" . }}-lb
+5G Core LoadBalancer Service:
+   Service: {{ include "ocudu-gnb.fullname" . }}-lb
    Type:    LoadBalancer
    {{- if .Values.service.loadBalancerIP }}
    IP:      {{ .Values.service.loadBalancerIP }}
@@ -99,35 +83,7 @@ O1 NETCONF Service:
    {{- end }}
 
    Get LoadBalancer IP:
-   kubectl get svc {{ include "srsran-cudu.fullname" . }}-lb -n {{ .Release.Namespace }}
-{{- end }}
-
-────────────────────────────────────────────────────────────────────────────────
-NEXT STEPS
-────────────────────────────────────────────────────────────────────────────────
-
-{{- if .Values.o1.enable_srs_o1 }}
-1. Connect to O1 interface using NETCONF client (ONAP SMO or compatible)
-2. Configure gNB parameters via YANG models
-3. Monitor metrics via InfluxDB/Grafana
-{{- else }}
-1. Verify gNB connects to 5G Core (check N2/N3 interfaces)
-2. Monitor metrics via Telegraf → InfluxDB → Grafana
-3. Check logs for connection status and errors
-{{- end }}
-
-{{- if not .Values.network.hostNetwork }}
-4. Ensure SR-IOV device plugin is running and VFs are allocated
-   kubectl get nodes -o json | jq '.items[].status.allocatable'
-{{- end }}
-
-{{- if .Values.persistence.enabled }}
-{{- if eq .Values.persistence.type "pvc" }}
-5. Verify PVC is bound:
-   kubectl get pvc -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
-{{- else }}
-5. Verify hostPath storage is accessible on the node
-{{- end }}
+   kubectl get svc {{ include "ocudu-gnb.fullname" . }}-lb -n {{ .Release.Namespace }}
 {{- end }}
 
 ────────────────────────────────────────────────────────────────────────────────
@@ -144,7 +100,7 @@ For detailed configuration guides, see:
 
 Main README:          README.md
 Project Home:         https://www.srsran.com/
-Issue Tracker:        https://github.com/srsran/srsRAN_Project/issues
+Issue Tracker:        https://gitlab.com/ocudu/ocudu_elements/ocudu_helm/-/issues
 
 ────────────────────────────────────────────────────────────────────────────────
 TROUBLESHOOTING
@@ -164,7 +120,3 @@ If gNB is not connecting to 5G Core:
 - Verify N2/N3 configuration in gnb_config.yaml
 - Check network connectivity to AMF and UPF
 - Review gNB logs for connection errors
-
-════════════════════════════════════════════════════════════════════════════════
-Thank you for using srsRAN Project!
-════════════════════════════════════════════════════════════════════════════════

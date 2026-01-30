@@ -1,6 +1,6 @@
 {{- if and .Values.networkPolicy.enabled (not .Values.network.hostNetwork) }}
 #
-# Copyright 2021-2025 Software Radio Systems Limited
+# Copyright 2021-2026 Software Radio Systems Limited
 #
 # By using this file, you agree to the terms and conditions set
 # forth in the LICENSE file which can be found at the top level of
@@ -10,15 +10,15 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ include "srsran-cudu.fullname" . }}
+  name: {{ include "ocudu-gnb.fullname" . }}
   labels:
-    {{- include "srsran-cudu.labels" . | nindent 4 }}
+    {{- include "ocudu-gnb.labels" . | nindent 4 }}
   annotations:
     description: "Network policy for gNB (only effective when hostNetwork: false)"
 spec:
   podSelector:
     matchLabels:
-      {{- include "srsran-cudu.selectorLabels" . | nindent 6 }}
+      {{- include "ocudu-gnb.selectorLabels" . | nindent 6 }}
   policyTypes:
     - Ingress
     - Egress
@@ -44,7 +44,7 @@ spec:
           port: {{ .Values.metricsService.port }}
     {{- end }}
     
-    {{- if and .Values.o1.enable_srs_o1 .Values.networkPolicy.ingress.management.enabled }}
+    {{- if and .Values.o1.enable_ocudu_o1 .Values.networkPolicy.ingress.management.enabled }}
     # Allow traffic from management systems (NETCONF/O1)
     - from:
       {{- toYaml .Values.networkPolicy.ingress.management.from | nindent 6 }}
@@ -89,7 +89,7 @@ spec:
       ports:
         - protocol: TCP
           port: 8086  # InfluxDB
-        {{- if .Values.o1.enable_srs_o1 }}
+        {{- if .Values.o1.enable_ocudu_o1 }}
         - protocol: TCP
           port: 8443  # VES Collector
         {{- end }}

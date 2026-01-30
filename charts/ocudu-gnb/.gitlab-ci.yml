@@ -15,4 +15,4 @@ stages:
 helm lint:
   extends: .helm lint
   variables:
-    CHART_PATH: charts/srsran-project
+    CHART_PATH: charts/ocudu-gnb

@@ -1,6 +1,6 @@
-# srsRAN Project CU/DU
+# OCUDU gNB CU/DU
 
-A Helm chart for deploying the srsRAN Project 5G CU/DU (gNB)
+A Helm chart for deploying the OCUDU 5G CU/DU (gNB)
 
 ![Production Ready](https://img.shields.io/badge/production-ready-green.svg)
 
@@ -32,17 +32,17 @@ See [Network Modes](docs/network-modes.md) for detailed deployment mode comparis
 
 ```bash
 # Add the Helm repository (if using remote repo)
-helm repo add srsran https://srsran.github.io/srsRAN_Project_helm/
+# OCI registry - no need to add repo
 
 # Install with default values (SR-IOV mode)
-helm install my-gnb srsran/srsran-cu-du
+helm install ocudu-gnb oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-gnb --version 3.0.0
 
 # Or install with custom values
-helm install my-gnb srsran/srsran-cu-du -f my-values.yaml
+helm install ocudu-gnb oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-gnb --version 3.0.0 -f my-values.yaml
 
 # Local installation
-cd charts/srsran-project
-helm install my-gnb ./
+cd charts/ocudu-gnb
+helm install ocudu-gnb ./
 ```
 
 After installation, Helm will display **post-install notes** with:
@@ -121,7 +121,7 @@ metricsService:
 
 # O1 Service - Expose NETCONF to external ONAP SMO
 o1:
-  enable_srs_o1: true
+  enable_ocudu_o1: true
   netconfServer:
     service:
       type: LoadBalancer
@@ -149,7 +149,7 @@ Find images at: [Docker Hub - softwareradiosystems](https://hub.docker.com/u/sof
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `replicaCount` | int | `1` | Number of pod replicas (must be 1 for stateful gNB) |
-| `image.repository` | string | `"softwareradiosystems/srsran-project"` | Container image repository |
+| `image.repository` | string | `"softwareradiosystems/ocudu-gnb"` | Container image repository |
 | `image.tag` | string | Chart appVersion | Image tag |
 | `image.pullPolicy` | string | `"IfNotPresent"` | Image pull policy |
 | `network.hostNetwork` | bool | `false` | Enable host network mode (bypasses NetworkPolicy) |
@@ -171,7 +171,7 @@ Find images at: [Docker Hub - softwareradiosystems](https://hub.docker.com/u/sof
 | `metricsService.loadBalancerIP` | string | `""` | LoadBalancer IP (when type is LoadBalancer) |
 | `metricsService.loadBalancerClass` | string | `""` | LoadBalancer class (optional) |
 | `metricsService.externalTrafficPolicy` | string | `"Cluster"` | External traffic policy |
-| `o1.enable_srs_o1` | bool | `false` | Enable O1 interface (NETCONF management) |
+| `o1.enable_ocudu_o1` | bool | `false` | Enable O1 interface (NETCONF management) |
 | `o1.netconfServer.service.type` | string | `"NodePort"` | O1 service type |
 | `o1.netconfServer.service.loadBalancerIP` | string | `""` | LoadBalancer IP (when type is LoadBalancer) |
 | `o1.netconfServer.service.loadBalancerClass` | string | `""` | LoadBalancer class (optional) |
@@ -185,7 +185,7 @@ Find images at: [Docker Hub - softwareradiosystems](https://hub.docker.com/u/sof
 | `nodeSelector` | object | `{}` | Node selector for pod assignment |
 | `tolerations` | list | `[]` | Tolerations for pod assignment |
 | `affinity` | object | `{}` | Affinity rules for pod assignment |
-| `o1.enable_srs_o1` | bool | `false` | Enable O1 interface (NETCONF management) |
+| `o1.enable_ocudu_o1` | bool | `false` | Enable O1 interface (NETCONF management) |
 | `config.gnb-config.yml` | string | See values.yaml | gNB configuration file |
 
 For complete parameter documentation, see:
@@ -197,16 +197,16 @@ For complete parameter documentation, see:
 
 ### gNB Configuration
 
-The gNB configuration file `gnb-config.yml` is defined in `values.yaml`. Refer to the [srsRAN Project Configuration Reference](https://docs.srsran.com/projects/project/en/latest/user_manuals/source/config_ref.html) for detailed configuration options.
+The gNB configuration file `gnb-config.yml` is defined in `values.yaml`. Refer to the [OCUDU Configuration Reference](https://gitlab.com/ocudu/ocudu_elements/ocudu_helm/projects/project/en/latest/user_manuals/source/config_ref.html) for detailed configuration options.
 
 ## Upgrading
 
 ```bash
 # Upgrade to latest version
-helm upgrade my-gnb srsran/srsran-cu-du
+helm upgrade ocudu-gnb oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-gnb --version 3.0.0
 
 # Upgrade with new values
-helm upgrade my-gnb srsran/srsran-cu-du -f my-values.yaml
+helm upgrade ocudu-gnb oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-gnb --version 3.0.0 -f my-values.yaml
 ```
 
 ## Uninstalling
@@ -219,9 +219,9 @@ This removes all Kubernetes resources associated with the chart.
 
 ## Support
 
-- **Documentation**: [srsRAN Project Docs](https://docs.srsran.com)
-- **Issues**: [GitHub Issues](https://github.com/srsran/srsRAN_Project_helm/issues)
-- **Community**: [srsRAN Discussions](https://github.com/srsran/srsRAN_Project/discussions)
+- **Documentation**: [OCUDU Docs](https://gitlab.com/ocudu/ocudu_elements/ocudu_helm)
+- **Issues**: [GitLab Issues](https://gitlab.com/ocudu/ocudu_elements/ocudu_helm/-/issues)
+- **Community**: [OCUDU Discussions](https://gitlab.com/ocudu/ocudu/-/issues)
 
 ## License
 

@@ -1,5 +1,5 @@
 #
-# Copyright 2021-2025 Software Radio Systems Limited
+# Copyright 2021-2026 Software Radio Systems Limited
 #
 # By using this file, you agree to the terms and conditions set
 # forth in the LICENSE file which can be found at the top level of
@@ -7,15 +7,15 @@
 #
 
 # -- Number of pod replicas
-# Note: srsRAN gNB is stateful and requires replicaCount: 1
+# Note: OCUDU gNB is stateful and requires replicaCount: 1
 # @default -- `1` (do not change for stateful workload)
 replicaCount: 1
 
 # -- Container image configuration
 image:
   # -- Container image repository
-  # See https://hub.docker.com/u/softwareradiosystems for available images
-  repository: softwareradiosystems/srsran-project
+  # See https://gitlab.com/ocudu/ocudu_elements/ocudu_helm/container_registry for available images
+  repository: registry.gitlab.com/ocudu/ocudu
   # -- Image pull policy
   pullPolicy: IfNotPresent
   # -- Image tag
@@ -30,13 +30,13 @@ imagePullSecrets:
 
 # -- Override the name of the chart
 # Leaving empty allows Helm to use the chart name for resource naming
-# @default -- Chart name (`srsran-cu-du`)
+# @default -- Chart name (`ocudu-gnb`)
 nameOverride: ""
 
 # -- Override the full name of resources
 # IMPORTANT: Keep empty to allow multiple instances in the same namespace
 # When empty, Helm generates unique names using: <release-name>-<chart-name>
-# Example: "gnb1-srsran-cu-du", "gnb2-srsran-cu-du"
+# Example: "gnb1-ocudu-gnb", "gnb2-ocudu-gnb"
 # @default -- `<release-name>-<chart-name>`
 fullnameOverride: ""
 
@@ -59,7 +59,7 @@ serviceAccount:
   annotations: {}
   # -- Service account name
   # When empty, uses the release name for uniqueness across multiple instances
-  # @default -- `<release-name>-srsran-cu-du`
+  # @default -- `<release-name>-ocudu-gnb`
   name: ""
 
 # -- RBAC (Role-Based Access Control) configuration
@@ -359,7 +359,7 @@ persistence:
 # Enables NETCONF-based management interface for the gNB
 o1:
   # -- Enable O1 interface containers (NETCONF server + O1 adapter)
-  enable_srs_o1: false
+  enable_ocudu_o1: false
 
 # -- SR-IOV configuration
 # Required when network.hostNetwork is false (default)
@@ -503,8 +503,8 @@ networkPolicy:
     custom: []
 
 # -- gNB configuration file
-# This is the main srsRAN gNB configuration in YAML format
-# For detailed documentation, see: https://docs.srsran.com/projects/project/en/latest/
+# This is the main OCUDU gNB configuration in YAML format
+# For detailed documentation, see: https://gitlab.com/ocudu/ocudu_elements/ocudu_helm
 config:
   # -- Main gNB configuration file
   # @default -- See values.yaml for complete example

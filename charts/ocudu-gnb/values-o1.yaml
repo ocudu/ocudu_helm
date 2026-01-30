@@ -1,33 +1,118 @@
 #
-# Copyright 2021-2025 Software Radio Systems Limited
+# Copyright 2021-2026 Software Radio Systems Limited
+#
 # By using this file, you agree to the terms and conditions set
 # forth in the LICENSE file which can be found at the top level of
 # the distribution.
 #
 
+# -- Number of pod replicas
+# Note: OCUDU gNB is stateful and requires replicaCount: 1
+# @default -- `1` (do not change for stateful workload)
 replicaCount: 1
 
+# -- Container image configuration
 image:
-  # Check https://hub.docker.com/u/softwareradiosystems for available images
-  repository: softwareradiosystems/srsran-project
+  # -- Container image repository
+  # See https://gitlab.com/ocudu/ocudu_elements/ocudu_helm/container_registry for available images
+  repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-gnb
+  # -- Image pull policy
   pullPolicy: IfNotPresent
-  tag: release_avx512-8e4f0bed05__2025-10-24
+  # -- Image tag
+  # Format: release_<arch>-<commit>__<date>
+  # @default -- Chart appVersion
+  tag: release_avx512-11c9bbabb6__2025-09-15
 
+# -- Image pull secrets for private registries
+# @default -- See values.yaml
 imagePullSecrets:
   - name: regcred
 
-nameOverride: "srsran-project-cudu"
-fullnameOverride: "srsran-project-cudu-chart"
+# -- Override the name of the chart
+# Leaving empty allows Helm to use the chart name for resource naming
+# @default -- Chart name (`ocudu-gnb`)
+nameOverride: ""
 
+# -- Override the full name of resources
+# IMPORTANT: Keep empty to allow multiple instances in the same namespace
+# When empty, Helm generates unique names using: <release-name>-<chart-name>
+# Example: "gnb1-ocudu-gnb", "gnb2-ocudu-gnb"
+# @default -- `<release-name>-<chart-name>`
+fullnameOverride: ""
+
+# -- ConfigMap name overrides for different components
+# Allows customization of ConfigMap names for advanced use cases
+configmap:
+  # -- Main gNB configuration ConfigMap name override
+  main: { nameOverride: "" }
+  # -- O1 adapter configuration ConfigMap name override
+  o1: { nameOverride: "" }
+  # -- Entrypoint script ConfigMap name override
+  entrypoint: { nameOverride: "" }
+
+# -- Service account configuration
 serviceAccount:
+  # -- Create a service account
   create: true
+  # -- Additional service account annotations
+  # @default -- `{}` (no annotations)
   annotations: {}
-  name: "srsadmin-gnb"
+  # -- Service account name
+  # When empty, uses the release name for uniqueness across multiple instances
+  # @default -- `<release-name>-ocudu-gnb`
+  name: ""
 
+# -- RBAC (Role-Based Access Control) configuration
+rbac:
+  # -- Create Role and RoleBinding resources
+  # Grants least-privilege permissions to the service account
+  create: true
+  # -- Additional custom RBAC rules
+  # @default -- `[]` (no additional rules)
+  extraRules: []
+  # Example: Allow reading secrets
+  # - apiGroups: [""]
+  #   resources: ["secrets"]
+  #   verbs: ["get"]
+
+# -- Pod Disruption Budget configuration
+# Ensures cluster stability during node maintenance and upgrades
+# ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+podDisruptionBudget:
+  # -- Enable PodDisruptionBudget resource
+  enabled: true
+  # -- Minimum number of available pods
+  # Use 0 for single-replica deployments to allow disruption
+  # Use only one: minAvailable OR maxUnavailable (not both)
+  minAvailable: 0
+  # -- Maximum number of unavailable pods
+  # Uncomment to use maxUnavailable instead of minAvailable
+  # maxUnavailable: 1
+  # -- Unhealthy pod eviction policy
+  # AlwaysAllow: Allows eviction of unhealthy pods (recommended for production)
+  # IfHealthyBudget: Protects unhealthy pods (may block node drains)
+  # @default -- `AlwaysAllow`
+  unhealthyPodEvictionPolicy: AlwaysAllow
+
+# -- Additional pod annotations
+# @default -- `{}` (no additional annotations)
 podAnnotations: {}
 
+# -- Pod-level security context
+# @default -- `{}` (no pod security context)
 podSecurityContext: {}
 
+# -- Container-level security context (for non-SR-IOV Device Plugin mode)
+# This configuration requires privileged mode for DPDK with kernel drivers
+# Uncomment this and comment the below when using SR-IOV Device Plugin with SR-IOV
+# Use this when hostNetwork is enabled
+# securityContext:
+#   capabilities:
+#     add: ["SYS_NICE", "NET_ADMIN"]
+#   privileged: true
+
+# -- Alternative security context for SR-IOV Device Plugin enabled (hostNetwork: false)
+# This configuration uses vfio-pci driver which doesn't require privileged mode
 securityContext:
   allowPrivilegeEscalation: false
   capabilities:
@@ -37,50 +122,174 @@ securityContext:
       - SYS_RAWIO
       - NET_RAW
       - SYS_NICE
-  privileged: false
 
+# -- Network configuration
 network:
+  # -- Enable host network mode
+  # false (default): Uses CNI network with SR-IOV for production (NetworkPolicy supported)
+  # true: Uses host network namespace directly (simple setup, NetworkPolicy NOT supported)
+  # @default -- `false`
   hostNetwork: false
 
-resources: {}
-  # enable_hugepages_1gi: true
-  # enable_hugepages_2mi: false
-  # limits:
-  #   cpu: 12
-  #   memory: 16Gi
-  #   hugepages-1Gi: 2Gi
-  #   intel.com/intel_sriov_dpdk: '1'
-  # requests:
-  #   cpu: 12
-  #   memory: 16Gi
-  #   hugepages-1Gi: 2Gi
-  #   intel.com/intel_sriov_dpdk: '1'
+# -- Resource requests and limits
+# Hugepages are automatically configured when defined in limits or requests.
+# The chart detects hugepages-1Gi or hugepages-2Mi and creates volumes accordingly.
+#
+# Example with 1Gi hugepages (recommended for DPDK):
+# ```yaml
+# resources:
+#   limits:
+#     cpu: 12
+#     memory: 16Gi
+#     hugepages-1Gi: 2Gi
+#   requests:
+#     cpu: 12
+#     memory: 16Gi
+#     hugepages-1Gi: 2Gi
+# ```
+#
+# Example with 2Mi hugepages (alternative):
+# ```yaml
+# resources:
+#   limits:
+#     cpu: 12
+#     memory: 16Gi
+#     hugepages-2Mi: 2Gi
+#   requests:
+#     cpu: 12
+#     memory: 16Gi
+#     hugepages-2Mi: 2Gi
+# ```
 
-sriovConfig:
-  enabled: true
-  extendedResourceName: "intel.com/intel_sriov_dpdk"
+# @default -- `{}` (no resource constraints)
+resources:
+  # -- Resource limits for the gNB container
+  # Include hugepages-1Gi or hugepages-2Mi to automatically enable hugepage volumes
+  # @default -- `{}` (no limits)
+  limits: {}
+    # cpu: 12
+    # memory: 16Gi
+    # hugepages-1Gi: 2Gi
+    # hugepages-2Mi: 2Gi
 
+  # -- Resource requests for the gNB container
+  # Should match limits for guaranteed QoS and CPU pinning
+  # Include hugepages-1Gi or hugepages-2Mi to automatically enable hugepage volumes
+  # @default -- `{}` (no requests)
+  requests: {}
+    # cpu: 12
+    # memory: 16Gi
+    # hugepages-1Gi: 2Gi
+    # hugepages-2Mi: 2Gi
+
+# -- Node selector for pod assignment
+# Schedule pods only on nodes with matching labels
+# Example:
+# ```yaml
+# nodeSelector:
+#   node-role.kubernetes.io/worker: ""
+#   feature.node.kubernetes.io/cpu-cpuid.AVX512F: "true"
+# ```
+# @default -- `{}` (no node selector)
 nodeSelector: {}
-tolerations: []
+
+# -- Tolerations for pod assignment
+# Allows pods to be scheduled on nodes with matching taints
+# @default -- `{}` (no tolerations)
+tolerations: {}
+
+# -- Pod affinity configuration for advanced scheduling
+# @default -- `{}` (no affinity rules)
 affinity: {}
 
-debugging:
-  enabled: false
-  preserveOldLogs: false
-  storageCapacity: "100Mi"
-  hostPath: "/mnt/debugging-logs"
-  containerPath: "/tmp"
-
+# -- Metrics service configuration
+# Exposes gNB metrics endpoint for Telegraf collection
 metricsService:
-  enabled: true
+  # -- Enable metrics service
+  enabled: false
+
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
   type: ClusterIP
-  # loadBalancerIP: "10.0.0.123"
-  # Make sure this port matches the port in the gnb config
+
+  # -- LoadBalancer IP address (optional, when type is LoadBalancer)
+  # Leave empty for automatic assignment
+  # Example: "10.0.0.101"
+  # @default -- `""` (auto-assign)
+  loadBalancerIP: ""
+
+  # -- LoadBalancer class (optional, for clusters with multiple LB implementations)
+  # Example: "metallb" or "cloud-provider-lb"
+  # @default -- `""` (use default)
+  loadBalancerClass: ""
+
+  # -- External traffic policy (Cluster or Local)
+  # Only applies when type is LoadBalancer or NodePort
+  # - Cluster: Load balances across all nodes (default)
+  # - Local: Preserves source IP, only routes to local pods
+  # @default -- `Cluster`
+  externalTrafficPolicy: Cluster
+
+  # -- Session affinity (None or ClientIP)
+  # @default -- `None`
+  sessionAffinity: None
+
+  # -- Service port (must match the port in gnb-config.yml)
   port: 8001
+
+  # -- Target port (container port)
   targetPort: 8001
 
+# -- LoadBalancer service configuration for N2/N3 interfaces
+# Used for exposing gNB to external 5G Core network
+# ref: https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer
+service:
+  # -- Enable LoadBalancer service for N2/N3 interfaces
+  # When enabled, creates a LoadBalancer service for external 5G Core connectivity
+  enabled: false
+
+  # -- Service type (only LoadBalancer is supported by this template)
+  # @default -- `LoadBalancer`
+  type: LoadBalancer
+
+  # -- LoadBalancer IP address (optional, cluster-dependent)
+  # Leave empty for automatic assignment
+  # Example: "10.0.0.100"
+  # @default -- `""` (auto-assign)
+  loadBalancerIP: ""
+
+  # -- LoadBalancer class (optional, for clusters with multiple LB implementations)
+  # Example: "metallb" or "cloud-provider-lb"
+  # @default -- `""` (use default)
+  loadBalancerClass: ""
+
+  # -- External traffic policy (Cluster or Local)
+  # - Cluster: Load balances across all nodes (default)
+  # - Local: Preserves source IP, only routes to local pods
+  # @default -- `Cluster`
+  externalTrafficPolicy: Cluster
+
+  # -- Session affinity (None or ClientIP)
+  # @default -- `None`
+  sessionAffinity: None
+
+  # -- Port configuration for N2 and N3 interfaces
+  ports:
+    # -- N2 interface (NGAP - control plane to AMF)
+    n2:
+      # -- Enable N2 port
+      enabled: true
+      # -- External port
+      port: 38412
+      # -- Container target port (must match gnb-config.yml)
+      # @default -- Same as port
+      targetPort: 38412
+      # -- Protocol (SCTP for NGAP)
+      protocol: SCTP
+      # -- NodePort (optional, only used if service type is NodePort)
+      # nodePort: 30412
 o1:
-  enable_srs_o1: true
+  enable_ocudu_o1: true
   netconfServerAddr: "localhost"
   o1Port: 830
   healthcheckPort: 5000

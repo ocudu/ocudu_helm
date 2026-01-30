@@ -1,6 +1,6 @@
-{{- if and .Values.o1.enable_srs_o1 .Values.o1.netconfServer.service }}
+{{- if and .Values.o1.enable_ocudu_o1 .Values.o1.netconfServer.service }}
 #
-# Copyright 2021-2025 Software Radio Systems Limited
+# Copyright 2021-2026 Software Radio Systems Limited
 #
 # By using this file, you agree to the terms and conditions set
 # forth in the LICENSE file which can be found at the top level of
@@ -10,9 +10,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "srsran-cudu.fullname" . }}-o1
+  name: {{ include "ocudu-gnb.fullname" . }}-o1
   labels:
-    {{- include "srsran-cudu.labels" . | nindent 4 }}
+    {{- include "ocudu-gnb.labels" . | nindent 4 }}
     app.kubernetes.io/component: o1-netconf
 spec:
   type: {{ .Values.o1.netconfServer.service.type | default "NodePort" }}
@@ -31,7 +31,7 @@ spec:
   sessionAffinity: {{ . }}
   {{- end }}
   selector:
-    {{- include "srsran-cudu.selectorLabels" . | nindent 4 }}
+    {{- include "ocudu-gnb.selectorLabels" . | nindent 4 }}
   ports:
     - name: o1
       port: {{ .Values.o1.o1Port }}
