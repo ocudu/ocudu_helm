@@ -72,7 +72,7 @@ sgwu:
 amf:
   enabled: true
   config:
-    networkName: "srsRAN"
+    networkName: "OCUDU"
     guamiList:
       - plmn_id:
           mcc: "001"
