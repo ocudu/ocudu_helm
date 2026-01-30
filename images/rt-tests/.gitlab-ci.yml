@@ -59,7 +59,7 @@ build-and-publish-rt-tests:
   variables:
     MODE: publish
 
-docker manifest:
+docker manifest rt-tests:
   extends: .docker manifest
   stage: manifest
   variables:

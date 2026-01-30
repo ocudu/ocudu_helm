@@ -30,3 +30,55 @@
     - helm lint --strict --with-subcharts ${CHART_PATH}/
     - helm template --debug ${CHART_PATH}/ | kubeconform --debug --strict
     - helm template ${CHART_PATH}/
+
+.helm publish:
+  image:
+    name: alpine/helm:3.16.2
+    entrypoint: ["/bin/sh", "-c"]
+  stage: publish
+  retry: 2
+  variables:
+    CHART_PATH: ${CI_PROJECT_DIR}
+    CHART_NAME: ""
+  rules:
+    - if: $ON_MR
+      when: manual
+      allow_failure: true
+    - if: $ON_DEFAULT_BRANCH
+  before_script:
+    - apk add --no-cache yq
+    - helm registry login -u $CI_REGISTRY_USER -p $CI_JOB_TOKEN $CI_REGISTRY
+  script:
+    - echo "Publishing Helm Chart to OCI Registry"
+    - echo "Chart $CHART_NAME"
+    - echo "Path $CHART_PATH"
+    - echo "Registry $CI_REGISTRY/$CI_PROJECT_PATH"
+    - VERSION=$(yq eval '.version' ${CHART_PATH}/Chart.yaml)
+    - echo "Version $VERSION"
+    - |
+      if helm pull oci://$CI_REGISTRY/$CI_PROJECT_PATH/$CHART_NAME --version $VERSION 2>/dev/null; then
+        echo "ERROR: Chart $CHART_NAME version $VERSION already exists in registry"
+        echo "Please bump the version in Chart.yaml before publishing"
+        exit 1
+      fi
+    - echo "Version $VERSION is new"
+    - |
+      if grep -q "^dependencies:" ${CHART_PATH}/Chart.yaml 2>/dev/null; then
+        echo "Updating chart dependencies"
+        helm dependency update ${CHART_PATH}/
+      fi
+    - echo "Packaging chart"
+    - PACKAGE_FILE=$(helm package ${CHART_PATH}/ --destination . | grep -oE '[^ ]+\.tgz$')
+    - echo "Chart packaged $PACKAGE_FILE"
+    - echo "Publishing to OCI registry"
+    - helm push $PACKAGE_FILE oci://$CI_REGISTRY/$CI_PROJECT_PATH
+    - echo "Successfully published $CHART_NAME:$VERSION"
+    - echo "Verifying published chart"
+    - helm pull oci://$CI_REGISTRY/$CI_PROJECT_PATH/$CHART_NAME --version $VERSION --destination /tmp
+    - echo "Verification successful"
+    - echo "Install with helm install <name> oci://$CI_REGISTRY/$CI_PROJECT_PATH/$CHART_NAME --version $VERSION"
+  artifacts:
+    paths:
+      - "*.tgz"
+    expire_in: 1 week
+    when: always

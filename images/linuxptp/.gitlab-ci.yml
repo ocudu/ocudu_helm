@@ -60,7 +60,7 @@ build-and-publish-linuxptp:
   variables:
     MODE: publish
 
-docker manifest ubuntu 22.04:
+docker manifest linuxptp:
   extends: .docker manifest
   stage: manifest
   variables:

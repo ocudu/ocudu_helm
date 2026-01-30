@@ -16,15 +16,13 @@ stages:
 helm lint:
   extends: .helm lint
   variables:
-    CHART_PATH: charts/grafana-ocudu
-  before_script:
-    - helm repo add influxdata https://helm.influxdata.com
+    CHART_PATH: charts/influxdb3
 
 helm publish:
   extends: .helm publish
   variables:
-    CHART_PATH: charts/grafana-ocudu
-    CHART_NAME: grafana-ocudu
+    CHART_PATH: charts/influxdb3
+    CHART_NAME: influxdb3
   needs:
     - job: helm lint
       optional: true

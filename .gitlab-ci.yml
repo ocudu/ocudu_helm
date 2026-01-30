@@ -38,7 +38,7 @@ stages:
   - ci
   - static
   - child
-  - release
+  - publish
 
 headers:
   stage: ci
@@ -69,7 +69,6 @@ linuxptp image:
         inputs:
           ocudu_path: $[[ inputs.ocudu_path ]]
           ocudu_ref: $[[ inputs.ocudu_ref ]]
-    strategy: depend
   needs: []
 
 rt-tests image:
@@ -92,7 +91,6 @@ rt-tests image:
         inputs:
           ocudu_path: $[[ inputs.ocudu_path ]]
           ocudu_ref: $[[ inputs.ocudu_ref ]]
-    strategy: depend
   needs: []
 
 tuned image:
@@ -116,7 +114,6 @@ tuned image:
         inputs:
           ocudu_path: $[[ inputs.ocudu_path ]]
           ocudu_ref: $[[ inputs.ocudu_ref ]]
-    strategy: depend
   needs: []
 
 ################################################################################
@@ -126,64 +123,87 @@ tuned image:
 grafana-ocudu chart:
   stage: child
   rules:
-    - if: $ON_MR
-      changes:
+    - changes:
         paths:
           - .gitlab/ci/helm_utils.yml
           - charts/grafana-ocudu/**/*
   trigger:
     include: charts/grafana-ocudu/.gitlab-ci.yml
-    strategy: depend
   needs: []
 
 rt-tests chart:
   stage: child
   rules:
-    - if: $ON_MR
-      changes:
+    - changes:
         paths:
           - .gitlab/ci/helm_utils.yml
           - charts/rt-tests/**/*
   trigger:
     include: charts/rt-tests/.gitlab-ci.yml
-    strategy: depend
   needs: []
 
 linuxptp chart:
   stage: child
   rules:
-    - if: $ON_MR
-      changes:
+    - changes:
         paths:
           - .gitlab/ci/helm_utils.yml
           - charts/linuxptp/**/*
   trigger:
     include: charts/linuxptp/.gitlab-ci.yml
-    strategy: depend
   needs: []
 
 ru_emulator chart:
   stage: child
   rules:
-    - if: $ON_MR
-      changes:
+    - changes:
         paths:
           - .gitlab/ci/helm_utils.yml
           - charts/ru_emulator/**/*
   trigger:
     include: charts/ru_emulator/.gitlab-ci.yml
-    strategy: depend
   needs: []
 
 ocudu-gnb chart:
   stage: child
   rules:
-    - if: $ON_MR
-      changes:
+    - changes:
         paths:
           - .gitlab/ci/helm_utils.yml
           - charts/ocudu-gnb/**/*
   trigger:
     include: charts/ocudu-gnb/.gitlab-ci.yml
-    strategy: depend
+  needs: []
+
+influxdb3 chart:
+  stage: child
+  rules:
+    - changes:
+        paths:
+          - .gitlab/ci/helm_utils.yml
+          - charts/influxdb3/**/*
+  trigger:
+    include: charts/influxdb3/.gitlab-ci.yml
+  needs: []
+
+tuned chart:
+  stage: child
+  rules:
+    - changes:
+        paths:
+          - .gitlab/ci/helm_utils.yml
+          - charts/tuned/**/*
+  trigger:
+    include: charts/tuned/.gitlab-ci.yml
+  needs: []
+
+onap-smo-lite chart:
+  stage: child
+  rules:
+    - changes:
+        paths:
+          - .gitlab/ci/helm_utils.yml
+          - charts/onap-smo-lite/**/*
+  trigger:
+    include: charts/onap-smo-lite/.gitlab-ci.yml
   needs: []

@@ -63,7 +63,7 @@ build-and-publish-tuned:
   variables:
     MODE: publish
 
-docker manifest ubuntu 24.04:
+docker manifest tuned:
   extends: .docker manifest
   stage: manifest
   variables:
