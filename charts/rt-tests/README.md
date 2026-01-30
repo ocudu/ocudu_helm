@@ -28,6 +28,13 @@ Before installing, ensure your environment meets these requirements:
 ## Installing the Chart
 
 **Basic installation**:
+
+**From OCI registry**:
+```bash
+helm install rt-tests-ocudu oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/rt-tests --version 2.0.0
+```
+
+**From local chart**:
 ```bash
 cd charts/rt-tests
 helm install rt-tests-srs ./
@@ -165,9 +172,9 @@ kubectl logs job/rt-tests-chart-job
 
 ## Support
 
-- **Documentation**: [srsRAN Project Docs](https://docs.srsran.com)
+- **Documentation**: [OCUDU Project Docs](https://gitlab.com/ocudu/ocudu_elements/ocudu_helm)
 - **rt-tests**: [rt-tests Wiki](https://wiki.linuxfoundation.org/realtime/documentation/howto/tools/rt-tests)
 
 ## License
 
-AGPL-3.0 - See LICENSE file for details
+MIT - See LICENSE file for details
