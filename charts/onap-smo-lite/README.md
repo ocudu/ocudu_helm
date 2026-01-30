@@ -8,7 +8,7 @@
 
 ## Overview
 
-A lightweight ONAP Service Management and Orchestration (SMO) stack for O1 management interface demonstrations with srsRAN gNodeB.
+A lightweight ONAP Service Management and Orchestration (SMO) stack for O1 management interface demonstrations with OCUDU gNodeB.
 
 This chart deploys a minimal ONAP SMO environment consisting of:
 - **SDNC Web UI** - Web interface for SDN-R controller
@@ -58,6 +58,14 @@ helm install onap-smo-lite ./charts/onap-smo-lite \
 ```
 
 ## Installation
+
+**From OCI registry**:
+```bash
+helm install onap-smo-lite oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/onap-smo-lite --version 1.0.0 \
+  --namespace smo --create-namespace
+```
+
+**From local chart**:
 
 ### Basic Installation
 
@@ -160,17 +168,17 @@ Ensure the hardcoded cluster domain in `values.yaml` matches your cluster's DNS 
 
 If sdnrdb (Elasticsearch) fails to start, check resource limits and ensure single-node discovery mode is enabled.
 
-## Integration with srsRAN gNodeB
+## Integration with OCUDU gNodeB
 
-To integrate with srsRAN O1 interface:
+To integrate with OCUDU O1 interface:
 
 1. Deploy this chart in a namespace (e.g., `onap`)
-2. Configure srsRAN gNodeB O1 settings to point to:
+2. Configure OCUDU gNodeB O1 settings to point to:
    - NETCONF server: SDN-R NETCONF port
    - VES Collector: `http://onap-smo-ves-collector.onap.svc.cluster.local:8443`
 3. Access SDN-R Web UI to view connected network functions
 
-Refer to srsRAN documentation for O1 configuration details.
+Refer to OCUDU documentation for O1 configuration details.
 
 ## Support
 
