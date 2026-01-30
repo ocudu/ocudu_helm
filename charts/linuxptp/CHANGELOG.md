@@ -1,6 +1,25 @@
 # Changelog
 
-## 1.3.1 (Unreleased)
+## 2.0.0 (2026-01-29)
+
+### BREAKING CHANGES
+- **License Changed**: AGPL-3.0 → MIT
+- **Repository Moved**: Updated home URL to GitLab (https://gitlab.com/ocudu/ocudu_elements/ocudu_helm)
+- **Container Registry Changed**: DockerHub → GitLab Container Registry
+  - New image: `registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/linuxptp`
+
+### Rebranding
+- Updated copyright headers to 2021-2026 Software Radio Systems Limited
+- Updated all URLs to point to new GitLab organization
+- Updated Chart.yaml metadata (home, sources, keywords: srsran → ocudu)
+- Updated documentation references from srsRAN to OCUDU
+- Updated all references to new container registry
+
+### Migration
+- Update your values files to reference new image registry
+- No functional changes to the chart
+
+## 1.3.1 (Final Pre-Rebranding Release)
 
 ### Fixed
 - Fix ptp4l probe conditions - probes now work correctly in server mode (serverOnly: 0)

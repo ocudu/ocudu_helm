@@ -32,7 +32,7 @@ Before installing, ensure your environment meets these requirements:
 
 **Basic installation** (single interface):
 ```bash
-helm install linuxptp-srs oci://registry.gitlab.com/softwareradiosystems/srsran_5g_enterprise/linuxptp \
+helm install linuxptp-ocudu oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/linuxptp --version 2.0.0 \
   --set interfaceNameList="ens3f0np0"
 ```
 
@@ -209,4 +209,4 @@ kubectl logs <pod> -c linuxptp-chart-ptp4l | grep rms
 
 ## License
 
-AGPL-3.0 - See LICENSE file for details
+MIT - See LICENSE file for details

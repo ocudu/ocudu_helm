@@ -1,4 +1,4 @@
-# srsRAN Docker linuxptp-agent
+# OCUDU Linuxptp Docker Image
 
 ## Description
 
