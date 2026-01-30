@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.0.0 (2026-01-29)
+
+### BREAKING CHANGES
+- **License Changed**: AGPL-3.0 → MIT
+- **Repository Moved**: Updated home URL to GitLab (https://gitlab.com/ocudu/ocudu_elements/ocudu_helm)
+- **Container Registry Changed**: Updated to GitLab Container Registry
+
+### Rebranding
+- Updated copyright headers to 2021-2026 Software Radio Systems Limited
+- Updated all URLs to point to new GitLab organization
+- Updated Chart.yaml metadata (home, sources, keywords: srsran → ocudu)
+- Updated documentation references from srsRAN to OCUDU
+
+### Migration
+- Update your values files to reference new image registry
+- No functional changes to the chart
+
+
 ## 1.2.0 (Unreleased)
 
 ### Added
@@ -30,7 +48,7 @@
 - Signal handling for graceful shutdown (SIGTERM/SIGINT)
 
 ### Notes
-- **Untested End-to-End**: SR-IOV implementation verified up to config replacement (BDF and MAC correctly detected and replaced). Full functional testing requires a custom container image containing the `/usr/local/bin/ru_emulator` binary (not present in standard srsRAN images). The entrypoint script and SR-IOV resource allocation are confirmed working through live cluster testing.
+- **Untested End-to-End**: SR-IOV implementation verified up to config replacement (BDF and MAC correctly detected and replaced). Full functional testing requires a custom container image containing the `/usr/local/bin/ru_emulator` binary (not present in standard OCUDU images). The entrypoint script and SR-IOV resource allocation are confirmed working through live cluster testing.
 
 ## 1.1.1 (2026-01-29)
 
@@ -59,4 +77,4 @@
 
 ## 0.1.0 (June 09, 2024)
 ### Added
-- Initial version of the srsRAN RU Emulator Helm chart
+- Initial version of the OCUDU RU Emulator Helm chart

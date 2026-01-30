@@ -1,5 +1,5 @@
 #
-# Copyright 2021-2025 Software Radio Systems Limited
+# Copyright 2021-2026 Software Radio Systems Limited
 #
 # By using this file, you agree to the terms and conditions set
 # forth in the LICENSE file which can be found at the top level of
@@ -14,7 +14,7 @@ replicaCount: 1
 # -- Container image configuration
 image:
   # -- Container image repository
-  repository: softwareradiosystems/srsran-project
+  repository: registry.gitlab.com/ocudu/ocudu/split7.2
   # -- Image pull policy
   pullPolicy: IfNotPresent
   # -- Image tag (overrides Chart appVersion if set)

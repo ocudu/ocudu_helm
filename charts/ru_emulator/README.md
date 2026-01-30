@@ -2,7 +2,7 @@
 
 ![PoC/Demo](https://img.shields.io/badge/status-PoC%2FDemo-yellow)
 
-A Helm chart for deploying the srsRAN Radio Unit (O-RU) emulator
+A Helm chart for deploying the OCUDU Radio Unit (O-RU) emulator
 
 > **⚠️ PoC/Demo Chart - Not Production Ready**
 >
@@ -13,7 +13,7 @@ A Helm chart for deploying the srsRAN Radio Unit (O-RU) emulator
 
 This chart deploys an O-RU (Open Radio Unit) emulator that communicates with DU units via the OpenFronthaul protocol. It simulates a real Radio Unit for testing and development purposes.
 
-> **⚠️ Important**: This chart requires a container image with the `ru_emulator` binary. The standard srsRAN Project image does not include this binary. You must build or obtain a specific RU emulator image before deploying.
+> **⚠️ Important**: This chart requires a container image with the `ru_emulator` binary. The standard OCUDU Project image does not include this binary. You must build or obtain a specific RU emulator image before deploying.
 >
 > **ℹ️ SR-IOV Status**: SR-IOV support is fully implemented with automatic BDF/MAC detection via the entrypoint script. However, it remains **untested end-to-end** due to the missing `ru_emulator` binary in standard images. The SR-IOV resource allocation and configuration replacement logic have been verified in live cluster testing.
 
@@ -28,10 +28,10 @@ This chart deploys an O-RU (Open Radio Unit) emulator that communicates with DU 
 Before installing, ensure your environment meets these requirements:
 
 1. **Container Image**: A container image with the `/usr/local/bin/ru_emulator` binary is required
-   - The default srsRAN Project image does **not** include this binary
+   - The default OCUDU Project image does **not** include this binary
    - You must specify a custom image in `values.yaml`
 2. **Kubernetes**: >= 1.24.0
-3. **Network Configuration** (choose one):
+3. **Network Configuration** (choose oneM - See ):
    - **hostNetwork mode**: Physical network interface for OpenFronthaul communication
    - **SR-IOV mode** (recommended for production): SR-IOV device plugin deployed in cluster
 4. **Privileges**:
@@ -43,6 +43,13 @@ Before installing, ensure your environment meets these requirements:
 ## Installing the Chart
 
 **Basic installation**:
+
+**From OCI registry**:
+```bash
+helm install ru-emulator oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ru-emulator --version 2.0.0
+```
+
+**From local chart**:
 ```bash
 cd charts/ru_emulator
 helm install ru-emulator ./
@@ -82,7 +89,7 @@ The command removes all Kubernetes components associated with the chart.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `image.repository` | string | `"srsran/ru-emulator"` | Container image repository |
+| `image.repository` | string | `"softwareradiosystems/srsran-project"` | Container image repository |
 | `image.tag` | string | Chart appVersion | Image tag |
 | `image.pullPolicy` | string | `"IfNotPresent"` | Image pull policy |
 | `network.hostNetwork` | bool | `true` | Enable host network (required when SR-IOV disabled) |
@@ -296,9 +303,9 @@ kubectl describe pod <pod-name> | grep -A10 "Security Context"
 
 ## Support
 
-- **Documentation**: [srsRAN Project Docs](https://docs.srsran.com)
+- **Documentation**: [OCUDU Project Docs](https://gitlab.com/ocudu/ocudu_elements/ocudu_helm)
 - **OpenFronthaul**: [O-RAN Alliance Specifications](https://www.o-ran.org/)
 
 ## License
 
-AGPL-3.0 - See LICENSE file for details
+MIT - See LICENSE file for details

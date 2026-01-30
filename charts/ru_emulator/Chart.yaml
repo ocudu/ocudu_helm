@@ -1,5 +1,5 @@
 #
-# Copyright 2021-2025 Software Radio Systems Limited
+# Copyright 2021-2026 Software Radio Systems Limited
 #
 # By using this file, you agree to the terms and conditions set
 # forth in the LICENSE file which can be found at the top level of
@@ -8,15 +8,15 @@
 
 apiVersion: v2
 name: ru-emulator
-description: srsRAN Radio Unit (O-RU) emulator for testing gNB deployments with OpenFronthaul interface
+description: OCUDU Radio Unit (O-RU) emulator for testing gNB deployments with OpenFronthaul interface
 kubeVersion: ">= 1.24.0-0"
-icon: https://docs.srsran.com/en/latest/_static/logo.png
-home: https://docs.srsran.com/
+icon: https://gitlab.com/ocudu/ocudu_elements/ocudu_helm/-/raw/main/docs/logo.png
+home: https://gitlab.com/ocudu/ocudu_elements/ocudu_helm
 sources:
-- https://github.com/srsran/srsRAN_Project_helm
-- https://github.com/srsran/srsran_project
+- https://gitlab.com/ocudu/ocudu_elements/ocudu_helm
+- https://gitlab.com/ocudu/ocudu
 keywords:
-- srsran
+- ocudu
 - ru
 - oru
 - radio-unit
@@ -27,9 +27,9 @@ keywords:
 - ran
 annotations:
   artifacthub.io/category: openfronthaul
-  artifacthub.io/license: AGPL-3.0
+  artifacthub.io/license: MIT
   artifacthub.io/operator: "false"
   artifacthub.io/prerelease: "true"
 type: application
-version: 1.1.0
+version: 2.0.0
 appVersion: "2024.10.0"
