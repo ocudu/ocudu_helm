@@ -1,8 +1,8 @@
-# srsRAN Kubernetes Helm Charts
+# OCUDU Kubernetes Helm Charts
 
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Kubernetes Helm charts for deploying srsRAN 5G Radio Access Network (RAN) components and supporting infrastructure.
+Kubernetes Helm charts for deploying OCUDU 5G Radio Access Network (RAN) components and supporting infrastructure.
 
 ## Available Charts
 
@@ -10,7 +10,7 @@ Kubernetes Helm charts for deploying srsRAN 5G Radio Access Network (RAN) compon
 
 | Chart | Version | Description | Status |
 |-------|---------|-------------|--------|
-| [srsran-project](charts/srsran-project/) | 2.3.x | 5G CU/DU (gNodeB) with O1, DPDK, SR-IOV support | 🟢 **Production Ready** |
+| [ocudu-gnb](charts/ocudu-gnb/) | 3.0.x | 5G gNB (CU/DU Combined) with O1, DPDK, SR-IOV support | 🟢 **Production Ready** |
 
 **This is the only Helm Chart under active maintenance**
 
@@ -18,13 +18,13 @@ Kubernetes Helm charts for deploying srsRAN 5G Radio Access Network (RAN) compon
 
 | Chart | Version | Description |
 |-------|---------|-------------|
-| [linuxptp](charts/linuxptp/) | 1.3.x | PTP time synchronization (ptp4l, phc2sys, ts2phc) |
-| [grafana-srsran](charts/grafana-srsran/) | 1.3.x | Monitoring stack (Grafana + InfluxDB3 + Telegraf) |
-| [influxdb3](charts/influxdb3/) | 1.1.x | InfluxDB3 time-series database |
-| [onap-smo-lite](charts/onap-smo-lite/) | 0.3.x | ONAP SMO components for O1 management |
-| [rt-tests](charts/rt-tests/) | 1.0.x | Real-time performance testing tools |
-| [ru_emulator](charts/ru_emulator/) | 1.2.x | Radio Unit (O-RU) emulator for testing |
-| [tuned](charts/tuned/) | 0.5.x | System tuning profiles for low-latency |
+| [linuxptp](charts/linuxptp/) | 2.0.x | PTP time synchronization (ptp4l, phc2sys, ts2phc) |
+| [grafana-ocudu](charts/grafana-ocudu/) | 2.0.x | Monitoring stack (Grafana + InfluxDB3 + Telegraf) |
+| [influxdb3](charts/influxdb3/) | 2.0.x | InfluxDB3 time-series database |
+| [onap-smo-lite](charts/onap-smo-lite/) | 1.0.x | ONAP SMO components for O1 management |
+| [rt-tests](charts/rt-tests/) | 2.0.x | Real-time performance testing tools |
+| [ru_emulator](charts/ru_emulator/) | 2.0.x | Radio Unit (O-RU) emulator for testing |
+| [tuned](charts/tuned/) | 1.0.x | System tuning profiles for low-latency |
 
 ⚠️ **PoC/Demo Status** means:
 - Intended for **development, testing, and proof-of-concept deployments only**
@@ -47,15 +47,15 @@ Each chart has its own README with detailed installation instructions. General p
 
 ```bash
 # Add the chart repository (if using a Helm repository)
-helm repo add srsran https://github.com/srsran/srsRAN_Project_helm/
+helm repo add ocudu https://gitlab.com/ocudu/ocudu_elements/ocudu_helm/
 
 # Install a chart
-helm install my-release srsran/<chart-name> \
+helm install my-release ocudu/<chart-name> \
   --namespace <namespace> \
   --create-namespace
 
 # For production deployments, use custom values
-helm install my-gnb srsran/srsran-project \
+helm install my-gnb ocudu/ocudu-gnb \
   -f my-production-values.yaml \
   --namespace ran-prod \
   --create-namespace
@@ -64,19 +64,21 @@ helm install my-gnb srsran/srsran-project \
 ### Documentation
 
 Refer to each chart's README for detailed configuration options:
-- [srsran-project](charts/srsran-project/README.md) - **Start here for production deployments**
+- [ocudu-gnb](charts/ocudu-gnb/README.md)
 - [linuxptp](charts/linuxptp/README.md)
-- [grafana-srsran](charts/grafana-srsran/README.md)
+- [grafana-ocudu](charts/grafana-ocudu/README.md)
 - [influxdb3](charts/influxdb3/README.md)
 - [onap-smo-lite](charts/onap-smo-lite/README.md)
 - [rt-tests](charts/rt-tests/README.md)
 - [ru_emulator](charts/ru_emulator/README.md)
 - [tuned](charts/tuned/README.md)
 
-## Docker images
+## Container Images
 
-Every srsRAN Project release is accompanied by pre-built Docker images, which can be found on [Docker Hub](https://hub.docker.com/u/softwareradiosystems). The Dockerfiles utilized are located in the [srsRAN Project repository](https://github.com/srsran/srsRAN_Project/tree/main/docker).
+Container images are available in the GitLab Container Registry:
+- **Chart images**: https://gitlab.com/ocudu/ocudu_elements/ocudu_helm/container_registry
+- **Split 7.2 images** (ru_emulator & ocudu-gnb): https://gitlab.com/ocudu/ocudu/container_registry
 
 ## License
 
-### [AGPL v3 License](https://github.com/srsran/srsRAN_Project_helm/blob/main/LICENSE).
+This project is licensed under the MIT License – see the [LICENSE](LICENSE) file for details.
