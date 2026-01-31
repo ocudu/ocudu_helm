@@ -38,8 +38,8 @@ variables:
     BUILD_ARGS: "TUNED_VERSION=${TUNED_VERSION}"
     NAME: ${TUNED_NAME}
     MULTI_ARCH_BUILD: "true"
-    REGISTRY_URI: ""
-    REGISTRY_ORG: $PUBLIC_CT_REGISTRY_URI
+    REGISTRY_URI: ${CI_REGISTRY}/${CI_PROJECT_PATH}
+    REGISTRY_ORG: ""
   parallel:
     matrix:
       - PLATFORM: ["arm64", "amd64"]
@@ -67,8 +67,8 @@ docker manifest tuned:
   extends: .docker manifest
   stage: manifest
   variables:
-    REGISTRY_URI: ""
-    REGISTRY_ORG: $PUBLIC_CT_REGISTRY_URI
+    REGISTRY_URI: ${CI_REGISTRY}/${CI_PROJECT_PATH}
+    REGISTRY_ORG: ""
     NAME: ${TUNED_NAME}
     VERSION: "${TUNED_VERSION}_${CT_VERSION}"
   needs:
