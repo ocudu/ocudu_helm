@@ -52,7 +52,7 @@ linuxptp image:
   stage: child
   variables:
     LINUXPTP_VERSION: "v4.4"
-    CT_VERSION: "1.1.3"
+    CT_VERSION: "2.0.0"
   rules:
     - if: $ON_MR
       changes:
