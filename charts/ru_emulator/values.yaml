@@ -14,12 +14,12 @@ replicaCount: 1
 # -- Container image configuration
 image:
   # -- Container image repository
-  repository: registry.gitlab.com/ocudu/ocudu/split7.2
+  repository: registry.gitlab.com/softwareradiosystems/srsran_5g_enterprise/srsran_release_avx512
   # -- Image pull policy
   pullPolicy: IfNotPresent
   # -- Image tag (overrides Chart appVersion if set)
   # @default -- Chart appVersion
-  tag: split72_release_avx512
+  tag: bbf65c91_007e9e06
 
 # -- Image pull secrets for private registries
 # @default -- `[]` (no pull secrets)
