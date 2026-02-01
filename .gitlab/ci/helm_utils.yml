@@ -31,7 +31,43 @@
     - helm template --debug ${CHART_PATH}/ | kubeconform --debug --strict
     - helm template ${CHART_PATH}/
 
-.helm publish:
+.helm version check:
+  image:
+    name: alpine/helm:3.16.2
+    entrypoint: ["/bin/sh", "-c"]
+  stage: static
+  retry: 2
+  variables:
+    CHART_PATH: ${CI_PROJECT_DIR}
+    CHART_NAME: ""
+  rules:
+    - if: $ON_MR
+  before_script:
+    - apk add --no-cache yq
+    - helm registry login -u $CI_REGISTRY_USER -p $CI_JOB_TOKEN $CI_REGISTRY
+  script:
+    - echo "Checking chart version availability"
+    - echo "Chart $CHART_NAME"
+    - echo "Path $CHART_PATH"
+    - echo "Registry $CI_REGISTRY/$CI_PROJECT_PATH"
+    - BASE_VERSION=$(yq eval '.version' ${CHART_PATH}/Chart.yaml)
+    - echo "Base version from Chart.yaml $BASE_VERSION"
+    - |
+      # For MR: Check if clean version exists (would conflict on merge)
+      if [ -n "$CI_MERGE_REQUEST_IID" ]; then
+        VERSION="$BASE_VERSION"
+        echo "Checking if clean version $VERSION exists (would conflict on merge)"
+        if helm pull oci://$CI_REGISTRY/$CI_PROJECT_PATH/$CHART_NAME --version $VERSION 2>/dev/null; then
+          echo "WARNING: Version $VERSION already exists in registry"
+          echo "Please bump the version before merging"
+          exit 1
+        else
+          echo "Version $VERSION is available"
+          echo "This version can be published when merged to default branch"
+        fi
+      fi
+
+.helm publish-dev:
   image:
     name: alpine/helm:3.16.2
     entrypoint: ["/bin/sh", "-c"]
@@ -44,41 +80,77 @@
     - if: $ON_MR
       when: manual
       allow_failure: true
+  before_script:
+    - apk add --no-cache yq
+    - helm registry login -u $CI_REGISTRY_USER -p $CI_JOB_TOKEN $CI_REGISTRY
+  script:
+    - |
+      echo "Publishing Development Helm Chart to OCI Registry"
+      echo "Chart $CHART_NAME"
+      echo "Path $CHART_PATH"
+      echo "Registry $CI_REGISTRY/$CI_PROJECT_PATH"
+      BASE_VERSION=$(yq eval '.version' ${CHART_PATH}/Chart.yaml)
+      echo "Base version from Chart.yaml $BASE_VERSION"
+      VERSION="${BASE_VERSION}-dev"
+      echo "Using development version $VERSION (allows overwrite)"
+      yq eval ".version = \"$VERSION\"" -i ${CHART_PATH}/Chart.yaml
+      if grep -q "^dependencies:" ${CHART_PATH}/Chart.yaml 2>/dev/null; then
+        echo "Updating chart dependencies"
+        helm dependency update ${CHART_PATH}/
+      fi
+      echo "Packaging chart with version $VERSION"
+      PACKAGE_FILE=$(helm package ${CHART_PATH}/ --destination . | grep -oE '[^ ]+\.tgz$')
+      echo "Chart packaged $PACKAGE_FILE"
+      CHART_NAME=$(basename $PACKAGE_FILE .tgz | sed "s/-${VERSION}$//")
+      echo "Chart name $CHART_NAME"
+      echo "Publishing to OCI registry"
+      helm push $PACKAGE_FILE oci://$CI_REGISTRY/$CI_PROJECT_PATH
+      echo "Successfully published $CHART_NAME:$VERSION"
+      echo "Verifying published chart"
+      helm pull oci://$CI_REGISTRY/$CI_PROJECT_PATH/$CHART_NAME --version $VERSION --destination /tmp
+      echo "Verification successful"
+      echo "Install with: helm install <name> oci://$CI_REGISTRY/$CI_PROJECT_PATH/$CHART_NAME --version $VERSION"
+
+.helm publish-prod:
+  image:
+    name: alpine/helm:3.16.2
+    entrypoint: ["/bin/sh", "-c"]
+  stage: publish
+  retry: 2
+  variables:
+    CHART_PATH: ${CI_PROJECT_DIR}
+    CHART_NAME: ""
+  rules:
     - if: $ON_DEFAULT_BRANCH
   before_script:
     - apk add --no-cache yq
     - helm registry login -u $CI_REGISTRY_USER -p $CI_JOB_TOKEN $CI_REGISTRY
   script:
-    - echo "Publishing Helm Chart to OCI Registry"
-    - echo "Chart $CHART_NAME"
-    - echo "Path $CHART_PATH"
-    - echo "Registry $CI_REGISTRY/$CI_PROJECT_PATH"
-    - VERSION=$(yq eval '.version' ${CHART_PATH}/Chart.yaml)
-    - echo "Version $VERSION"
     - |
-      if helm pull oci://$CI_REGISTRY/$CI_PROJECT_PATH/$CHART_NAME --version $VERSION 2>/dev/null; then
-        echo "ERROR: Chart $CHART_NAME version $VERSION already exists in registry"
-        echo "Please bump the version in Chart.yaml before publishing"
-        exit 1
-      fi
-    - echo "Version $VERSION is new"
-    - |
+      echo "Publishing Production Helm Chart to OCI Registry"
+      echo "Chart $CHART_NAME"
+      echo "Path $CHART_PATH"
+      echo "Registry $CI_REGISTRY/$CI_PROJECT_PATH"
+      VERSION=$(yq eval '.version' ${CHART_PATH}/Chart.yaml)
+      echo "Using production version $VERSION"
       if grep -q "^dependencies:" ${CHART_PATH}/Chart.yaml 2>/dev/null; then
         echo "Updating chart dependencies"
         helm dependency update ${CHART_PATH}/
       fi
-    - echo "Packaging chart"
-    - PACKAGE_FILE=$(helm package ${CHART_PATH}/ --destination . | grep -oE '[^ ]+\.tgz$')
-    - echo "Chart packaged $PACKAGE_FILE"
-    - echo "Publishing to OCI registry"
-    - helm push $PACKAGE_FILE oci://$CI_REGISTRY/$CI_PROJECT_PATH
-    - echo "Successfully published $CHART_NAME:$VERSION"
-    - echo "Verifying published chart"
-    - helm pull oci://$CI_REGISTRY/$CI_PROJECT_PATH/$CHART_NAME --version $VERSION --destination /tmp
-    - echo "Verification successful"
-    - echo "Install with helm install <name> oci://$CI_REGISTRY/$CI_PROJECT_PATH/$CHART_NAME --version $VERSION"
+      echo "Packaging chart with version $VERSION"
+      PACKAGE_FILE=$(helm package ${CHART_PATH}/ --destination . | grep -oE '[^ ]+\.tgz$')
+      echo "Chart packaged $PACKAGE_FILE"
+      CHART_NAME=$(basename $PACKAGE_FILE .tgz | sed "s/-${VERSION}$//")
+      echo "Chart name $CHART_NAME"
+      echo "Publishing to OCI registry"
+      helm push $PACKAGE_FILE oci://$CI_REGISTRY/$CI_PROJECT_PATH
+      echo "Successfully published $CHART_NAME:$VERSION"
+      echo "Verifying published chart"
+      helm pull oci://$CI_REGISTRY/$CI_PROJECT_PATH/$CHART_NAME --version $VERSION --destination /tmp
+      echo "Verification successful"
+      echo "Install with: helm install <name> oci://$CI_REGISTRY/$CI_PROJECT_PATH/$CHART_NAME --version $VERSION"
   artifacts:
     paths:
       - "*.tgz"
-    expire_in: 1 week
+    expire_in: 2 days
     when: always

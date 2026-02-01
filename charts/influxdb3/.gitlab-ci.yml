@@ -18,11 +18,25 @@ helm lint:
   variables:
     CHART_PATH: charts/influxdb3
 
-helm publish:
-  extends: .helm publish
+helm version check:
+  extends: .helm version check
+  variables:
+    CHART_PATH: charts/influxdb3
+    CHART_NAME: influxdb3
+
+helm publish-dev:
+  extends: .helm publish-dev
   variables:
     CHART_PATH: charts/influxdb3
     CHART_NAME: influxdb3
   needs:
     - job: helm lint
       optional: true
+    - job: helm version check
+      optional: true
+
+helm publish-prod:
+  extends: .helm publish-prod
+  variables:
+    CHART_PATH: charts/influxdb3
+    CHART_NAME: influxdb3

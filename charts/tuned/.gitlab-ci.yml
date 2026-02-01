@@ -18,11 +18,25 @@ helm lint:
   variables:
     CHART_PATH: charts/tuned
 
-helm publish:
-  extends: .helm publish
+helm version check:
+  extends: .helm version check
+  variables:
+    CHART_PATH: charts/tuned
+    CHART_NAME: tuned
+
+helm publish-dev:
+  extends: .helm publish-dev
   variables:
     CHART_PATH: charts/tuned
     CHART_NAME: tuned
   needs:
     - job: helm lint
       optional: true
+    - job: helm version check
+      optional: true
+
+helm publish-prod:
+  extends: .helm publish-prod
+  variables:
+    CHART_PATH: charts/tuned
+    CHART_NAME: tuned
