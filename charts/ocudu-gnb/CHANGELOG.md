@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.1.0 (2026-02-01)
+
+### Fixed
+- Fixed logging. Issue: Polluting the return value when captured with command substitution
+
 ## 3.0.0 (2026-01-29)
 
 ### BREAKING CHANGES

@@ -150,7 +150,7 @@ update_config_paths() {
     local first_line
     first_line=$(grep -E '^[[:space:]]*[A-Za-z0-9_]*filename:' "$config_file" | head -1)
     if [ -z "$first_line" ]; then
-        log_info "No filename entries found in config, skipping log path update"
+        log_info "No filename entries found in config, skipping log path update" >&2
         return 0
     fi
 
@@ -176,7 +176,7 @@ update_config_paths() {
         return 1
     fi
     
-    log_info "Created log directory: $new_folder"
+    log_info "Created log directory: $new_folder" >&2
   
     if ! sed -i -E "s#([[:space:]]*(filename|[A-Za-z0-9_]+_filename):[[:space:]])${base_dir}(/[0-9]{8}-[0-9]{6})?/#\1${base_dir}/${timestamp}/#g" "$config_file"; then
         log_error "Failed to update log paths in config"
