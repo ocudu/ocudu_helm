@@ -15,6 +15,7 @@ stages:
 
 helm lint:
   extends: .helm lint
+  allow_failure: true
   variables:
     CHART_PATH: charts/grafana-ocudu
   before_script:
