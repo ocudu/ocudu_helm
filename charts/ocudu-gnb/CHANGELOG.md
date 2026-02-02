@@ -1,6 +1,8 @@
 # Changelog
 
 ## 3.2.0 (2026-02-02)
+### Added
+- metricsService: Added custom NodePort configuration support
 
 ### Fixed
 - O1 Integration: Fixed entrypoint script to properly handle O1-generated configurations

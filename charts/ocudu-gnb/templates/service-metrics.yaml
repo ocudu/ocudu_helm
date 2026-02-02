@@ -37,4 +37,7 @@ spec:
       port: {{ .Values.metricsService.port }}
       targetPort: {{ .Values.metricsService.targetPort | default .Values.metricsService.port }}
       protocol: TCP
+      {{- if and (eq .Values.metricsService.type "NodePort") (.Values.metricsService.nodePort) }}
+      nodePort: {{ .Values.metricsService.nodePort }}
+      {{- end }}
 {{- end }}

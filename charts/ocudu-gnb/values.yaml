@@ -234,6 +234,12 @@ metricsService:
   # @default -- `None`
   sessionAffinity: None
 
+  # -- NodePort (optional, only used when type is NodePort)
+  # If not specified, Kubernetes will auto-assign a port from the NodePort range
+  # Example: 30555
+  # @default -- `""` (auto-assign)
+  nodePort: ""
+
   # -- Service port (must match the port in gnb-config.yml)
   port: 8001
 

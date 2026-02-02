@@ -40,6 +40,9 @@ Metrics Service (Telegraf/InfluxDB):
    {{- else if eq .Values.metricsService.type "NodePort" }}
    Access via NodePort:
    kubectl get svc {{ include "ocudu-gnb.fullname" . }}-metrics -n {{ .Release.Namespace }}
+   {{- if .Values.metricsService.nodePort }}
+   NodePort: {{ .Values.metricsService.nodePort }}
+   {{- end }}
    {{- else if eq .Values.metricsService.type "LoadBalancer" }}
    Access via LoadBalancer:
    kubectl get svc {{ include "ocudu-gnb.fullname" . }}-metrics -n {{ .Release.Namespace }}
