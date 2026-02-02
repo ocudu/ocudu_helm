@@ -371,10 +371,15 @@ update_network_interfaces_and_macs() {
     local current_bdf=""
 
     while IFS= read -r line || [ -n "$line" ]; do
-        if echo "$line" | grep -qE "^[[:space:]]*-[[:space:]]*network_interface:" && [ $counter -lt ${#bdf_array[@]} ]; then
+        if echo "$line" | grep -qE "^[[:space:]]*-?[[:space:]]*network_interface:" && [ $counter -lt ${#bdf_array[@]} ]; then
             current_bdf=$(echo "${bdf_array[$counter]}" | xargs)
             indent=$(echo "$line" | sed -n 's/^\([[:space:]]*\).*/\1/p')
-            echo "${indent}- network_interface: $current_bdf" >> "$tmpfile"
+            # Preserve the dash if it exists (for list syntax), otherwise use plain key
+            if echo "$line" | grep -qE "^[[:space:]]*-[[:space:]]*"; then
+                echo "${indent}- network_interface: $current_bdf" >> "$tmpfile"
+            else
+                echo "${indent}network_interface: $current_bdf" >> "$tmpfile"
+            fi
             log_info "Setting network_interface to: $current_bdf"
         elif echo "$line" | grep -q "^[[:space:]]*du_mac_addr:" && [ -n "$current_bdf" ]; then
             mac=$(dmesg | grep "$current_bdf" | grep "MAC address:" | tail -n 1 | sed -n 's/.*MAC address: \([0-9a-fA-F:]\+\).*/\1/p')
@@ -518,17 +523,6 @@ main() {
     DEVICE_LIST="${!resource_var}"
     if [ -n "$DEVICE_LIST" ]; then
         log_info "SR-IOV devices detected: $DEVICE_LIST"
-        
-        # Validate that HAL eal_args are present when using SR-IOV
-        if ! grep -q "^[[:space:]]*hal:" "$config_file"; then
-            log_fatal "SR-IOV devices detected but no 'hal' section found in config. When using SR-IOV, the gNB config MUST include 'hal.eal_args' for DPDK configuration."
-        fi
-        
-        if ! grep -q "^[[:space:]]*eal_args:" "$config_file"; then
-            log_fatal "SR-IOV devices detected but 'hal.eal_args' not found in config. When using SR-IOV, the gNB config MUST include 'hal.eal_args' for DPDK configuration."
-        fi
-        
-        log_info "SR-IOV HAL configuration validated"
     else
         log_info "No SR-IOV devices detected"
     fi
@@ -557,6 +551,20 @@ main() {
         # Validate config exists
         validate_config_file "$config_file" || log_fatal "Config validation failed"
         
+        # Validate SR-IOV HAL configuration
+        if [ -n "$DEVICE_LIST" ]; then
+            # Validate that HAL eal_args are present when using SR-IOV
+            if ! grep -q "^[[:space:]]*hal:" "$config_file"; then
+                log_fatal "SR-IOV devices detected but no 'hal' section found in config. When using SR-IOV, the gNB config MUST include 'hal.eal_args' for DPDK configuration."
+            fi
+
+            if ! grep -q "^[[:space:]]*eal_args:" "$config_file"; then
+                log_fatal "SR-IOV devices detected but 'hal.eal_args' not found in config. When using SR-IOV, the gNB config MUST include 'hal.eal_args' for DPDK configuration."
+            fi
+
+            log_info "SR-IOV HAL configuration validated"
+        fi
+
         # Process config and run gNB
         process_and_run_gnb "$config_file"
         local exit_code=$?
