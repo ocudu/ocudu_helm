@@ -250,11 +250,11 @@ metricsService:
 # Used for exposing gNB to external 5G Core network
 # ref: https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer
 service:
-  # -- Enable LoadBalancer service for N2/N3 interfaces
-  # When enabled, creates a LoadBalancer service for external 5G Core connectivity
+  # -- Enable service for N2/N3 interfaces (5G Core connectivity)
+  # When enabled, creates a service for external 5G Core connectivity
   enabled: false
 
-  # -- Service type (only LoadBalancer is supported by this template)
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
   # @default -- `LoadBalancer`
   type: LoadBalancer
 
@@ -292,8 +292,11 @@ service:
       targetPort: 38412
       # -- Protocol (SCTP for NGAP)
       protocol: SCTP
-      # -- NodePort (optional, only used if service type is NodePort)
-      # nodePort: 30412
+      # -- NodePort (optional, only used when type is NodePort)
+      # If not specified, Kubernetes will auto-assign a port from the NodePort range
+      # Example: 30412
+      # @default -- `""` (auto-assign)
+      nodePort: ""
 
     # -- N3 interface (GTP-U - user plane to UPF)
     n3:
@@ -306,8 +309,11 @@ service:
       targetPort: 2152
       # -- Protocol (UDP for GTP-U)
       protocol: UDP
-      # -- NodePort (optional, only used if service type is NodePort)
-      # nodePort: 30152
+      # -- NodePort (optional, only used when type is NodePort)
+      # If not specified, Kubernetes will auto-assign a port from the NodePort range
+      # Example: 30152
+      # @default -- `""` (auto-assign)
+      nodePort: ""
 
 # -- Persistent storage configuration
 # The chart supports both PVC (with StorageClass) and hostPath storage for debugging logs

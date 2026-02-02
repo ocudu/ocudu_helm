@@ -68,25 +68,39 @@ O1 NETCONF Service:
    {{- end }}
 {{- end }}
 
-{{- if and .Values.service.enabled (eq .Values.service.type "LoadBalancer") }}
+{{- if .Values.service.enabled }}
 
-5G Core LoadBalancer Service:
+5G Core Service (N2/N3):
    Service: {{ include "ocudu-gnb.fullname" . }}-lb
-   Type:    LoadBalancer
-   {{- if .Values.service.loadBalancerIP }}
-   IP:      {{ .Values.service.loadBalancerIP }}
-   {{- end }}
+   Type:    {{ .Values.service.type | default "LoadBalancer" }}
 
    Ports:
    {{- if .Values.service.ports.n2.enabled }}
    - N2 (Control): {{ .Values.service.ports.n2.port }}/{{ .Values.service.ports.n2.protocol }}
+     {{- if and (eq (.Values.service.type | default "LoadBalancer") "NodePort") (.Values.service.ports.n2.nodePort) }}
+     NodePort: {{ .Values.service.ports.n2.nodePort }}
+     {{- end }}
    {{- end }}
    {{- if .Values.service.ports.n3.enabled }}
    - N3 (User):    {{ .Values.service.ports.n3.port }}/{{ .Values.service.ports.n3.protocol }}
+     {{- if and (eq (.Values.service.type | default "LoadBalancer") "NodePort") (.Values.service.ports.n3.nodePort) }}
+     NodePort: {{ .Values.service.ports.n3.nodePort }}
+     {{- end }}
    {{- end }}
 
-   Get LoadBalancer IP:
+   {{- if eq (.Values.service.type | default "LoadBalancer") "ClusterIP" }}
+   Access within cluster:
+   {{ include "ocudu-gnb.fullname" . }}-lb.{{ .Release.Namespace }}.svc.cluster.local
+   {{- else if eq .Values.service.type "NodePort" }}
+   Access via NodePort:
    kubectl get svc {{ include "ocudu-gnb.fullname" . }}-lb -n {{ .Release.Namespace }}
+   {{- else if eq .Values.service.type "LoadBalancer" }}
+   Access via LoadBalancer:
+   {{- if .Values.service.loadBalancerIP }}
+   IP: {{ .Values.service.loadBalancerIP }}
+   {{- end }}
+   kubectl get svc {{ include "ocudu-gnb.fullname" . }}-lb -n {{ .Release.Namespace }}
+   {{- end }}
 {{- end }}
 
 ────────────────────────────────────────────────────────────────────────────────

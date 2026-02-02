@@ -1,4 +1,4 @@
-{{- if and .Values.service.enabled (eq .Values.service.type "LoadBalancer") }}
+{{- if .Values.service.enabled }}
 #
 # Copyright 2021-2026 Software Radio Systems Limited
 #
@@ -15,7 +15,8 @@ metadata:
     {{- include "ocudu-gnb.labels" . | nindent 4 }}
     app.kubernetes.io/component: n2-n3
 spec:
-  type: {{ .Values.service.type }}
+  type: {{ .Values.service.type | default "LoadBalancer" }}
+  {{- if eq (.Values.service.type | default "LoadBalancer") "LoadBalancer" }}
   {{- if .Values.service.loadBalancerIP }}
   loadBalancerIP: {{ .Values.service.loadBalancerIP }}
   {{- end }}
@@ -24,6 +25,7 @@ spec:
   {{- end }}
   {{- with .Values.service.externalTrafficPolicy }}
   externalTrafficPolicy: {{ . }}
+  {{- end }}
   {{- end }}
   {{- with .Values.service.sessionAffinity }}
   sessionAffinity: {{ . }}
