@@ -154,8 +154,7 @@ Find images at: [Docker Hub - softwareradiosystems](https://hub.docker.com/u/sof
 | `image.pullPolicy` | string | `"IfNotPresent"` | Image pull policy |
 | `network.hostNetwork` | bool | `false` | Enable host network mode (bypasses NetworkPolicy) |
 | `sriovConfig.enabled` | bool | `true` | Enable SR-IOV device plugin |
-| `sriovConfig.extendedResourceName` | string | `"intel.com/intel_sriov_netdevice"` | SR-IOV resource name |
-| `sriovConfig.vfCount` | int | `1` | Number of SR-IOV VFs to request |
+| `sriovConfig.extendedResourceName` | string | `"intel.com/intel_sriov_netdevice"` | SR-IOV resource name (specify resources manually in resources section) |
 | `rbac.create` | bool | `true` | Create RBAC Role and RoleBinding |
 | `podDisruptionBudget.enabled` | bool | `true` | Enable PodDisruptionBudget |
 | `podDisruptionBudget.unhealthyPodEvictionPolicy` | string | `"AlwaysAllow"` | Pod eviction policy |

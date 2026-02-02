@@ -15,10 +15,16 @@ network:
 sriovConfig:
   enabled: true  # Enabled by default
   extendedResourceName: "intel.com/intel_sriov_netdevice"
-  vfCount: 1
 
 networkPolicy:
   enabled: true  # Optional, for traffic control
+
+# SR-IOV resources must be manually specified
+resources:
+  limits:
+    intel.com/intel_sriov_netdevice: "1"
+  requests:
+    intel.com/intel_sriov_netdevice: "1"
 
 # Security context for SR-IOV Device Plugin enabled
 securityContext:

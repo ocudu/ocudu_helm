@@ -388,14 +388,12 @@ sriovConfig:
   # This must match the resource name configured in your SR-IOV device plugin
   # Common values:
   #   - intel.com/intel_sriov_netdevice (Intel NICs)
+  #   - intel.com/intel_sriov_dpdk (Intel NICs with DPDK)
   #   - mellanox.com/cx5_sriov_switchdev (Mellanox NICs)
   # Check available resources: kubectl get node <node-name> -o json | jq '.status.allocatable'
+  # Note: SR-IOV resources must be manually specified in the resources.limits/requests section
   # @default -- `intel.com/intel_sriov_netdevice`
   extendedResourceName: "intel.com/intel_sriov_netdevice"
-
-  # -- Number of SR-IOV VFs to request
-  # @default -- `1`
-  vfCount: 1
 
 # -- NetworkPolicy configuration
 # Restricts network traffic to/from the gNB pod for enhanced security

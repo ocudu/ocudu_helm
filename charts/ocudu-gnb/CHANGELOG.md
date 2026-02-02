@@ -1,9 +1,11 @@
 # Changelog
 
 ## 3.2.0 (2026-02-02)
+
 ### Added
 - metricsService: Added custom NodePort configuration support
 - N2/N3 Service: Added ClusterIP and NodePort support
+- SR-IOV Resource Management: Removed automatic `vfCount` injection, just use resources
 
 ### Fixed
 - O1 Integration: Fixed entrypoint script to properly handle O1-generated configurations
