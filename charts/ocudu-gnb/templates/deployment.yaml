@@ -107,7 +107,7 @@ spec:
               value: '{{ .Values.network.hostNetwork }}'
           {{- if and .Values.service .Values.service.type (eq .Values.service.type "LoadBalancer") }}
             - name: LB_IP
-              value: {{ .Values.service.LoadBalancerIP | quote }}
+              value: {{ .Values.service.loadBalancerIP | quote }}
           {{- end }}
           {{- if and .Values.sriovConfig .Values.sriovConfig.enabled }}
             - name: RESOURCE_EXTENDED

@@ -9,6 +9,7 @@
 
 ### Fixed
 - O1 Integration: Fixed entrypoint script to properly handle O1-generated configurations
+- LoadBalancer IP: Fixed deployment template using incorrect variable name `LoadBalancerIP` instead of `loadBalancerIP`
 
 ## 3.1.0 (2026-02-01)
 
