@@ -62,7 +62,6 @@ linuxptp image:
       changes:
         paths:
           - images/linuxptp/**/*
-        compare_to: refs/tags/latest
   trigger:
     include:
       - local: images/linuxptp/.gitlab-ci.yml
@@ -84,7 +83,6 @@ rt-tests image:
       changes:
         paths:
           - images/rt-tests/**/*
-        compare_to: refs/tags/latest
   trigger:
     include:
       - local: images/rt-tests/.gitlab-ci.yml
@@ -107,7 +105,6 @@ tuned image:
       changes:
         paths:
           - images/tuned/**/*
-        compare_to: refs/tags/latest
   trigger:
     include:
       - local: images/tuned/.gitlab-ci.yml
