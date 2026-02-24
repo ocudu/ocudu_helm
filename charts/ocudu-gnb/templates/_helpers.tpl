@@ -130,10 +130,10 @@ Create the name of the service account to use
 Create the image path for the passed in image field of gnb image
 */}}
 {{- define "ocudu-gnb.image" -}}
-{{- if eq (substr 0 7 .tag) "sha256:" -}}
-{{- printf "%s@%s" .repository .tag -}}
+{{- if eq (substr 0 7 (.tag | toString)) "sha256:" -}}
+{{- printf "%s@%s" .repository (.tag | toString) -}}
 {{- else -}}
-{{- printf "%s:%s" .repository .tag -}}
+{{- printf "%s:%s" .repository (.tag | toString) -}}
 {{- end -}}
 {{- end -}}
 
@@ -141,10 +141,10 @@ Create the image path for the passed in image field of gnb image
 Create the image path for the passed in image field of netconf-server image
 */}}
 {{- define "ocudu-gnb.o1.netconfServer.image" -}}
-{{- if eq (substr 0 7 .tag) "sha256:" -}}
-{{- printf "%s@%s" .repository .tag -}}
+{{- if eq (substr 0 7 (.tag | toString)) "sha256:" -}}
+{{- printf "%s@%s" .repository (.tag | toString) -}}
 {{- else -}}
-{{- printf "%s:%s" .repository .tag -}}
+{{- printf "%s:%s" .repository (.tag | toString) -}}
 {{- end -}}
 {{- end -}}
 
@@ -152,10 +152,10 @@ Create the image path for the passed in image field of netconf-server image
 Create the image path for the passed in image field of o1-adapter image
 */}}
 {{- define "ocudu-gnb.o1.o1Adapter.image" -}}
-{{- if eq (substr 0 7 .tag) "sha256:" -}}
-{{- printf "%s@%s" .repository .tag -}}
+{{- if eq (substr 0 7 (.tag | toString)) "sha256:" -}}
+{{- printf "%s@%s" .repository (.tag | toString) -}}
 {{- else -}}
-{{- printf "%s:%s" .repository .tag -}}
+{{- printf "%s:%s" .repository (.tag | toString) -}}
 {{- end -}}
 {{- end -}}
 
