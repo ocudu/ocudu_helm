@@ -25,11 +25,11 @@ keywords:
 - ocudu
 annotations:
   artifacthub.io/category: monitoring-logging
-  artifacthub.io/license: MIT
+  artifacthub.io/license: BSD-3-Clause-Open-MPI
   artifacthub.io/operator: "false"
   artifacthub.io/prerelease: "true"
 type: application
-version: 2.0.0
+version: 2.1.0
 appVersion: "9.2.10"
 
 dependencies:

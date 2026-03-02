@@ -235,4 +235,4 @@ kubectl get daemonset <release-name>-tuned -o yaml | grep -A2 REBOOT_ENABLED
 
 ## License
 
-MIT - See LICENSE file for details
+BSD 3-Clause Open MPI variant - See LICENSE file for details

@@ -177,4 +177,4 @@ kubectl logs job/rt-tests-chart-job
 
 ## License
 
-MIT - See LICENSE file for details
+BSD 3-Clause Open MPI variant - See LICENSE file for details

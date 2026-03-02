@@ -1,6 +1,6 @@
 # OCUDU Kubernetes Helm Charts
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: BSD 3-Clause Open MPI](https://img.shields.io/badge/License-BSD%203--Clause%20Open%20MPI-blue.svg)](LICENSE)
 
 Kubernetes Helm charts for deploying OCUDU 5G Radio Access Network (RAN) components and supporting infrastructure.
 
@@ -81,4 +81,5 @@ Container images are available in the GitLab Container Registry:
 
 ## License
 
-This project is licensed under the MIT License – see the [LICENSE](LICENSE) file for details.
+This project is licensed under the BSD 3-Clause Open MPI variant License – see the LICENSE file for details.
+Portions of this software may implement 3GPP specifications, which may be subject to additional licensing requirements.

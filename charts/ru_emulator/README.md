@@ -308,4 +308,4 @@ kubectl describe pod <pod-name> | grep -A10 "Security Context"
 
 ## License
 
-MIT - See LICENSE file for details
+BSD 3-Clause Open MPI variant - See LICENSE file for details

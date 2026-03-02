@@ -209,4 +209,4 @@ kubectl logs <pod> -c linuxptp-chart-ptp4l | grep rms
 
 ## License
 
-MIT - See LICENSE file for details
+BSD 3-Clause Open MPI variant - See LICENSE file for details

@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.3.0 (2026-03-02)
+
+### Changed
+- License: Updated from MIT to BSD 3-Clause Open MPI variant
+
 ## 3.2.0 (2026-02-02)
 
 ### Added

@@ -26,9 +26,9 @@ keywords:
 - ocudu
 annotations:
   artifacthub.io/category: synchronization
-  artifacthub.io/license: MIT
+  artifacthub.io/license: BSD-3-Clause-Open-MPI
   artifacthub.io/operator: "false"
   artifacthub.io/prerelease: "true"
 type: application
-version: 2.0.0
+version: 2.1.0
 appVersion: "4.4.0"
