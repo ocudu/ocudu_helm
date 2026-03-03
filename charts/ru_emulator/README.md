@@ -171,8 +171,8 @@ config:
     cells:
     - bandwidth: 100
       network_interface: ""  # Auto-detected from SR-IOV VF PCI address
-      ru_mac_addr: 50:7c:6f:45:44:33
-      du_mac_addr: ""  # Auto-detected from dmesg
+      ru_mac_addr: ""   # Auto-detected from dmesg
+      du_mac_addr: 50:7c:6f:45:44:33
       vlan_tag: 6
 
 replicaCount: 1
@@ -243,7 +243,7 @@ When SR-IOV is enabled, the entrypoint script automatically:
 1. **Detects VF PCI Address**: Reads from environment variable set by SR-IOV device plugin
    - Example: `PCIDEVICE_INTEL_COM_INTEL_SRIOV_NETDEVICE=0000:01:10.0`
 2. **Extracts MAC Address**: Queries `dmesg` for the VF's MAC address
-3. **Updates Configuration**: Replaces `network_interface` and `du_mac_addr` in config file
+3. **Updates Configuration**: Replaces `network_interface` and `ru_mac_addr` in config file
 4. **Launches Emulator**: Starts with auto-configured network settings
 
 This eliminates manual configuration of PCI addresses and MAC addresses.

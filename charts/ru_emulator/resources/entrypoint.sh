@@ -65,7 +65,7 @@ convert_resource_name() {
 # Network Configuration Functions
 #==============================================================================
 
-# Update network_interface and du_mac_addr for single cell using SR-IOV BDF
+# Update network_interface and ru_mac_addr for single cell using SR-IOV BDF
 update_network_interface_and_mac() {
     local config_file="$1"
     local bdf="$2"
@@ -112,13 +112,13 @@ update_network_interface_and_mac() {
             echo "${indent}network_interface: $bdf" >> "$tmpfile"
             log_info "Replaced network_interface with BDF: $bdf"
             network_replaced=true
-        # Update du_mac_addr when in cell (if MAC was found)
-        elif echo "$line" | grep -qE "^[[:space:]]*du_mac_addr:" && [ "$in_cell" = true ] && [ "$mac_replaced" = false ]; then
+        # Update ru_mac_addr when in cell (if MAC was found)
+        elif echo "$line" | grep -qE "^[[:space:]]*ru_mac_addr:" && [ "$in_cell" = true ] && [ "$mac_replaced" = false ]; then
             local indent
             indent=$(echo "$line" | sed -n 's/^\([[:space:]]*\).*/\1/p')
             if [ -n "$mac" ]; then
-                echo "${indent}du_mac_addr: $mac" >> "$tmpfile"
-                log_info "Replaced du_mac_addr with MAC: $mac"
+                echo "${indent}ru_mac_addr: $mac" >> "$tmpfile"
+                log_info "Replaced ru_mac_addr with MAC: $mac"
             else
                 echo "$line" >> "$tmpfile"
             fi

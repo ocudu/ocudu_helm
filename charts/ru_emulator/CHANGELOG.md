@@ -1,9 +1,10 @@
 # Changelog
 
-## 2.1.0 (2026-03-02)
+## 2.1.0 (2026-03-03)
 
 ### Changed
 - License: Updated from MIT to BSD 3-Clause Open MPI variant
+- Fixed problem with deriving MAC address for ru_mac_addr field
 
 ## 2.0.0 (2026-01-29)
 
