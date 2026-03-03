@@ -47,17 +47,47 @@ data:
         {{- if .du_mac_addr }}
         du_mac_addr: {{ .du_mac_addr }}
         {{- end }}
-        {{- if .dl_port_id }}
+        {{- if .vlan_tag }}
         vlan_tag: {{ .vlan_tag }}
         {{- end }}
         {{- if .ul_port_id }}
-        ul_port_id: {{ .ul_port_id }}
+        ul_port_id:
+{{ toYaml .ul_port_id | nindent 10 }}
+        {{- end }}
+        {{- if .dl_port_id }}
+        dl_port_id:
+{{ toYaml .dl_port_id | nindent 10 }}
+        {{- end }}
+        {{- if .prach_port_id }}
+        prach_port_id:
+{{ toYaml .prach_port_id | nindent 10 }}
         {{- end }}
         {{- if .compr_method_ul }}
         compr_method_ul: {{ .compr_method_ul }}
         {{- end }}
         {{- if .compr_bitwidth_ul }}
-        compr_bitwidth_ul: 9
+        compr_bitwidth_ul: {{ .compr_bitwidth_ul }}
+        {{- end }}
+        {{- if .t2a_max_cp_dl }}
+        t2a_max_cp_dl: {{ .t2a_max_cp_dl }}
+        {{- end }}
+        {{- if .t2a_min_cp_dl }}
+        t2a_min_cp_dl: {{ .t2a_min_cp_dl }}
+        {{- end }}
+        {{- if .t2a_max_cp_ul }}
+        t2a_max_cp_ul: {{ .t2a_max_cp_ul }}
+        {{- end }}
+        {{- if .t2a_min_cp_ul }}
+        t2a_min_cp_ul: {{ .t2a_min_cp_ul }}
+        {{- end }}
+        {{- if .t2a_max_up }}
+        t2a_max_up: {{ .t2a_max_up }}
+        {{- end }}
+        {{- if .t2a_min_up }}
+        t2a_min_up: {{ .t2a_min_up }}
+        {{- end }}
+        {{- if .prach_format }}
+        prach_format: {{ .prach_format }}
         {{- end }}
       {{- end }}
       {{- end }}

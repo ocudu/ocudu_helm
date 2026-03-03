@@ -159,6 +159,7 @@ config:
     # -- Cell bandwidth in MHz
     - bandwidth: 100
       # -- Network interface name for OpenFronthaul traffic
+      # Set to auto in case of DPDK with SRIOV plugin is enabled
       network_interface: enp4s0f0
       # -- MAC address of the RU (emulated device)
       ru_mac_addr: 50:7c:6f:45:44:33
@@ -168,8 +169,23 @@ config:
       vlan_tag: 6
       # -- Uplink port IDs for OpenFronthaul
       ul_port_id: [0]
+      # -- Downlink port IDs for OpenFronthaul
+      dl_port_id: [0]
+      # -- PRACH port IDs for OpenFronthaul
+      prach_port_id: [0]
       # -- Compression method for uplink IQ data
       # Options: none, bfp (block floating point), bfp_sel
       compr_method_ul: "bfp"
       # -- Compression bitwidth for uplink (1-16 bits)
       compr_bitwidth_ul: 9
+      # -- Timing parameters for control-plane downlink
+      t2a_max_cp_dl: 500
+      t2a_min_cp_dl: 258
+      # -- Timing parameters for control-plane uplink
+      t2a_max_cp_ul: 500
+      t2a_min_cp_ul: 285
+      # -- Timing parameters for user-plane uplink
+      t2a_max_up: 300
+      t2a_min_up: 85
+      # -- PRACH format (long or short)
+      prach_format: "long"

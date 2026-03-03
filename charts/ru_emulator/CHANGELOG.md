@@ -1,10 +1,12 @@
 # Changelog
 
-## 2.1.0 (2026-03-03)
+## 2.2.0 (2026-03-03)
 
 ### Changed
 - License: Updated from MIT to BSD 3-Clause Open MPI variant
 - Fixed problem with deriving MAC address for ru_mac_addr field
+- Update ConfigMap with new parameters (prach_format, vlan_tag, port IDs, etc.)
+- Add `t2a_*` timing parameters to cell configuration rendering and defaults
 
 ## 2.0.0 (2026-01-29)
 
