@@ -189,3 +189,55 @@ config:
       t2a_min_up: 85
       # -- PRACH format (long or short)
       prach_format: "long"
+
+# -- Persistent storage configuration
+# The chart supports both PVC (with StorageClass) and hostPath storage for logs
+persistence:
+  # -- Enable persistent storage for logs
+  # When disabled, logs are stored in ephemeral pod storage (lost on pod restart)
+  # @default -- `true`
+  enabled: true
+
+  # -- Storage type: "pvc" or "hostPath"
+  # - "pvc": Uses PersistentVolumeClaim with dynamic provisioning (recommended for cloud)
+  # - "hostPath": Direct mount from host filesystem (recommended for bare-metal)
+  # @default -- `hostPath`
+  type: hostPath
+
+  # -- PVC configuration (used when type is "pvc")
+  pvc:
+    # -- Storage class name for dynamic provisioning
+    # Leave empty to use the cluster's default StorageClass
+    # Check available: kubectl get storageclass
+    # @default -- `""` (cluster default)
+    storageClassName: ""
+
+    # -- Access mode for the persistent volume
+    # ReadWriteOnce: Volume can be mounted read-write by a single node
+    # @default -- `ReadWriteOnce`
+    accessMode: ReadWriteOnce
+
+    # -- Storage size for the persistent volume
+    # @default -- `10Gi`
+    size: 10Gi
+
+  # -- hostPath configuration (used when type is "hostPath")
+  hostPath:
+    # -- Path on the host node where logs will be stored
+    # Ensure this path exists or can be created on worker nodes
+    # @default -- `/mnt/debugging-logs`
+    path: "/mnt/debugging-logs"
+
+    # -- hostPath type (DirectoryOrCreate, Directory, etc.)
+    # DirectoryOrCreate: Creates directory if it doesn't exist
+    # @default -- `DirectoryOrCreate`
+    type: DirectoryOrCreate
+
+  # -- Mount path inside the container where logs are written
+  # @default -- `/tmp`
+  mountPath: "/tmp"
+
+  # -- Preserve logs from previous runs (append mode)
+  # When true, logs are appended; when false, logs are overwritten
+  # @default -- `true`
+  preserveOldLogs: true

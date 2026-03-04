@@ -40,6 +40,17 @@ spec:
           configMap:
             name: {{ include "ru-emulator.configmapName" . }}
             defaultMode: 0755
+        {{- if .Values.persistence.enabled }}
+        - name: logs-volume
+          {{- if eq .Values.persistence.type "pvc" }}
+          persistentVolumeClaim:
+            claimName: {{ include "ru-emulator.fullname" . }}-logs
+          {{- else if eq .Values.persistence.type "hostPath" }}
+          hostPath:
+            path: {{ .Values.persistence.hostPath.path }}
+            type: {{ .Values.persistence.hostPath.type }}
+          {{- end }}
+        {{- end }}
         {{- if .Values.config.dpdk }}
         - name: hugepage-1gi
           emptyDir:
@@ -69,18 +80,32 @@ spec:
               {{ .Values.sriovConfig.extendedResourceName }}: {{ .Values.sriovConfig.vfCount | quote }}
             requests:
               {{ .Values.sriovConfig.extendedResourceName }}: {{ .Values.sriovConfig.vfCount | quote }}
-            {{- end }}
+          {{- end }}
           {{- end }}
           {{- if and .Values.sriovConfig .Values.sriovConfig.enabled }}
           env:
             - name: RESOURCE_EXTENDED
               value: {{ .Values.sriovConfig.extendedResourceName | quote }}
+            - name: RU_LOG_FILE
+              value: {{ .Values.config.log.filename | default (printf "%s/ru_em.log" .Values.persistence.mountPath) | quote }}
+            - name: RU_PRESERVE_LOGS
+              value: {{ .Values.persistence.preserveOldLogs | quote }}
+          {{- else }}
+          env:
+            - name: RU_LOG_FILE
+              value: {{ .Values.config.log.filename | default (printf "%s/ru_em.log" .Values.persistence.mountPath) | quote }}
+            - name: RU_PRESERVE_LOGS
+              value: {{ .Values.persistence.preserveOldLogs | quote }}
           {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
             - name: entrypoint-volume
               mountPath: /entrypoint
+            {{- if .Values.persistence.enabled }}
+            - name: logs-volume
+              mountPath: {{ .Values.persistence.mountPath }}
+            {{- end }}
             {{- if .Values.config.dpdk }}
             - name: hugepage-1gi
               mountPath: /hugepages-1Gi

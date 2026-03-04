@@ -1,0 +1,17 @@
+{{- if and .Values.persistence.enabled (eq .Values.persistence.type "pvc") }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "ru-emulator.fullname" . }}-logs
+  labels:
+    {{- include "ru-emulator.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.pvc.accessMode }}
+  {{- if .Values.persistence.pvc.storageClassName }}
+  storageClassName: {{ .Values.persistence.pvc.storageClassName }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.pvc.size }}
+{{- end }}

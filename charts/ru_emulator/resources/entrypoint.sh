@@ -139,6 +139,71 @@ update_network_interface_and_mac() {
     return 0
 }
 
+# Update log file paths with timestamps
+update_config_paths() {
+    local config_file="$1"
+
+    if [ -z "$config_file" ]; then
+        log_error "update_config_paths: Config file not provided"
+        return 1
+    fi
+
+    if [ ! -f "$config_file" ]; then
+        log_error "update_config_paths: Config file not found: $config_file"
+        return 1
+    fi
+
+    local timestamp
+    timestamp=$(date +'%Y%m%d-%H%M%S')
+
+    local first_line
+    first_line=$(grep -E '^[[:space:]]*[A-Za-z0-9_]*filename:' "$config_file" | head -1)
+    if [ -z "$first_line" ]; then
+        log_info "No filename entries found in config, skipping log path update" >&2
+        return 0
+    fi
+
+    local original_path
+    original_path=$(echo "$first_line" | sed -E 's/^[[:space:]]*[A-Za-z0-9_]*filename:[[:space:]]*(.*)$/\1/')
+
+    local current_dir
+    current_dir=$(dirname "$original_path")
+
+    local ts_candidate base_dir
+    ts_candidate=$(basename "$current_dir")
+    if [[ "$ts_candidate" =~ ^[0-9]{8}-[0-9]{6}$ ]]; then
+        base_dir=$(dirname "$current_dir")
+    else
+        base_dir="$current_dir"
+    fi
+
+    local new_folder="${base_dir}/${timestamp}"
+
+    if ! mkdir -p "$new_folder"; then
+        log_error "Failed to create log directory: $new_folder"
+        return 1
+    fi
+
+    log_info "Created log directory: $new_folder" >&2
+
+    if ! sed -i -E "s#([[:space:]]*(filename|[A-Za-z0-9_]+_filename):[[:space:]])${base_dir}(/[0-9]{8}-[0-9]{6})?/#\\1${base_dir}/${timestamp}/#g" "$config_file"; then
+        log_error "Failed to update log paths in config"
+        return 1
+    fi
+
+    local symlink_path="${base_dir}/current"
+    if [ -L "$symlink_path" ]; then
+        rm -f "$symlink_path"
+    fi
+
+    if ! ln -sf "./${timestamp}" "${symlink_path}"; then
+        log_warn "Failed to create symlink: $symlink_path"
+    fi
+
+    echo "$new_folder"
+    return 0
+}
+
 #==============================================================================
 # Main Execution
 #==============================================================================
@@ -199,15 +264,30 @@ main() {
 
     # Launch RU emulator
     log_info "Launching ru_emulator..."
-    /usr/local/bin/ru_emulator -c "$updated_config" &
+    local preserve_old_logs
+    preserve_old_logs="${PRESERVE_OLD_LOGS:-${RU_PRESERVE_LOGS:-true}}"
+
+    if [ "$preserve_old_logs" = "true" ]; then
+        local log_path
+        log_path=$(update_config_paths "$updated_config") || log_fatal "Log path setup failed"
+
+        log_info "Starting ru_emulator with log preservation in: $log_path"
+        {
+            /usr/local/bin/ru_emulator -c "$updated_config" 2>&1 | tee -a "${log_path}/ru_emulator.stdout"
+            exit ${PIPESTATUS[0]}
+        } &
+    else
+        log_info "Starting ru_emulator (logs not preserved)"
+        /usr/local/bin/ru_emulator -c "$updated_config" &
+    fi
+
     ru_pid=$!
-    
+
     log_info "RU emulator started with PID: $ru_pid"
-    
-    # Wait for process
+
     wait "$ru_pid"
     local exit_code=$?
-    
+
     log_info "RU emulator exited with code: $exit_code"
     exit $exit_code
 }

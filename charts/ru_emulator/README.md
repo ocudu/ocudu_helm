@@ -82,6 +82,25 @@ helm uninstall ru-emulator
 
 The command removes all Kubernetes components associated with the chart.
 
+## Log Persistence
+
+The RU emulator can persist console output to a log file. By default, logs are written to `/tmp/ru_em.log` inside the container and can be persisted via hostPath or PVC.
+
+Example (hostPath):
+```yaml
+persistence:
+  enabled: true
+  type: hostPath
+  hostPath:
+    path: /mnt/debugging-logs
+  mountPath: /tmp
+  preserveOldLogs: true
+config:
+  log:
+    filename: /tmp/ru_em.log
+```
+
+If `preserveOldLogs` is `false`, logs are truncated at start.
 
 ## Configuration
 
@@ -98,6 +117,11 @@ The command removes all Kubernetes components associated with the chart.
 | `sriovConfig.extendedResourceName` | string | `"intel.com/intel_sriov_netdevice"` | SR-IOV resource name from device plugin |
 | `sriovConfig.vfCount` | int | `1` | Number of SR-IOV VFs to request |
 | `config.ru_emu.cells` | list | See values.yaml | Cell configuration (interfaces, MAC addresses, VLAN) |
+| `config.log.filename` | string | `"/tmp/ru_em.log"` | Log file path inside the container |
+| `persistence.enabled` | bool | `true` | Enable persistent storage for logs |
+| `persistence.type` | string | `"hostPath"` | Storage type: `pvc` or `hostPath` |
+| `persistence.mountPath` | string | `"/tmp"` | Mount path for logs in the container |
+| `persistence.preserveOldLogs` | bool | `true` | Append to existing log file if true |
 | `replicaCount` | int | `1` | Number of emulated RU instances |
 | `resources` | object | `{}` | CPU/memory limits and requests |
 | `nodeSelector` | object | `{}` | Node selector for pod assignment |

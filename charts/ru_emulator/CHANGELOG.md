@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.3.0 (2026-03-04)
+
+### Added
+- Add support for persistence of logs using PVCs with hostPath option
+- Add filename parameter to config for log output file
+- Add preserveOldLogs parameter to manage log file retention on hostPath mounts
+
 ## 2.2.0 (2026-03-03)
 
 ### Changed

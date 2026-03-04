@@ -16,8 +16,10 @@ data:
   ru_emulator.yaml: |
     {{- if .Values.config.log }}
     log:
-      {{- if .Values.config.log }}
+      {{- if .Values.config.log.filename }}
       filename: {{ .Values.config.log.filename }}
+      {{- else }}
+      filename: {{ printf "%s/ru_em.log" .Values.persistence.mountPath }}
       {{- end }}
       {{- if .Values.config.log.level }}
       level: {{ .Values.config.log.level }}
