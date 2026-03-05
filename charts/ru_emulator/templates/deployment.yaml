@@ -12,6 +12,9 @@ metadata:
   name: {{ include "ru-emulator.fullname" . }}
   labels:
     {{- include "ru-emulator.labels" . | nindent 4 }}
+    {{- with .Values.extraLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   selector:
     matchLabels:
@@ -24,6 +27,9 @@ spec:
       {{- end }}
       labels:
         {{- include "ru-emulator.selectorLabels" . | nindent 8 }}
+        {{- with .Values.extraLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:

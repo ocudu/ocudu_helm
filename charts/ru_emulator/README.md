@@ -111,6 +111,7 @@ If `preserveOldLogs` is `false`, logs are truncated at start.
 | `image.repository` | string | `"softwareradiosystems/srsran-project"` | Container image repository |
 | `image.tag` | string | Chart appVersion | Image tag |
 | `image.pullPolicy` | string | `"IfNotPresent"` | Image pull policy |
+| `extraLabels` | object | `{}` | Extra labels applied to the Deployment and Pod template |
 | `network.hostNetwork` | bool | `true` | Enable host network (required when SR-IOV disabled) |
 | `securityContext.privileged` | bool | `true` | Enable privileged mode (required for DPDK with hostNetwork) |
 | `sriovConfig.enabled` | bool | `false` | Enable SR-IOV device plugin integration |

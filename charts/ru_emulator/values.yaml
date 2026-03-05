@@ -50,6 +50,10 @@ configmap: {}
 # @default -- `{}` (no additional annotations)
 podAnnotations: {}
 
+# -- Extra labels applied to the Deployment and Pod template
+# @default -- `{}` (no extra labels)
+extraLabels: {}
+
 # -- Pod-level security context
 # @default -- `{}` (no pod security context)
 podSecurityContext: {}
