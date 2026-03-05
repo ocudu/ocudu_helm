@@ -152,6 +152,7 @@ Find images at: [Docker Hub - softwareradiosystems](https://hub.docker.com/u/sof
 | `image.repository` | string | `"softwareradiosystems/ocudu-gnb"` | Container image repository |
 | `image.tag` | string | Chart appVersion | Image tag |
 | `image.pullPolicy` | string | `"IfNotPresent"` | Image pull policy |
+| `extraLabels` | object | `{}` | Extra labels applied to the Deployment and Pod template |
 | `network.hostNetwork` | bool | `false` | Enable host network mode (bypasses NetworkPolicy) |
 | `sriovConfig.enabled` | bool | `true` | Enable SR-IOV device plugin |
 | `sriovConfig.extendedResourceName` | string | `"intel.com/intel_sriov_netdevice"` | SR-IOV resource name (specify resources manually in resources section) |

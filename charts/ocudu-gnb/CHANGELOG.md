@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.3.1 (2026-03-06)
+
+### Added
+- Add `extraLabels` values to apply custom labels to the Deployment and Pod template
+
 ## 3.3.0 (2026-03-02)
 
 ### Changed
