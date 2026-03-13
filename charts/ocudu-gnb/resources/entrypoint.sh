@@ -348,6 +348,59 @@ update_hal_eal_args() {
 # Network Configuration Functions
 #==============================================================================
 
+# Get MAC address for a PCI BDF without requiring CAP_SYSLOG.
+# Try order:
+#   1. Direct sysfs net address  (VF still bound to kernel driver)
+#   2. PF ip-link VF entry       (VF bound to vfio-pci / DPDK)
+#   3. dmesg fallback            (last resort; may fail without CAP_SYSLOG)
+get_mac_for_bdf() {
+    local bdf="$1"
+    local mac=""
+
+    # 1. Direct sysfs — works when VF is bound to a kernel net driver
+    local sysfs_net="/sys/bus/pci/devices/${bdf}/net"
+    if [ -d "$sysfs_net" ]; then
+        mac=$(cat "${sysfs_net}"/*/address 2>/dev/null | head -1)
+    fi
+
+    # 2. Via Physical Function — works for DPDK/vfio-pci bound VFs
+    if [ -z "$mac" ]; then
+        local physfn_link="/sys/bus/pci/devices/${bdf}/physfn"
+        if [ -L "$physfn_link" ]; then
+            local pf_bdf
+            pf_bdf=$(basename "$(readlink -f "$physfn_link")")
+            local pf_net="/sys/bus/pci/devices/${pf_bdf}/net"
+            if [ -d "$pf_net" ]; then
+                local pf_iface
+                pf_iface=$(ls "$pf_net" 2>/dev/null | head -1)
+                if [ -n "$pf_iface" ]; then
+                    # Find this VF's index under the PF
+                    local vf_idx=0
+                    while [ -L "/sys/bus/pci/devices/${pf_bdf}/virtfn${vf_idx}" ]; do
+                        local vf_bdf
+                        vf_bdf=$(basename "$(readlink -f "/sys/bus/pci/devices/${pf_bdf}/virtfn${vf_idx}")")
+                        if [ "$vf_bdf" = "$bdf" ]; then
+                            mac=$(ip link show "$pf_iface" 2>/dev/null \
+                                | grep "vf ${vf_idx} " \
+                                | sed -n 's/.*link\/ether \([0-9a-fA-F:]\+\).*/\1/p')
+                            break
+                        fi
+                        vf_idx=$((vf_idx + 1))
+                    done
+                fi
+            fi
+        fi
+    fi
+
+    # 3. dmesg fallback (requires CAP_SYSLOG on kernels >= 5.8; may fail in restricted containers)
+    if [ -z "$mac" ]; then
+        mac=$(dmesg 2>/dev/null | grep "$bdf" | grep "MAC address:" | tail -n 1 \
+            | sed -n 's/.*MAC address: \([0-9a-fA-F:]\+\).*/\1/p')
+    fi
+
+    echo "$mac"
+}
+
 # Update each cell's network_interface and du_mac_addr using provided BDFs
 update_network_interfaces_and_macs() {
     local config_file="$1"
@@ -382,7 +435,7 @@ update_network_interfaces_and_macs() {
             fi
             log_info "Setting network_interface to: $current_bdf"
         elif echo "$line" | grep -q "^[[:space:]]*du_mac_addr:" && [ -n "$current_bdf" ]; then
-            mac=$(dmesg | grep "$current_bdf" | grep "MAC address:" | tail -n 1 | sed -n 's/.*MAC address: \([0-9a-fA-F:]\+\).*/\1/p')
+            mac=$(get_mac_for_bdf "$current_bdf")
             indent=$(echo "$line" | sed -n 's/^\([[:space:]]*\).*/\1/p')
             if [ -n "$mac" ]; then
                 echo "${indent}du_mac_addr: $mac" >> "$tmpfile"
