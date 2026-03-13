@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.3.2 (2026-03-13)
+
+### Fixed
+- entrypoint: Replace MAC address lookup with sysfs/ip-link approach, avoiding the need for `CAP_SYSLOG`. Falls back to dmesg only as last resort.
+
 ## 2.3.1 (2026-03-06)
 
 ### Added

@@ -65,6 +65,59 @@ convert_resource_name() {
 # Network Configuration Functions
 #==============================================================================
 
+# Get MAC address for a PCI BDF without requiring CAP_SYSLOG.
+# Try order:
+#   1. Direct sysfs net address  (VF still bound to kernel driver)
+#   2. PF ip-link VF entry       (VF bound to vfio-pci / DPDK)
+#   3. dmesg fallback            (last resort; may fail without CAP_SYSLOG)
+get_mac_for_bdf() {
+    local bdf="$1"
+    local mac=""
+
+    # 1. Direct sysfs — works when VF is bound to a kernel net driver
+    local sysfs_net="/sys/bus/pci/devices/${bdf}/net"
+    if [ -d "$sysfs_net" ]; then
+        mac=$(cat "${sysfs_net}"/*/address 2>/dev/null | head -1)
+    fi
+
+    # 2. Via Physical Function — works for DPDK/vfio-pci bound VFs
+    if [ -z "$mac" ]; then
+        local physfn_link="/sys/bus/pci/devices/${bdf}/physfn"
+        if [ -L "$physfn_link" ]; then
+            local pf_bdf
+            pf_bdf=$(basename "$(readlink -f "$physfn_link")")
+            local pf_net="/sys/bus/pci/devices/${pf_bdf}/net"
+            if [ -d "$pf_net" ]; then
+                local pf_iface
+                pf_iface=$(ls "$pf_net" 2>/dev/null | head -1)
+                if [ -n "$pf_iface" ]; then
+                    # Find this VF's index under the PF
+                    local vf_idx=0
+                    while [ -L "/sys/bus/pci/devices/${pf_bdf}/virtfn${vf_idx}" ]; do
+                        local vf_bdf
+                        vf_bdf=$(basename "$(readlink -f "/sys/bus/pci/devices/${pf_bdf}/virtfn${vf_idx}")")
+                        if [ "$vf_bdf" = "$bdf" ]; then
+                            mac=$(ip link show "$pf_iface" 2>/dev/null \
+                                | grep "vf ${vf_idx} " \
+                                | sed -n 's/.*link\/ether \([0-9a-fA-F:]\+\).*/\1/p')
+                            break
+                        fi
+                        vf_idx=$((vf_idx + 1))
+                    done
+                fi
+            fi
+        fi
+    fi
+
+    # 3. dmesg fallback (requires CAP_SYSLOG on kernels >= 5.8; may fail in restricted containers)
+    if [ -z "$mac" ]; then
+        mac=$(dmesg 2>/dev/null | grep "$bdf" | grep "MAC address:" | tail -n 1 \
+            | sed -n 's/.*MAC address: \([0-9a-fA-F:]\+\).*/\1/p')
+    fi
+
+    echo "$mac"
+}
+
 # Update network_interface and ru_mac_addr for single cell using SR-IOV BDF
 update_network_interface_and_mac() {
     local config_file="$1"
@@ -77,13 +130,11 @@ update_network_interface_and_mac() {
 
     log_info "Updating network interface for SR-IOV device: $bdf"
 
-    # Extract MAC address from dmesg
     local mac
-    mac=$(dmesg | grep "$bdf" | grep "MAC address:" | tail -n 1 | sed -n 's/.*MAC address: \([0-9a-fA-F:]\+\).*/\1/p')
+    mac=$(get_mac_for_bdf "$bdf")
 
     if [ -z "$mac" ]; then
-        log_warn "Could not determine MAC address for BDF $bdf from dmesg"
-        log_warn "Continuing with BDF replacement only"
+        log_warn "Could not determine MAC address for BDF $bdf, continuing with BDF replacement only"
     else
         log_info "Detected MAC address: $mac for BDF: $bdf"
     fi
