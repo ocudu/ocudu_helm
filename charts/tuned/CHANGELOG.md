@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1 (2026-03-13)
+
+### Changed
+- daemonset: Add shebang line in scripts to ensure correct execution environment
+
+
 ## 1.1.0 (2026-03-02)
 
 ### Changed

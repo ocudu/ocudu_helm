@@ -62,6 +62,7 @@ spec:
           command: ["/bin/bash","-c"]
           args:
             - |
+              #!/bin/bash
               set -euo pipefail
 
               SRC=/config
