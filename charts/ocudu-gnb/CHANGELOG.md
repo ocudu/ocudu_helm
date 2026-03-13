@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.3.2 (2026-03-13)
+
+### Changed
+- entrypoint: Fix issue with replacing lcores correctly, only replace second braketed section
+
 ## 3.3.1 (2026-03-06)
 
 ### Added

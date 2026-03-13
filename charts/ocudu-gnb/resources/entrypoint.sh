@@ -333,9 +333,9 @@ update_hal_eal_args() {
         return 0
     fi
 
-    # Replace the CPU list in @(...) or entire pattern (x-y)@(x-y) with detected CPUs
+    # Replace only the CPU list after @(...), preserving the lcore mapping before it.
     # Supports both formats: @(cpus) and (lcores)@(cpus)
-    if ! sed -i -E "s/(\\([-0-9,]+\\))?@\\([-0-9,]+\\)/(${cpus})@(${cpus})/" "$config_file"; then
+    if ! sed -i -E "s/(\\([-0-9,]+\\))?@\\([-0-9,]+\\)/\\1@(${cpus})/" "$config_file"; then
         log_error "Failed to update hal.eal_args"
         return 1
     fi
