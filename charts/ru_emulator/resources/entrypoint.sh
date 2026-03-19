@@ -62,6 +62,88 @@ convert_resource_name() {
 }
 
 #==============================================================================
+# Hardware Detection Functions
+#==============================================================================
+
+# Detect container-available CPUs from cgroups (v1/v2, privileged/non-privileged)
+get_container_cpus() {
+    local cpuset=""
+    local cgroup_path=""
+
+    if [ -f /proc/self/cgroup ]; then
+        cgroup_path=$(grep -E "cpuset|0::" /proc/self/cgroup | head -1 | cut -d: -f3)
+    fi
+
+    if [ -n "$cgroup_path" ] && [ "$cgroup_path" != "/" ]; then
+        if [ -f "/sys/fs/cgroup/cpuset${cgroup_path}/cpuset.cpus" ]; then
+            cpuset=$(cat "/sys/fs/cgroup/cpuset${cgroup_path}/cpuset.cpus")
+        elif [ -f "/sys/fs/cgroup${cgroup_path}/cpuset.cpus" ]; then
+            cpuset=$(cat "/sys/fs/cgroup${cgroup_path}/cpuset.cpus")
+        fi
+    fi
+
+    if [ -z "$cpuset" ]; then
+        if [ -f /sys/fs/cgroup/cpuset/cpuset.cpus ]; then
+            cpuset=$(cat /sys/fs/cgroup/cpuset/cpuset.cpus)
+        elif [ -f /sys/fs/cgroup/cpuset.cpus ]; then
+            cpuset=$(cat /sys/fs/cgroup/cpuset.cpus)
+        fi
+    fi
+
+    if [ -z "$cpuset" ]; then
+        log_warn "Could not determine CPU set from cgroup, using fallback"
+        if command -v nproc >/dev/null 2>&1; then
+            local n
+            n=$(nproc)
+            if [ "$n" -gt 0 ]; then
+                cpuset="0-$((n-1))"
+            else
+                cpuset="0-1"
+            fi
+        else
+            cpuset="0-1"
+        fi
+    else
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] [INFO] Detected CPU set from cgroup: $cpuset" >&2
+    fi
+
+    echo "$cpuset" | xargs
+    return 0
+}
+
+# Update hal.eal_args CPU list (inside @(...)) only if hal section exists
+update_hal_eal_args() {
+    local config_file="$1"
+
+    if ! grep -q "^[[:space:]]*hal:" "$config_file"; then
+        log_info "No hal section found, skipping eal_args update"
+        return 0
+    fi
+
+    if ! grep -q "^[[:space:]]*eal_args:" "$config_file"; then
+        log_info "No eal_args found, skipping update"
+        return 0
+    fi
+
+    local cpus
+    cpus=$(get_container_cpus)
+    if [ -z "$cpus" ]; then
+        log_warn "No CPUs detected, skipping hal.eal_args update"
+        return 0
+    fi
+
+    # Replace only the CPU list after @(...), preserving the lcore mapping before it.
+    # Supports both formats: @(cpus) and (lcores)@(cpus)
+    if ! sed -i -E "s/(\\([-0-9,]+\\))?@\\([-0-9,]+\\)/\\1@(${cpus})/" "$config_file"; then
+        log_error "Failed to update hal.eal_args"
+        return 1
+    fi
+
+    log_info "Updated hal.eal_args CPU list to: ${cpus}"
+    return 0
+}
+
+#==============================================================================
 # Network Configuration Functions
 #==============================================================================
 
@@ -293,11 +375,23 @@ main() {
         
         if [ -n "$device_list" ]; then
             log_info "Found SR-IOV device(s): $device_list"
-            
+
+            # Validate that hal.eal_args is present when using SR-IOV
+            if ! grep -q "^[[:space:]]*hal:" "$updated_config"; then
+                log_fatal "SR-IOV devices detected but no 'hal' section found in config. When using SR-IOV, the config MUST include 'hal.eal_args' for DPDK configuration."
+            fi
+            if ! grep -q "^[[:space:]]*eal_args:" "$updated_config"; then
+                log_fatal "SR-IOV devices detected but 'hal.eal_args' not found in config. When using SR-IOV, the config MUST include 'hal.eal_args' for DPDK configuration."
+            fi
+            log_info "SR-IOV HAL configuration validated"
+
             # Use first device (single cell only)
             local bdf="${device_list%%,*}"
             log_info "Using BDF: $bdf (single cell configuration)"
-            
+
+            # Update hal.eal_args CPU list
+            update_hal_eal_args "$updated_config" || log_fatal "HAL EAL args update failed"
+
             # Update network interface and MAC in config
             update_network_interface_and_mac "$updated_config" "$bdf" || \
                 log_fatal "Failed to update network configuration"

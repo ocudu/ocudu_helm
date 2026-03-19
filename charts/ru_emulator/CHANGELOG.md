@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.3.3 (2026-03-19)
+
+### Added
+- entrypoint: Add function to get assigned CPU cores from cgroup for deployments with SRIOV Device Plugin enabled
+
 ## 2.3.2 (2026-03-13)
 
 ### Fixed
