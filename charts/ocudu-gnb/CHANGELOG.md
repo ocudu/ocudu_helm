@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.4.0 (2026-03-13)
+
+### Added
+- deployment: Add optional volume mount for Grafana for power measurement metrics via /sys/class/powercap
+
 ## 3.3.3 (2026-03-13)
 
 ### Fixed

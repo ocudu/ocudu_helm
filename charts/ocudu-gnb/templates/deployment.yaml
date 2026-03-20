@@ -80,10 +80,14 @@ spec:
           emptyDir:
             medium: HugePages-2Mi
         {{- end }}
-        {{- if .Values.metricsService.enabled }}
+        {{- if and .Values.metricsService.enabled .Values.metricsService.powercap.enabled }}
         - name: powercap-sysfs
           hostPath:
             path: /sys/class/powercap
+            type: Directory
+        - name: powercap-devices
+          hostPath:
+            path: /sys/devices/virtual/powercap
             type: Directory
         {{- end }}
       containers:
@@ -155,9 +159,12 @@ spec:
             - name: hugepage-2mi
               mountPath: /hugepages-2Mi
             {{- end }}
-            {{- if .Values.metricsService.enabled }}
+            {{- if and .Values.metricsService.enabled .Values.metricsService.powercap.enabled }}
             - name: powercap-sysfs
               mountPath: /sys/class/powercap
+              readOnly: true
+            - name: powercap-devices
+              mountPath: /sys/devices/virtual/powercap
               readOnly: true
             {{- end }}
           {{- if .Values.o1.enable_ocudu_o1 }}

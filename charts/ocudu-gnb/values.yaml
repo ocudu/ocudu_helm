@@ -211,6 +211,10 @@ affinity: {}
 metricsService:
   # -- Enable metrics service
   enabled: false
+  # -- Enable mounting powercap sysfs paths for energy metrics
+  # When false, /sys/class/powercap and /sys/devices/virtual/powercap are not mounted
+  powercap:
+    enabled: true
 
   # -- Service type (ClusterIP, NodePort, or LoadBalancer)
   # @default -- `ClusterIP`
