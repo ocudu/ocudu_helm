@@ -29,7 +29,7 @@ annotations:
   artifacthub.io/operator: "false"
   artifacthub.io/prerelease: "true"
 type: application
-version: 2.2.0
+version: 2.3.0
 appVersion: "9.2.10"
 
 dependencies:
@@ -37,10 +37,6 @@ dependencies:
     repository: "https://grafana.github.io/helm-charts"
     version: "9.2.10"
     alias: grafana
-  - name: telegraf
-    repository: "https://helm.influxdata.com/"
-    version: "1.8.60"
-    alias: telegraf
   - name: influxdb3
     repository: "oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm"
     version: "2.2.0"

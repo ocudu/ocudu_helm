@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.3.0 (2026-03-20)
+
+### Added
+- support for multiple gNBs via a `gnbs` list
+- `gnbs` list: one Telegraf Deployment is created per entry, connecting to that gNB and tagging all metrics with `gnb_id` for per-gNB filtering in Grafana
+
 ## 2.2.0 (2026-03-20)
 
 ### Changed

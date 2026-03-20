@@ -166,11 +166,23 @@ influxdb3:
     # -- Mount path for plugins directory
     pluginMountPath: /var/lib/influxdb3-plugins
 
-# -- Telegraf configuration (subchart)
-# This deploys Telegraf agent for collecting metrics from OCUDU gNB
+# -- List of gNBs to collect metrics from (required, at least one entry).
+#
+# Each entry creates a dedicated Telegraf Deployment that connects to that
+# gNB's WebSocket endpoint and tags all metrics with the gNB's id, allowing
+# a single Grafana dashboard to distinguish between gNBs via a gnb_id filter.
+#
+# Example:
+#   gnbs:
+#     - id: gnb1
+#       wsUrl: "192.168.1.10:8001"
+#     - id: gnb2
+#       wsUrl: "192.168.1.11:8001"
+gnbs: []
+
+# -- Telegraf configuration
+# Applies to all Telegraf Deployments created from the gnbs list above.
 telegraf:
-  # -- Use custom image configuration
-  useImageConfig: true
   
   # -- Container image configuration
   image:
@@ -189,13 +201,9 @@ telegraf:
     - "--config"
     - "/etc/ocudu/telegraf.conf"
   
-  # -- Environment variables for Telegraf configuration
+  # -- Environment variables applied to every Telegraf Deployment.
+  # WS_URL and GNB_ID are injected automatically from each gnbs entry.
   env:
-    # -- WebSocket URL for OCUDU metrics endpoint
-    # Format: <ocudu-gnb-release-name>-metrics.<namespace>:8001
-    # The service name depends on the Helm release name of the ocudu-gnb chart.
-    - name: WS_URL
-      value: "ocudu-gnb-metrics.ocudu:8001"
     # -- InfluxDB3 service URL
     - name: INFLUXDB3_EXTERNAL_URL
       value: "http://influxdb3.ocudu:8081"
@@ -281,7 +289,3 @@ telegraf:
       value: "srskit-rack1"
       effect: "NoSchedule"
   
-  # -- Service configuration
-  service:
-    # -- Disable service (Telegraf doesn't need external access)
-    enabled: false
