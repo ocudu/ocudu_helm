@@ -70,6 +70,11 @@ service:
   type: ClusterIP
   # -- Service port for HTTP API
   port: 8081
+  # -- NodePort for external access (only used when type: NodePort)
+  # Required when type is NodePort and you want a fixed port number.
+  # If omitted while type is NodePort, Kubernetes assigns a random port.
+  # @default -- none (Kubernetes auto-assigns)
+  nodePort: null
 
 # -- Persistence configuration
 # InfluxDB3 stores time-series data and requires persistent storage

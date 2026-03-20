@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.0 (2026-03-20)
+
+### Added
+- `service.nodePort`: optional fixed NodePort when `service.type: NodePort`, enabling external access for distributed deployments
+
 ## 2.1.0 (2026-03-02)
 
 ### Changed
