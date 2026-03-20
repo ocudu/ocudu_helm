@@ -59,11 +59,11 @@ grafana:
     # -- Admin password (change for production)
     GF_SECURITY_ADMIN_PASSWORD: "admin1234"
     # -- InfluxDB3 service URL
-    INFLUXDB3_EXTERNAL_URL: "http://influxdb3.srsran.svc.cluster.local:8081"
+    INFLUXDB3_EXTERNAL_URL: "http://influxdb3.ocudu:8081"
     # -- InfluxDB3 authentication token (fake token for demo)
     INFLUXDB3_AUTH_TOKEN: "fake-token-1234567890abcdef"
     # -- InfluxDB3 database/bucket name
-    INFLUXDB3_BUCKET: "srsran"
+    INFLUXDB3_BUCKET: "ocudu"
   
   # -- Service configuration
   service:
@@ -94,7 +94,7 @@ grafana:
           # -- Access mode (proxy = through Grafana backend)
           access: proxy
           # -- InfluxDB3 URL
-          url: http://influxdb3.srsran.svc.cluster.local:8081
+          url: http://influxdb3.ocudu:8081
           # -- Unique identifier for this data source
           uid: JOSE3g9KVz
           # -- JSON data for InfluxDB3 configuration
@@ -102,7 +102,7 @@ grafana:
             # -- InfluxDB version (SQL for v3)
             version: SQL
             # -- Database name
-            dbName: srsran
+            dbName: ocudu
             # -- Allow insecure gRPC connections
             insecureGrpc: true
             # -- Maximum series to return in queries
@@ -144,11 +144,6 @@ influxdb3:
     - --http-bind=0.0.0.0:8081
     # Disable authentication (demo only)
     - --without-auth
-  
-  # -- Database configuration
-  database:
-    # -- Database name to create
-    name: srsran
   
   # -- Persistence configuration
   persistence:
@@ -192,22 +187,24 @@ telegraf:
   # -- Command-line arguments for Telegraf
   args:
     - "--config"
-    - "/etc/srs/telegraf.conf"
+    - "/etc/ocudu/telegraf.conf"
   
   # -- Environment variables for Telegraf configuration
   env:
     # -- WebSocket URL for OCUDU metrics endpoint
+    # Format: <ocudu-gnb-release-name>-metrics.<namespace>:8001
+    # The service name depends on the Helm release name of the ocudu-gnb chart.
     - name: WS_URL
-      value: "srsran-project-cudu-chart-metrics.srsran.svc.cluster.local:8001"
+      value: "ocudu-gnb-metrics.ocudu:8001"
     # -- InfluxDB3 service URL
     - name: INFLUXDB3_EXTERNAL_URL
-      value: "http://influxdb3.srsran.svc.cluster.local:8081"
+      value: "http://influxdb3.ocudu:8081"
     # -- InfluxDB3 authentication token
     - name: INFLUXDB3_AUTH_TOKEN
       value: "fake-token-1234567890abcdef"
     # -- InfluxDB3 bucket/database name
     - name: INFLUXDB3_BUCKET
-      value: "srsran"
+      value: "ocudu"
     # -- InfluxDB3 write rate limit (0 = unlimited)
     - name: INFLUXDB3_RATE_LIMIT
       value: "0"

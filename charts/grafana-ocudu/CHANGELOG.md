@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.2.0 (2026-03-20)
+
+### Changed
+- Replaced all remaining `srsran` references with `ocudu`: default database name, namespace in service DNS names, and WS_URL default
+- Updated Telegraf config path from `/etc/srs/telegraf.conf` to `/etc/ocudu/telegraf.conf` to align with the Docker image build
+- Updated `influxdb3` dependency to 2.2.0 (adds NodePort support)
+
+### Migration
+- If deploying in a non-default namespace, update `INFLUXDB3_EXTERNAL_URL`, `grafana.datasources.datasources.yaml.datasources[0].url`, and `telegraf.env.WS_URL` to match your namespace
+- Default database name changed from `srsran` to `ocudu` — update any existing InfluxDB3 data or override `influxdb3.database.name` and `INFLUXDB3_BUCKET` in your values file
+
 ## 2.1.0 (2026-03-02)
 
 ### Changed

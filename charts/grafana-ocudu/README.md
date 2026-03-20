@@ -113,7 +113,7 @@ grafana:
 telegraf:
   env:
     - name: WS_URL
-      value: "my-gnb-metrics.namespace.svc.cluster.local:8001"
+      value: "my-gnb-metrics.namespace:8001"
 ```
 
 **Persistent Storage for InfluxDB3**:
@@ -144,7 +144,7 @@ grafana:
 | grafana.env.GF_AUTH_ANONYMOUS_ORG_ROLE | string | `"Viewer"` | Anonymous user role |
 | grafana.env.GF_SECURITY_ADMIN_USER | string | `"admin"` | Admin username |
 | grafana.env.GF_SECURITY_ADMIN_PASSWORD | string | `"admin1234"` | Admin password |
-| grafana.env.INFLUXDB3_EXTERNAL_URL | string | `"http://influxdb3.ocudu.svc.cluster.local:8081"` | InfluxDB 3 external URL |
+| grafana.env.INFLUXDB3_EXTERNAL_URL | string | `"http://influxdb3.ocudu:8081"` | InfluxDB 3 external URL |
 | grafana.env.INFLUXDB3_AUTH_TOKEN | string | `"fake-token-1234567890abcdef"` | InfluxDB 3 auth token |
 | grafana.env.INFLUXDB3_BUCKET | string | `"ocudu"` | InfluxDB 3 bucket name |
 | grafana.service.enabled | bool | `true` | Enable Grafana service |
@@ -156,7 +156,6 @@ grafana:
 | influxdb3.image.tag | string | `"3.1.0-core"` | InfluxDB 3 image tag |
 | influxdb3.service.type | string | `"ClusterIP"` | InfluxDB 3 service type |
 | influxdb3.service.port | int | `8081` | InfluxDB 3 service port |
-| influxdb3.database.name | string | `"ocudu"` | InfluxDB 3 database name |
 | influxdb3.persistence.enabled | bool | `true` | Enable InfluxDB 3 persistence |
 | influxdb3.persistence.type | string | `"hostPath"` | Persistence type |
 | influxdb3.persistence.hostPath | string | `"/mnt/influxdb3"` | Host path for data storage |
@@ -167,8 +166,8 @@ grafana:
 | telegraf.useImageConfig | bool | `true` | Use image config for Telegraf |
 | telegraf.image.repo | string | `"softwareradiosystems/telegraf"` | Telegraf image repository |
 | telegraf.image.tag | string | `"11c9bbabb6__2025-09-15"` | Telegraf image tag |
-| telegraf.env.WS_URL | string | `"ocudu-gnb-metrics.ocudu.svc.cluster.local:8001"` | WebSocket URL |
-| telegraf.env.INFLUXDB3_EXTERNAL_URL | string | `"http://influxdb3.ocudu.svc.cluster.local:8081"` | InfluxDB 3 URL for Telegraf |
+| telegraf.env.WS_URL | string | `"ocudu-gnb-metrics.ocudu:8001"` | WebSocket URL |
+| telegraf.env.INFLUXDB3_EXTERNAL_URL | string | `"http://influxdb3.ocudu:8081"` | InfluxDB 3 URL for Telegraf |
 | telegraf.env.INFLUXDB3_AUTH_TOKEN | string | `"fake-token-1234567890abcdef"` | InfluxDB 3 auth token for Telegraf |
 | telegraf.env.INFLUXDB3_BUCKET | string | `"ocudu"` | InfluxDB 3 bucket for Telegraf |
 | telegraf.env.TELEGRAF_INPUT_INTERVAL | string | `"1s"` | Input interval |
