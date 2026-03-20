@@ -31,11 +31,11 @@ grafana:
   # -- Container image configuration
   image:
     # -- Container image repository (custom build with dashboards)
-    repository: softwareradiosystems/grafana
+    registry: registry.gitlab.com
+    repository: ocudu/ocudu/grafana
     # -- Image tag
     # @default -- Matches OCUDU release version
-    tag: "11c9bbabb6__2025-09-15"
-  
+    tag: "1.7.1"
   # -- Environment variables for Grafana configuration
   env:
     # -- Grafana HTTP port
@@ -187,10 +187,10 @@ telegraf:
   # -- Container image configuration
   image:
     # -- Container image repository (custom build with WebSocket input)
-    repo: "softwareradiosystems/telegraf"
+    repo: "registry.gitlab.com/ocudu/ocudu/telegraf"
     # -- Image tag
     # @default -- Matches OCUDU release version
-    tag: "11c9bbabb6__2025-09-15"
+    tag: "0.17.0"
   
   # -- Image pull secrets
   imagePullSecrets:

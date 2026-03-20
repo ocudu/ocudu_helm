@@ -29,7 +29,7 @@ annotations:
   artifacthub.io/operator: "false"
   artifacthub.io/prerelease: "true"
 type: application
-version: 2.3.0
+version: 2.2.0
 appVersion: "9.2.10"
 
 dependencies:
