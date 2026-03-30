@@ -137,7 +137,7 @@ o1:
 Select the appropriate container image based on your CPU:
 
 - **Architectures**: arm64, amd64
-- **OS**: Ubuntu 22.04
+- **OS**: Ubuntu 24.04
 - **CPU Flags**: AVX512, AVX2, NEON
 
 Find images at: [Docker Hub - softwareradiosystems](https://hub.docker.com/u/softwareradiosystems)
@@ -225,4 +225,4 @@ This removes all Kubernetes resources associated with the chart.
 
 ## License
 
-AGPL-3.0 - See LICENSE file for details
+BSD-3-Clause-Open-MPI - See LICENSE file for details

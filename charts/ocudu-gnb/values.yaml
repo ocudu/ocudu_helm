@@ -14,19 +14,18 @@ replicaCount: 1
 # -- Container image configuration
 image:
   # -- Container image repository
-  # See https://gitlab.com/ocudu/ocudu_elements/ocudu_helm/container_registry for available images
-  repository: registry.gitlab.com/ocudu/ocudu
+  # See https://gitlab.com/ocudu/ocudu/container_registry/ for available images
+  repository: registry.gitlab.com/ocudu/ocudu/ocudu_nightly_avx512
   # -- Image pull policy
   pullPolicy: IfNotPresent
   # -- Image tag
-  # Format: release_<arch>-<commit>__<date>
+  # Format: <date>_<commit>
   # @default -- Chart appVersion
-  tag: release_avx512-11c9bbabb6__2025-09-15
+  tag: 20260327_4c5a2088
 
 # -- Image pull secrets for private registries
 # @default -- See values.yaml
-imagePullSecrets:
-  - name: regcred
+imagePullSecrets: []
 
 # -- Override the name of the chart
 # Leaving empty allows Helm to use the chart name for resource naming

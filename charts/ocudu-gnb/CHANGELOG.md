@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.5.0 (2026-03-30)
+
+### Changed
+- Update default image to OCUDU 26.04
+- Fix README license badge: AGPL-3.0 → BSD-3-Clause-Open-MPI
+
 ## 3.4.0 (2026-03-13)
 
 ### Added
