@@ -58,6 +58,7 @@ linuxptp image:
         paths:
           - images/linuxptp/**/*
   trigger:
+    strategy: mirror
     include:
       - local: images/linuxptp/.gitlab-ci.yml
         inputs:
@@ -79,6 +80,7 @@ rt-tests image:
         paths:
           - images/rt-tests/**/*
   trigger:
+    strategy: mirror
     include:
       - local: images/rt-tests/.gitlab-ci.yml
         inputs:
@@ -101,6 +103,7 @@ tuned image:
         paths:
           - images/tuned/**/*
   trigger:
+    strategy: mirror
     include:
       - local: images/tuned/.gitlab-ci.yml
         inputs:
@@ -120,6 +123,7 @@ grafana-ocudu chart:
           - .gitlab/ci/helm_utils.yml
           - charts/grafana-ocudu/**/*
   trigger:
+    strategy: mirror
     include: charts/grafana-ocudu/.gitlab-ci.yml
   needs: []
 
@@ -131,6 +135,7 @@ rt-tests chart:
           - .gitlab/ci/helm_utils.yml
           - charts/rt-tests/**/*
   trigger:
+    strategy: mirror
     include: charts/rt-tests/.gitlab-ci.yml
   needs: []
 
@@ -142,6 +147,7 @@ linuxptp chart:
           - .gitlab/ci/helm_utils.yml
           - charts/linuxptp/**/*
   trigger:
+    strategy: mirror
     include: charts/linuxptp/.gitlab-ci.yml
   needs: []
 
@@ -153,6 +159,7 @@ ru_emulator chart:
           - .gitlab/ci/helm_utils.yml
           - charts/ru_emulator/**/*
   trigger:
+    strategy: mirror
     include: charts/ru_emulator/.gitlab-ci.yml
   needs: []
 
@@ -164,6 +171,7 @@ ocudu-gnb chart:
           - .gitlab/ci/helm_utils.yml
           - charts/ocudu-gnb/**/*
   trigger:
+    strategy: mirror
     include: charts/ocudu-gnb/.gitlab-ci.yml
   needs: []
 
@@ -175,6 +183,7 @@ influxdb3 chart:
           - .gitlab/ci/helm_utils.yml
           - charts/influxdb3/**/*
   trigger:
+    strategy: mirror
     include: charts/influxdb3/.gitlab-ci.yml
   needs: []
 
@@ -186,6 +195,7 @@ tuned chart:
           - .gitlab/ci/helm_utils.yml
           - charts/tuned/**/*
   trigger:
+    strategy: mirror
     include: charts/tuned/.gitlab-ci.yml
   needs: []
 
@@ -197,5 +207,6 @@ onap-smo-lite chart:
           - .gitlab/ci/helm_utils.yml
           - charts/onap-smo-lite/**/*
   trigger:
+    strategy: mirror
     include: charts/onap-smo-lite/.gitlab-ci.yml
   needs: []
