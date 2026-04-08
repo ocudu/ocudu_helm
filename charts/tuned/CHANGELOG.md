@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.3 (2026-04-08)
+
+### Changed
+- Maintenance: fix issue in REUSE compliance headers.
+
 ## 1.1.2 (2026-04-08)
 
 ### Changed
