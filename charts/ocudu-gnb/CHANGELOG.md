@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.5.1 (2026-04-08)
+
+### Changed
+- Maintenance: REUSE compliance headers and licensing metadata.
+
 ## 3.5.0 (2026-03-30)
 
 ### Changed
