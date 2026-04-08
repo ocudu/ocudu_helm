@@ -1,0 +1,75 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+{{- /*
+Multi-gNB Telegraf Deployments
+
+Rendered only when .Values.gnbs is non-empty. Each entry in the gnbs list
+produces one dedicated Telegraf Deployment that connects to that gNB's
+WebSocket metrics endpoint and tags every metric with the gNB's id.
+
+When gnbs is empty (default), this template produces no output and the
+single-instance upstream Telegraf subchart is used instead.
+*/ -}}
+
+{{- if not .Values.gnbs }}
+{{- fail "gnbs is required: provide at least one gNB entry with id and wsUrl" }}
+{{- end }}
+
+{{- range .Values.gnbs }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $.Release.Name }}-telegraf-{{ .id }}
+  labels:
+    app.kubernetes.io/name: telegraf
+    app.kubernetes.io/instance: {{ $.Release.Name }}-{{ .id }}
+    app.kubernetes.io/component: telegraf
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: telegraf
+      app.kubernetes.io/instance: {{ $.Release.Name }}-{{ .id }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: telegraf
+        app.kubernetes.io/instance: {{ $.Release.Name }}-{{ .id }}
+        app.kubernetes.io/component: telegraf
+    spec:
+      {{- with $.Values.telegraf.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: telegraf
+          image: "{{ $.Values.telegraf.image.repo }}:{{ $.Values.telegraf.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          args: {{ toJson $.Values.telegraf.args }}
+          env:
+            - name: WS_URL
+              value: {{ .wsUrl | quote }}
+            - name: GNB_ID
+              value: {{ .id | quote }}
+            {{- range $.Values.telegraf.env }}
+            {{- if and (ne .name "WS_URL") (ne .name "GNB_ID") }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+            {{- end }}
+          {{- with $.Values.telegraf.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.telegraf.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with $.Values.telegraf.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

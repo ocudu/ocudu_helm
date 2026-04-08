@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.3.2 (2026-04-09)
+
+### Added
+- Add missing `templates/telegraf-deployments.yaml` to deploy one Telegraf pod per gNB entry in the `gnbs` list
+
 ## 2.3.1 (2026-04-08)
 
 ### Changed
