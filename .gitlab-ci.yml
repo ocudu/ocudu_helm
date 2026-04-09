@@ -175,6 +175,30 @@ ocudu-gnb chart:
     include: charts/ocudu-gnb/.gitlab-ci.yml
   needs: []
 
+ocudu-cu chart:
+  stage: child
+  rules:
+    - changes:
+        paths:
+          - .gitlab/ci/helm_utils.yml
+          - charts/ocudu-cu/**/*
+  trigger:
+    strategy: mirror
+    include: charts/ocudu-cu/.gitlab-ci.yml
+  needs: []
+
+ocudu-du chart:
+  stage: child
+  rules:
+    - changes:
+        paths:
+          - .gitlab/ci/helm_utils.yml
+          - charts/ocudu-du/**/*
+  trigger:
+    strategy: mirror
+    include: charts/ocudu-du/.gitlab-ci.yml
+  needs: []
+
 influxdb3 chart:
   stage: child
   rules:
