@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# Reproducible overrides for Gradiant's open5gs-operator Helm chart.
+# This fixes the deprecated/removed gcr.io image reference used by chart 1.0.5.
+
+controllerManager:
+  kubeRbacProxy:
+    image:
+      repository: registry.k8s.io/kubebuilder/kube-rbac-proxy
+      tag: v0.16.0

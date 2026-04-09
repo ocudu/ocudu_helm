@@ -1,29 +1,28 @@
 # SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
 # SPDX-License-Identifier: BSD-3-Clause-Open-MPI
 
+# Minimal static PV for the operator-created MongoDB PVC used by:
+#   PVC: default/open5gs-sample-mongodb
+# This is suitable for a single-node lab cluster using hostPath storage.
+#
+# Before applying, ensure the node path exists and is writable:
+#   /mnt/data/open5gs-sample-mongodb
+
+apiVersion: v1
 kind: PersistentVolume
-apiVersion: v1
 metadata:
-  name: db-pv
+  name: open5gs-sample-mongodb-pv
 spec:
-  storageClassName: manual
   capacity:
-    storage: 50Gi
+    storage: 8Gi
   accessModes:
     - ReadWriteOnce
-    - ReadWriteMany
+  volumeMode: Filesystem
   persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    namespace: default
+    name: open5gs-sample-mongodb
   hostPath:
-    path: /mnt/data/vol
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: open5gs-mongodb-claim
-spec:
-  storageClassName: manual
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 30Gi
+    path: /mnt/data/open5gs-sample-mongodb
+    type: DirectoryOrCreate
