@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+apiVersion: v2
+name: ocudu-du
+description: OCUDU Project DU (Distributed Unit) Helm Chart
+kubeVersion: ">= 1.24.0-0"
+icon: https://gitlab.com/ocudu/ocudu_elements/ocudu_helm/-/raw/main/docs/logo.png
+home: https://gitlab.com/ocudu/ocudu_elements/ocudu_helm
+sources:
+- https://gitlab.com/ocudu/ocudu_elements/ocudu_helm
+- https://gitlab.com/ocudu/ocudu
+keywords:
+- ocudu
+- 5g
+- oran
+- vran
+- du
+- ran
+- mobile
+- telecom
+- networking
+annotations:
+  artifacthub.io/category: networking
+  artifacthub.io/license: BSD-3-Clause-Open-MPI
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "false"
+type: application
+version: 1.0.0
+appVersion: "26.04"

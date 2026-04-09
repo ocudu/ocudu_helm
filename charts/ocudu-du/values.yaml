@@ -1,0 +1,128 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# -- Container image configuration
+image:
+  # -- Container image repository
+  repository: registry.gitlab.com/ocudu/ocudu/ocudu_nightly_avx512
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+  # -- Image tag
+  # @default -- Chart appVersion
+  tag: ""
+
+# -- Image pull secrets for private registries
+imagePullSecrets: []
+
+# -- Override the name of the chart
+nameOverride: ""
+
+# -- Override the full name of resources
+fullnameOverride: ""
+
+# -- ConfigMap name overrides
+configmap:
+  main: { nameOverride: "" }
+  entrypoint: { nameOverride: "" }
+
+# -- Service account configuration
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# -- RBAC configuration
+rbac:
+  create: true
+  extraRules: []
+
+# -- Pod Disruption Budget configuration
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 0
+  unhealthyPodEvictionPolicy: AlwaysAllow
+
+# -- Additional pod annotations
+podAnnotations: {}
+
+# -- Extra labels applied to the Deployment and Pod template
+extraLabels: {}
+
+# -- Pod-level security context
+podSecurityContext: {}
+
+# -- Container-level security context
+securityContext:
+  privileged: true
+
+# -- Resource requests and limits
+resources: {}
+
+# -- Node selector for pod assignment
+nodeSelector: {}
+
+# -- Tolerations for pod assignment
+tolerations: {}
+
+# -- Pod affinity configuration
+affinity: {}
+
+# -- Persistent storage configuration
+persistence:
+  enabled: true
+  # -- Storage type: "pvc" or "hostPath"
+  type: hostPath
+  pvc:
+    storageClassName: ""
+    accessMode: ReadWriteOnce
+    size: 10Gi
+  hostPath:
+    path: "/mnt/debugging-logs"
+    type: DirectoryOrCreate
+  mountPath: "/tmp"
+  preserveOldLogs: true
+
+# -- DU configuration file
+config:
+  du-config.yml: |-
+    f1ap:
+      addrs: 127.0.10.1
+      bind_addrs: 127.0.10.2
+
+    f1u:
+      socket:
+        - bind_addr: 127.0.10.2
+
+    ru_sdr:
+      device_driver: uhd
+      device_args: type=b200,num_recv_frames=64,num_send_frames=64
+      srate: 23.04
+      otw_format: sc12
+      tx_gain: 80
+      rx_gain: 40
+
+    cell_cfg:
+      dl_arfcn: 650000
+      band: 78
+      channel_bandwidth_MHz: 20
+      common_scs: 30
+      plmn: "00101"
+      tac: 7
+      pci: 1
+
+    log:
+      filename: /tmp/du.log
+      all_level: warning
+
+    metrics:
+      autostart_stdout_metrics: false
+      enable_json: false
+      enable_log: false
+
+    pcap:
+      mac_enable: false
+      mac_filename: /tmp/du_mac.pcap
+      f1ap_enable: false
+      f1ap_filename: /tmp/du_f1ap.pcap
+      f1u_enable: false
+      f1u_filename: /tmp/du_f1u.pcap

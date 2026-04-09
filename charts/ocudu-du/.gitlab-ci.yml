@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+include:
+  - local: .gitlab/ci/helm_utils.yml
+
+stages:
+  - static
+  - publish
+
+helm lint:
+  extends: .helm lint
+  variables:
+    CHART_PATH: charts/ocudu-du
+
+helm version check:
+  extends: .helm version check
+  variables:
+    CHART_PATH: charts/ocudu-du
+    CHART_NAME: ocudu-du
+
+helm publish-dev:
+  extends: .helm publish-dev
+  variables:
+    CHART_PATH: charts/ocudu-du
+    CHART_NAME: ocudu-du
+  needs:
+    - job: helm lint
+      optional: true
+    - job: helm version check
+      optional: true
+
+helm publish-prod:
+  extends: .helm publish-prod
+  variables:
+    CHART_PATH: charts/ocudu-du
+    CHART_NAME: ocudu-du

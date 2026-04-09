@@ -1,0 +1,93 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ocudu-du.fullname" . }}
+  labels:
+    {{- include "ocudu-du.labels" . | nindent 4 }}
+    {{- with .Values.extraLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "ocudu-du.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "ocudu-du.selectorLabels" . | nindent 8 }}
+        {{- with .Values.extraLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "ocudu-du.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      volumes:
+        - name: entrypoint-volume-srsdu
+          configMap:
+            name: {{ include "ocudu-du.entrypointConfigmapName" . }}
+            defaultMode: 0777
+        - name: config-volume
+          configMap:
+            name: {{ include "ocudu-du.mainConfigmapName" . }}
+        {{- if .Values.persistence.enabled }}
+          {{- if eq .Values.persistence.type "pvc" }}
+        - name: srs-logs
+          persistentVolumeClaim:
+            claimName: {{ include "ocudu-du.fullname" . }}-logs
+          {{- else if eq .Values.persistence.type "hostPath" }}
+        - name: srs-logs
+          hostPath:
+            path: {{ .Values.persistence.hostPath.path }}
+            type: {{ .Values.persistence.hostPath.type }}
+          {{- end }}
+        {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ template "ocudu-du.image" .Values.image }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: PRESERVE_OLD_LOGS
+              value: {{ .Values.persistence.preserveOldLogs | quote }}
+          command: [ "/bin/bash" ]
+          args: [ "-c", "/etc/entrypoint/entrypoint-srsdu.sh /etc/config/du-config.yml" ]
+          volumeMounts:
+            - name: entrypoint-volume-srsdu
+              mountPath: /etc/entrypoint
+            - name: config-volume
+              mountPath: /etc/config/
+            {{- if .Values.persistence.enabled }}
+            - name: srs-logs
+              mountPath: {{ .Values.persistence.mountPath }}
+            {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

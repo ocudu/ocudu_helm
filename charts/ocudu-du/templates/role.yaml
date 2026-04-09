@@ -1,0 +1,22 @@
+{{- if and .Values.serviceAccount.create .Values.rbac.create }}
+
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "ocudu-du.serviceAccountName" . }}
+  labels:
+    {{- include "ocudu-du.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get"]
+{{- with .Values.rbac.extraRules }}
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}
