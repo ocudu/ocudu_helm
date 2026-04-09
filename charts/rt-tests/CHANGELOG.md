@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.3 (2026-04-09)
+
+### Changed
+- Maintenance: bump version due to shared CI pipeline update in helm_utils.yml
+- CI: `helm publish-dev` now requires `helm lint` and `helm version check` to pass before running
+
 ## 2.1.2 (2026-04-08)
 
 ### Changed

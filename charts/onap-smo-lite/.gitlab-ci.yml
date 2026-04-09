@@ -26,9 +26,7 @@ helm publish-dev:
     CHART_NAME: onap-smo-lite
   needs:
     - job: helm lint
-      optional: true
     - job: helm version check
-      optional: true
 
 helm publish-prod:
   extends: .helm publish-prod
