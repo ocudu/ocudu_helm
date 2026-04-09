@@ -9,6 +9,7 @@
   retry: 2
   variables:
     CHART_PATH: ${CI_PROJECT_DIR}
+    LINT_VALUES_FILE: ""
   rules:
     - if: $ON_MR
   script:
@@ -22,9 +23,9 @@
       chmod +x /usr/local/bin/kubeconform
       cd ${CI_PROJECT_DIR}
     - helm dependency update ${CHART_PATH}/
-    - helm lint --strict --with-subcharts ${CHART_PATH}/
-    - helm template --debug ${CHART_PATH}/ | kubeconform --debug --strict
-    - helm template ${CHART_PATH}/
+    - helm lint --strict --with-subcharts ${CHART_PATH}/ ${LINT_VALUES_FILE:+-f $LINT_VALUES_FILE}
+    - helm template --debug ${CHART_PATH}/ ${LINT_VALUES_FILE:+-f $LINT_VALUES_FILE} | kubeconform --debug --strict
+    - helm template ${CHART_PATH}/ ${LINT_VALUES_FILE:+-f $LINT_VALUES_FILE}
 
 .helm version check:
   image:

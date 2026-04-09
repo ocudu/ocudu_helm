@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# Minimal values for CI linting. Provides the required gnbs entry so that
+# helm template does not trigger the fail guard in telegraf-deployments.yaml.
+gnbs:
+  - id: ci-gnb
+    wsUrl: "192.168.0.1:8001"

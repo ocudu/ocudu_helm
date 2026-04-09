@@ -13,6 +13,7 @@ helm lint:
   allow_failure: true
   variables:
     CHART_PATH: charts/grafana-ocudu
+    LINT_VALUES_FILE: charts/grafana-ocudu/ci/lint-values.yaml
   before_script:
     - helm repo add influxdata https://helm.influxdata.com
 

@@ -4,6 +4,8 @@
 
 ### Added
 - Add missing `templates/telegraf-deployments.yaml` to deploy one Telegraf pod per gNB entry in the `gnbs` list
+- Fix issues with linter
+- CI: `helm publish-dev` now requires `helm lint` and `helm version check` to pass before running
 
 ## 2.3.1 (2026-04-08)
 
