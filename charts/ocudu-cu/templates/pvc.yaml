@@ -1,0 +1,21 @@
+{{- if and .Values.persistence.enabled (eq .Values.persistence.type "pvc") }}
+
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "ocudu-cu.fullname" . }}-logs
+  labels:
+    {{- include "ocudu-cu.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.pvc.accessMode }}
+  {{- if .Values.persistence.pvc.storageClassName }}
+  storageClassName: {{ .Values.persistence.pvc.storageClassName }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.pvc.size }}
+{{- end }}
