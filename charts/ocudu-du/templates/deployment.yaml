@@ -51,6 +51,16 @@ spec:
             type: {{ .Values.persistence.hostPath.type }}
           {{- end }}
         {{- end }}
+        {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-1Gi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-1Gi")) }}
+        - name: hugepage-1gi
+          emptyDir:
+            medium: HugePages-1Gi
+        {{- end }}
+        {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-2Mi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-2Mi")) }}
+        - name: hugepage-2mi
+          emptyDir:
+            medium: HugePages-2Mi
+        {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -74,6 +84,14 @@ spec:
             {{- if .Values.persistence.enabled }}
             - name: srs-logs
               mountPath: {{ .Values.persistence.mountPath }}
+            {{- end }}
+            {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-1Gi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-1Gi")) }}
+            - name: hugepage-1gi
+              mountPath: /hugepages-1Gi
+            {{- end }}
+            {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-2Mi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-2Mi")) }}
+            - name: hugepage-2mi
+              mountPath: /hugepages-2Mi
             {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

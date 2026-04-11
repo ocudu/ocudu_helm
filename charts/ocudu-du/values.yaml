@@ -56,7 +56,50 @@ securityContext:
   privileged: true
 
 # -- Resource requests and limits
-resources: {}
+# Hugepages are automatically configured when defined in limits or requests.
+# The chart detects hugepages-1Gi or hugepages-2Mi and creates volumes accordingly.
+#
+# Example with 1Gi hugepages (recommended):
+# ```yaml
+# resources:
+#   limits:
+#     cpu: 12
+#     memory: 16Gi
+#     hugepages-1Gi: 2Gi
+#   requests:
+#     cpu: 12
+#     memory: 16Gi
+#     hugepages-1Gi: 2Gi
+# ```
+#
+# Example with 2Mi hugepages:
+# ```yaml
+# resources:
+#   limits:
+#     cpu: 12
+#     memory: 16Gi
+#     hugepages-2Mi: 2Gi
+#   requests:
+#     cpu: 12
+#     memory: 16Gi
+#     hugepages-2Mi: 2Gi
+# ```
+resources:
+  # -- Resource limits for the DU container
+  # Include hugepages-1Gi or hugepages-2Mi to automatically enable hugepage volumes
+  limits: {}
+    # cpu: 12
+    # memory: 16Gi
+    # hugepages-1Gi: 2Gi
+    # hugepages-2Mi: 2Gi
+
+  # -- Resource requests for the DU container
+  # Include hugepages-1Gi or hugepages-2Mi to automatically enable hugepage volumes
+  requests: {}
+    # cpu: 12
+    # memory: 16Gi
+    # hugepages-1Gi: 2Gi
+    # hugepages-2Mi: 2Gi
 
 # -- Node selector for pod assignment
 nodeSelector: {}
