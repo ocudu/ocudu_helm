@@ -107,12 +107,12 @@ get_container_cpus() {
     return 0
 }
 
-# Update hal.eal_args CPU list (inside @(...)) only if hal section exists
-update_hal_eal_args() {
+# Update dpdk.eal_args CPU list (inside @(...)) only if dpdk section exists
+update_dpdk_eal_args() {
     local config_file="$1"
 
-    if ! grep -q "^[[:space:]]*hal:" "$config_file"; then
-        log_info "No hal section found, skipping eal_args update"
+    if ! grep -q "^[[:space:]]*dpdk:" "$config_file"; then
+        log_info "No dpdk section found, skipping eal_args update"
         return 0
     fi
 
@@ -124,18 +124,18 @@ update_hal_eal_args() {
     local cpus
     cpus=$(get_container_cpus)
     if [ -z "$cpus" ]; then
-        log_warn "No CPUs detected, skipping hal.eal_args update"
+        log_warn "No CPUs detected, skipping dpdk.eal_args update"
         return 0
     fi
 
     # Replace only the CPU list after @(...), preserving the lcore mapping before it.
     # Supports both formats: @(cpus) and (lcores)@(cpus)
     if ! sed -i -E "s/(\\([-0-9,]+\\))?@\\([-0-9,]+\\)/\\1@(${cpus})/" "$config_file"; then
-        log_error "Failed to update hal.eal_args"
+        log_error "Failed to update dpdk.eal_args"
         return 1
     fi
 
-    log_info "Updated hal.eal_args CPU list to: ${cpus}"
+    log_info "Updated dpdk.eal_args CPU list to: ${cpus}"
     return 0
 }
 
@@ -372,21 +372,21 @@ main() {
         if [ -n "$device_list" ]; then
             log_info "Found SR-IOV device(s): $device_list"
 
-            # Validate that hal.eal_args is present when using SR-IOV
-            if ! grep -q "^[[:space:]]*hal:" "$updated_config"; then
-                log_fatal "SR-IOV devices detected but no 'hal' section found in config. When using SR-IOV, the config MUST include 'hal.eal_args' for DPDK configuration."
+            # Validate that dpdk.eal_args is present when using SR-IOV
+            if ! grep -q "^[[:space:]]*dpdk:" "$updated_config"; then
+                log_fatal "SR-IOV devices detected but no 'dpdk' section found in config. When using SR-IOV, the config MUST include 'dpdk.eal_args' for DPDK configuration."
             fi
             if ! grep -q "^[[:space:]]*eal_args:" "$updated_config"; then
-                log_fatal "SR-IOV devices detected but 'hal.eal_args' not found in config. When using SR-IOV, the config MUST include 'hal.eal_args' for DPDK configuration."
+                log_fatal "SR-IOV devices detected but 'dpdk.eal_args' not found in config. When using SR-IOV, the config MUST include 'dpdk.eal_args' for DPDK configuration."
             fi
-            log_info "SR-IOV HAL configuration validated"
+            log_info "SR-IOV DPDK configuration validated"
 
             # Use first device (single cell only)
             local bdf="${device_list%%,*}"
             log_info "Using BDF: $bdf (single cell configuration)"
 
-            # Update hal.eal_args CPU list
-            update_hal_eal_args "$updated_config" || log_fatal "HAL EAL args update failed"
+            # Update dpdk.eal_args CPU list
+            update_dpdk_eal_args "$updated_config" || log_fatal "DPDK EAL args update failed"
 
             # Update network interface and MAC in config
             update_network_interface_and_mac "$updated_config" "$bdf" || \
