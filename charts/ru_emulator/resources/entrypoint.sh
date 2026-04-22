@@ -414,12 +414,12 @@ main() {
 
         log_info "Starting ru_emulator with log preservation in: $log_path"
         {
-            /usr/local/bin/ru_emulator -c "$updated_config" 2>&1 | tee -a "${log_path}/ru_emulator.stdout"
+            ru_emulator -c "$updated_config" 2>&1 | tee -a "${log_path}/ru_emulator.stdout"
             exit ${PIPESTATUS[0]}
         } &
     else
         log_info "Starting ru_emulator (logs not preserved)"
-        /usr/local/bin/ru_emulator -c "$updated_config" &
+        ru_emulator -c "$updated_config" &
     fi
 
     ru_pid=$!

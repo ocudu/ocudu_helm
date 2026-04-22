@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.4.0
+
+### Changed
+- Default securityContext tightened to minimum-privilege shape
+  - `capabilities.drop: [ALL]` + `capabilities.add: [SYS_NICE, IPC_LOCK]`
+  - `podSecurityContext` defaults to non-root: `runAsNonRoot: true`, `runAsUser: 1000`, `runAsGroup: 1000`, `fsGroup: 1000`
+  - `allowPrivilegeEscalation: true` (required for file caps to take effect on execve)
+  - **Requires image with** `setcap cap_sys_nice,cap_ipc_lock+ep /usr/local/bin/ru_emulator` (OCUDU images include this by default)
+  - **Requires node containerd with** `device_ownership_from_security_context = true`
+- Updated README.md
+
+### Fixed
+- `resources/entrypoint.sh`: validation & mutation now check for `dpdk:` section (matches the ru_emulator binary's CLI schema) instead of `hal:` which was copy-pasted from the gNB entrypoint and does not apply here
+- `resources/entrypoint.sh`: invoke `ru_emulator` via `$PATH` instead of hardcoded `/usr/local/bin/ru_emulator`, enabling PATH override
+
 ## 2.3.6 (2026-04-09)
 
 ### Changed

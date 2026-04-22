@@ -49,32 +49,32 @@ podAnnotations: {}
 # @default -- `{}` (no extra labels)
 extraLabels: {}
 
-# -- Pod-level security context
-# @default -- `{}` (no pod security context)
-podSecurityContext: {}
+# -- Pod-level security context. Runs the container as a non-root user by default.
+# @default -- see below
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
 
-# -- Container-level security context for hostNetwork mode
-# RU emulator requires privileged access for DPDK and network configuration
+# -- Container-level security context.
+#
+# Default: minimum-privilege shape for SR-IOV Device Plugin + vfio-pci.
+#
+# REQUIREMENTS for this default to work:
+#   1. Image must have file capabilities on /usr/local/bin/ru_emulator:
+#        RUN setcap cap_sys_nice,cap_ipc_lock+ep /usr/local/bin/ru_emulator
+#   2. Node's containerd must set `device_ownership_from_security_context = true`
+#      so VFIO device nodes are chown'd to the pod's runAsUser/runAsGroup.
+#   3. allowPrivilegeEscalation MUST be true for file caps to take effect.
 securityContext:
-  # -- Additional capabilities for network and system operations
+  allowPrivilegeEscalation: true
+  privileged: false
   capabilities:
-    add: ["SYS_NICE", "NET_ADMIN"]
-  # -- Run container in privileged mode
-  privileged: true
-
-# -- Alternative security context for SR-IOV mode
-# When using SR-IOV, privileged mode is not required
-# Uncomment and use this configuration if SR-IOV is enabled
-# securityContext:
-#   allowPrivilegeEscalation: false
-#   capabilities:
-#     add:
-#       - IPC_LOCK
-#       - SYS_ADMIN
-#       - SYS_RAWIO
-#       - NET_RAW
-#       - SYS_NICE
-#   privileged: false
+    drop: ["ALL"]
+    add:
+      - SYS_NICE
+      - IPC_LOCK
 
 # -- Resource requests and limits
 # Example:

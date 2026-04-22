@@ -13,9 +13,7 @@ A Helm chart for deploying the OCUDU Radio Unit (O-RU) emulator
 
 This chart deploys an O-RU (Open Radio Unit) emulator that communicates with DU units via the OpenFronthaul protocol. It simulates a real Radio Unit for testing and development purposes.
 
-> **⚠️ Important**: This chart requires a container image with the `ru_emulator` binary. The standard OCUDU Project image does not include this binary. You must build or obtain a specific RU emulator image before deploying.
->
-> **ℹ️ SR-IOV Status**: SR-IOV support is fully implemented with automatic BDF/MAC detection via the entrypoint script. However, it remains **untested end-to-end** due to the missing `ru_emulator` binary in standard images. The SR-IOV resource allocation and configuration replacement logic have been verified in live cluster testing.
+> **ℹ️ Image source**: The OCUDU nightly built images ship the `ru_emulator` binary as part of their build. The chart defaults to that image.
 
 **Capabilities**:
 - OpenFronthaul protocol support
@@ -27,16 +25,15 @@ This chart deploys an O-RU (Open Radio Unit) emulator that communicates with DU 
 
 Before installing, ensure your environment meets these requirements:
 
-1. **Container Image**: A container image with the `/usr/local/bin/ru_emulator` binary is required
-   - The default OCUDU Project image does **not** include this binary
-   - You must specify a custom image in `values.yaml`
+1. **Container Image**: the chart defaults to the OCUDU image which already ships `/usr/local/bin/ru_emulator`. Override `image.repository` only if using a different build.
 2. **Kubernetes**: >= 1.24.0
-3. **Network Configuration** (choose oneM - See ):
+3. **Network Configuration** (choose one):
    - **hostNetwork mode**: Physical network interface for OpenFronthaul communication
    - **SR-IOV mode** (recommended for production): SR-IOV device plugin deployed in cluster
-4. **Privileges**:
-   - **hostNetwork mode**: Requires `hostNetwork: true` and `privileged: true`
-   - **SR-IOV mode**: Reduced privileges with specific capabilities (no full privileged mode)
+4. **Non-root prerequisites** (for the default minimum-privilege securityContext):
+   - Image has file caps on the binary: `setcap cap_sys_nice,cap_ipc_lock+ep /usr/local/bin/ru_emulator` (OCUDU images include this by default)
+   - Node's containerd has `device_ownership_from_security_context = true`
+   - If either condition isn't met, override `securityContext` (run as root / broader caps) or add the prerequisites to your cluster
 5. **Node Selection**: Use `nodeSelector` to target nodes with appropriate hardware
    - For SR-IOV: Nodes must have SR-IOV-capable NICs with VFs configured
 
@@ -108,12 +105,14 @@ If `preserveOldLogs` is `false`, logs are truncated at start.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `image.repository` | string | `"softwareradiosystems/srsran-project"` | Container image repository |
+| `image.repository` | string | `"registry.gitlab.com/ocudu/ocudu/ocudu_nightly_avx512"` | Container image repository (OCUDU image ships `ru_emulator`) |
 | `image.tag` | string | Chart appVersion | Image tag |
 | `image.pullPolicy` | string | `"IfNotPresent"` | Image pull policy |
 | `extraLabels` | object | `{}` | Extra labels applied to the Deployment and Pod template |
-| `network.hostNetwork` | bool | `true` | Enable host network (required when SR-IOV disabled) |
-| `securityContext.privileged` | bool | `true` | Enable privileged mode (required for DPDK with hostNetwork) |
+| `network.hostNetwork` | bool | `true` | Enable host network (set to `false` for SR-IOV mode) |
+| `podSecurityContext.runAsNonRoot` | bool | `true` | Run as non-root (uid 1000); needs the image + containerd prerequisites in the Prerequisites section |
+| `securityContext.privileged` | bool | `false` | Privileged mode — disabled by default; override for hostNetwork+igb_uio fallback |
+| `securityContext.capabilities.add` | list | `[SYS_NICE, IPC_LOCK]` | Minimum caps for DPDK + RT scheduling (empirically verified) |
 | `sriovConfig.enabled` | bool | `false` | Enable SR-IOV device plugin integration |
 | `sriovConfig.extendedResourceName` | string | `"intel.com/intel_sriov_netdevice"` | SR-IOV resource name from device plugin |
 | `sriovConfig.vfCount` | int | `1` | Number of SR-IOV VFs to request |
@@ -135,12 +134,12 @@ For the full list of available parameters, see [`values.yaml`](values.yaml).
 
 ## Common Configuration Examples
 
-### hostNetwork Mode (Testing/Development)
+### hostNetwork Mode (Testing/Development — fallback)
+
+Use this when you dont have the SR-IOV Device Plugin install in your cluster. Override the chart's non-root default:
 
 ```yaml
-image:
-  repository: <your-ru-emulator-image>  # REQUIRED: Custom image with ru_emulator binary
-  tag: "latest"
+# Image defaults to OCUDU; override image.repository only if using a different build.
 
 network:
   hostNetwork: true
@@ -159,6 +158,7 @@ config:
 
 replicaCount: 1
 
+podSecurityContext: {}
 securityContext:
   privileged: true
   capabilities:
@@ -176,68 +176,61 @@ nodeSelector:
   kubernetes.io/hostname: worker-node-1
 ```
 
-### SR-IOV Mode (Production)
+### SR-IOV Mode (Production — chart default)
+
+The chart ships with the minimum-privilege shape as the default. A values file
+mainly needs to toggle network mode and provide cell config.
 
 ```yaml
-image:
-  repository: <your-ru-emulator-image>
-  tag: "latest"
+# Image defaults to OCUDU; override image.repository only if using a different build.
 
 network:
-  hostNetwork: false  # Disable for SR-IOV
+  hostNetwork: false
 
 sriovConfig:
   enabled: true
-  extendedResourceName: "intel.com/intel_sriov_netdevice"
+  extendedResourceName: "intel.com/oru"   # adjust to your device-plugin pool
   vfCount: 1
 
 config:
   ru_emu:
     cells:
     - bandwidth: 100
-      network_interface: ""  # Auto-detected from SR-IOV VF PCI address
-      ru_mac_addr: ""   # Auto-detected from dmesg
-      du_mac_addr: 50:7c:6f:45:44:33
+      network_interface: auto     # entrypoint substitutes the allocated VF BDF
+      ru_mac_addr: 50:7c:6f:45:44:33
+      du_mac_addr: 50:7c:6f:45:44:34
       vlan_tag: 6
 
-replicaCount: 1
+# Minimum-privilege security context (chart default — shown for reference).
+# Requires image with setcap cap_sys_nice,cap_ipc_lock+ep /usr/local/bin/ru_emulator
+# and node containerd with device_ownership_from_security_context = true.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
 
-# Reduced privileges with SR-IOV
 securityContext:
-  allowPrivilegeEscalation: false
-  capabilities:
-    add:
-      - IPC_LOCK
-      - SYS_ADMIN
-      - SYS_RAWIO
-      - NET_RAW
-      - SYS_NICE
+  allowPrivilegeEscalation: true   # required for file caps on execve
   privileged: false
+  capabilities:
+    drop: ["ALL"]
+    add:
+      - SYS_NICE
+      - IPC_LOCK
 
 resources:
   limits:
     cpu: 4
     memory: 4Gi
+    hugepages-1Gi: 2Gi
   requests:
     cpu: 4
     memory: 4Gi
+    hugepages-1Gi: 2Gi
 
 nodeSelector:
   kubernetes.io/hostname: worker-node-1
-```
-
-### Multi-Cell Load Testing
-
-```yaml
-replicaCount: 8
-
-resources:
-  limits:
-    cpu: 8
-    memory: 8Gi
-  requests:
-    cpu: 8
-    memory: 8Gi
 ```
 
 ## Architecture & Design
@@ -253,7 +246,7 @@ The RU emulator supports two deployment modes:
 - Requires `privileged: true`
 - Simpler setup, suitable for testing
 
-**2. SR-IOV Mode (Production)**
+**2. SR-IOV Mode**
 - `network.hostNetwork: false`
 - `sriovConfig.enabled: true`
 - Uses SR-IOV Virtual Functions (VFs)
@@ -273,63 +266,19 @@ When SR-IOV is enabled, the entrypoint script automatically:
 
 This eliminates manual configuration of PCI addresses and MAC addresses.
 
-### Why Privileges are Required
+### Why These Capabilities
 
-**hostNetwork Mode**: `privileged: true` because:
-- DPDK initialization and hugepage access
-- Network interface configuration (`SYS_NICE`, `NET_ADMIN` capabilities)
-- Direct hardware access for OpenFronthaul
+**SR-IOV Mode (chart default)** — minimum verified set:
+- `SYS_NICE`: `sched_setscheduler(SCHED_FIFO)` on DPDK timing / tx-rx threads
+- `IPC_LOCK`: `mlock()` on DPDK hugepages
 
-**SR-IOV Mode**: Reduced privileges (`privileged: false`) with specific capabilities:
-- `IPC_LOCK`: Lock memory pages for DPDK
-- `SYS_ADMIN`, `SYS_RAWIO`: Device access
-- `NET_RAW`, `SYS_NICE`: Network operations and RT scheduling
+Device access (VFIO group node permissions) is handled by containerd's
+`device_ownership_from_security_context = true` flag, not by a capability. The
+older `SYS_ADMIN`/`SYS_RAWIO`/`NET_RAW` additions are not required with
+vfio-pci + IOMMU + that containerd flag; they were removed in chart 2.4.0.
 
-### Deployment Model
-
-- **Deployment**: Stateless replicas for load testing
-- **Default replicas**: 1 (increase for load testing)
-- **Scaling**: Can scale horizontally for multi-cell scenarios
-
-## Troubleshooting
-
-### Pod fails with network errors
-```bash
-# Verify interface exists
-kubectl exec -it <pod-name> -- ip link show
-
-# Check interface name in config
-kubectl get configmap -o yaml | grep network_interface
-
-# Common issues:
-# - Interface name incorrect
-# - Interface not present on target node
-```
-
-### Binary not found error
-```bash
-# If you see: "/usr/local/bin/ru_emulator: No such file or directory"
-# The container image does not include the ru_emulator binary
-
-# Solution:
-# - Build or obtain a custom image with ru_emulator binary
-# - Update image.repository in values.yaml
-```
-
-### Permission denied errors
-```bash
-# Verify security context
-kubectl describe pod <pod-name> | grep -A10 "Security Context"
-
-# Ensure both are set:
-# - network.hostNetwork: true
-# - securityContext.privileged: true
-```
-
-## Support
-
-- **Documentation**: [OCUDU Project Docs](https://gitlab.com/ocudu/ocudu_elements/ocudu_helm)
-- **OpenFronthaul**: [O-RAN Alliance Specifications](https://www.o-ran.org/)
+**hostNetwork Mode (fallback)**: `privileged: true` still needed for direct
+hardware access when SR-IOV isn't available. Only use for local testing.
 
 ## License
 
