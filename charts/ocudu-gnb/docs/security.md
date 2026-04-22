@@ -27,21 +27,16 @@ Kubernetes Pod Security Standards (PSS) define security policies at three levels
 
 ### Why Not Restricted?
 
-The OCUDU gNB requires specific Linux capabilities for real-time performance and hardware access:
+The OCUDU gNB requires two Linux capabilities for real-time DPDK operation:
 
-- `IPC_LOCK` - Lock memory pages for DPDK
-- `SYS_ADMIN` - Access DPDK devices
-- `SYS_RAWIO` - Direct I/O operations
-- `NET_RAW` - Raw socket access
-- `SYS_NICE` - Real-time CPU scheduling
-
-These capabilities are not permitted under the Restricted PSS profile.
+- `SYS_NICE` — `sched_setscheduler(SCHED_FIFO)` on ru_timing / tx / rx threads
+- `IPC_LOCK` — `mlock()` on DPDK hugepages
 
 ### Recommended Configuration
 
 **For Production (Baseline PSS):**
 
-Use SR-IOV mode with non-privileged security context:
+Use SR-IOV mode with the minimum-privilege shape (chart default from 3.6.0 onward):
 
 ```yaml
 network:
@@ -50,16 +45,51 @@ network:
 sriovConfig:
   enabled: true
 
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
 securityContext:
-  allowPrivilegeEscalation: false
+  allowPrivilegeEscalation: true   # required so file caps take effect
+  privileged: false
   capabilities:
+    drop: ["ALL"]
     add:
-      - IPC_LOCK
-      - SYS_ADMIN
-      - SYS_RAWIO
-      - NET_RAW
       - SYS_NICE
+      - IPC_LOCK
 ```
+
+### Prerequisites for the minimum-privilege default
+
+The chart default only works end-to-end when two infra conditions are met. Without them the gNB pod will start but fail at DPDK init or silently fail to transmit.
+
+1. **Image must have file capabilities baked into the `gnb` binary.** The chart-default pod runs as uid=1000. Linux drops inherited capabilities on `execve()` to a non-root uid unless the binary itself declares them via xattrs. The OCUDU Dockerfile should include:
+   ```dockerfile
+   RUN setcap cap_sys_nice,cap_ipc_lock+ep /usr/local/bin/gnb
+   ```
+   Verify in the built image with `getcap /usr/local/bin/gnb` → expect `cap_sys_nice,cap_ipc_lock=ep`.
+
+   The image must also make DPDK/UHD/ROHC libs findable without `LD_LIBRARY_PATH` (setcap triggers ld.so secure mode which strips that env var). Add:
+   ```dockerfile
+   RUN printf '%s\n' \
+         /opt/dpdk/<DPDK_VERSION>/lib/x86_64-linux-gnu \
+         /opt/dpdk/<DPDK_VERSION>/lib \
+         /opt/uhd/<UHD_VERSION>/lib/x86_64-linux-gnu \
+         /opt/uhd/<UHD_VERSION>/lib \
+         /opt/rohc/lib \
+         > /etc/ld.so.conf.d/ocudu.conf \
+       && ldconfig
+   ```
+
+The OCUDU images are built with these requirements by default, but if using a custom image or older OCUDU image, these steps are necessary.
+
+2. **Node's containerd must enable `device_ownership_from_security_context`.** Without it, `/dev/vfio/<group>` is bind-mounted into the pod as `root:root 0600`, and uid=1000 can't open it. In `/etc/containerd/config.toml` under `[plugins."io.containerd.cri.v1.runtime"]`:
+   ```toml
+   device_ownership_from_security_context = true
+   ```
+   Restart containerd. After this, VFIO device nodes exposed to the pod are chown'd to the pod's `runAsUser` / `runAsGroup`.
 
 ---
 
@@ -116,7 +146,7 @@ rbac:
 
 **Note**: The ServiceAccount will still be created if `serviceAccount.create: true`.
 
-### Verifying RBAC
+### Troubleshooting RBAC
 
 Check what the service account can do:
 
@@ -142,31 +172,37 @@ The chart supports two security context configurations based on the deployment m
 **Use when**: `hostNetwork: false` and `sriovConfig.enabled: true`
 
 ```yaml
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
 securityContext:
-  allowPrivilegeEscalation: false
+  allowPrivilegeEscalation: true   # required for file caps on execve
+  privileged: false
   capabilities:
+    drop: ["ALL"]
     add:
-      - IPC_LOCK      # Memory locking for DPDK
-      - SYS_ADMIN     # DPDK device access
-      - SYS_RAWIO     # Direct I/O operations
-      - NET_RAW       # Raw socket access
-      - SYS_NICE      # Real-time CPU scheduling
+      - SYS_NICE      # SCHED_FIFO on ru_timing / tx-rx threads
+      - IPC_LOCK      # mlock() on DPDK hugepages
 ```
 
 **Advantages:**
-- ✅ No privileged mode required
+- ✅ Non-root (uid 1000), drops ALL and adds only the two required caps
+- ✅ No privileged mode
 - ✅ Compatible with Pod Security Baseline
-- ✅ Better security isolation
 - ✅ NetworkPolicy support
 
 **Requirements:**
-- vfio-pci driver loaded
-- IOMMU enabled in BIOS
-- SR-IOV virtual functions configured
+- vfio-pci driver loaded; IOMMU enabled in BIOS
+- SR-IOV Device Plugin configured
+- **Image has** `setcap cap_sys_nice,cap_ipc_lock+ep /usr/local/bin/gnb`
+- **Node's containerd has** `device_ownership_from_security_context = true`
 
-See [network-modes.md](network-modes.md) and [sriov-setup.md](sriov-setup.md) for detailed setup.
+See the "Prerequisites for the minimum-privilege default" section above for details on the last two items. See [network-modes.md](network-modes.md) and [sriov-setup.md](sriov-setup.md) for network/SR-IOV setup.
 
-### Mode 2: Host Network with igb_uio (Fallback)
+### Mode 2: Host Network (Fallback)
 
 **Use when**: `hostNetwork: true` and `sriovConfig.enabled: false`
 
@@ -188,8 +224,6 @@ securityContext:
 - ❌ Only compatible with Privileged PSS
 - ❌ NetworkPolicy bypassed
 - ❌ Reduced security isolation
-
-**⚠️ Warning**: Only use this mode for development or when SR-IOV is not available.
 
 ### Pod-Level Security Context
 
@@ -249,35 +283,6 @@ Controls how unhealthy pods are handled during eviction:
   - Protects unhealthy pods
   - May block node drains if all pods are unhealthy
   - Can cause cluster maintenance issues
-
-### Production Recommendation
-
-For production deployments, always use `unhealthyPodEvictionPolicy: AlwaysAllow`.
-
-This ensures:
-- ✅ Cluster operability during maintenance
-- ✅ Unhealthy pods don't block upgrades
-- ✅ Self-healing capabilities work correctly
-
-### Disabling PDB
-
-Not recommended for production, but possible:
-
-```yaml
-podDisruptionBudget:
-  enabled: false
-```
-
-### Verifying PDB
-
-```bash
-# Check PDB status
-kubectl get pdb -n ocudu
-kubectl describe pdb ocudu-gnb -n ocudu
-
-# During node drain, check if PDB is respected
-kubectl drain <node-name> --ignore-daemonsets
-```
 
 ---
 

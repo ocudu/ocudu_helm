@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.6.0
+
+### Changed
+- **Default securityContext tightened to minimum-privilege shape.**
+  - `capabilities.drop: [ALL]` + `capabilities.add: [SYS_NICE, IPC_LOCK]` (was 5 caps added, no drop).
+  - `podSecurityContext` defaults to non-root: `runAsNonRoot: true`, `runAsUser: 1000`, `runAsGroup: 1000`, `fsGroup: 1000`.
+  - `allowPrivilegeEscalation: true` (required for file caps to take effect on execve).
+  - **Requires image with** `setcap cap_sys_nice,cap_ipc_lock+ep /usr/local/bin/gnb` and libraries findable via `ld.so.conf` (not only `LD_LIBRARY_PATH`).
+  - **Requires node containerd with** `device_ownership_from_security_context = true`.
+  - See [docs/security.md](docs/security.md) for the full prerequisite discussion.
+- **values-o1.yaml**: mirrors the same securityContext + podSecurityContext defaults.
+
 ## 3.5.3 (2026-04-09)
 
 ### Changed

@@ -21,10 +21,15 @@ Before deploying, ensure:
 
 1. **PTP Synchronization**: PTP4l and PHC2SYS services are running with synchronized hardware clock
 2. **Network Setup**: Choose your deployment mode:
-   - **SR-IOV (Default - Production)**: Requires SR-IOV device plugin (see [SR-IOV Setup](docs/sriov-setup.md))
+   - **SR-IOV (Default)**: Requires SR-IOV device plugin (see [SR-IOV Setup](docs/sriov-setup.md))
    - **Host Network (Fallback)**: Direct host access, no SR-IOV needed
 3. **DPDK Driver**: Network interface bound to DPDK-compatible driver (`igb_uio` or `vfio-pci`)
-4. **Hugepages (Optional)**: Configure hugepages for optimal DPDK performance (see [Hugepages Guide](docs/hugepages.md))
+4. **Hugepages**: Configure hugepages for optimal DPDK performance (see [Hugepages Guide](docs/hugepages.md))
+5. **Non-root prerequisites** (for the default minimum-privilege securityContext to work):
+   - Image has file caps on the binary: `setcap cap_sys_nice,cap_ipc_lock+ep /usr/local/bin/gnb`
+   - Node's containerd has `device_ownership_from_security_context = true`
+
+   See [Security Guide](docs/security.md) for the full rationale. If either condition is not met, override the chart's `securityContext` with a broader cap set or run as root.
 
 See [Network Modes](docs/network-modes.md) for detailed deployment mode comparison.
 

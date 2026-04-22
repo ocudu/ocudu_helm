@@ -97,29 +97,29 @@ podAnnotations: {}
 extraLabels: {}
 
 # -- Pod-level security context
-# @default -- `{}` (no pod security context)
-podSecurityContext: {}
+# -- Pod-level security context. Runs the container as a non-root user by default.
+# @default -- see below
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
 
-# -- Container-level security context (for non-SR-IOV Device Plugin mode)
-# This configuration requires privileged mode for DPDK with kernel drivers
-# Uncomment this and comment the below when using SR-IOV Device Plugin with SR-IOV
-# Use this when hostNetwork is enabled
-# securityContext:
-#   capabilities:
-#     add: ["SYS_NICE", "NET_ADMIN"]
-#   privileged: true
-
-# -- Alternative security context for SR-IOV Device Plugin enabled (hostNetwork: false)
-# This configuration uses vfio-pci driver which doesn't require privileged mode
+# -- Container-level security context.
+#
+# Default: minimum-privilege shape for SR-IOV Device Plugin + vfio-pci.
+# Requires the image to have file capabilities baked into /usr/local/bin/gnb
+# (setcap cap_sys_nice,cap_ipc_lock+ep) and containerd
+# `device_ownership_from_security_context = true` on the node.
+# See docs/security.md for details.
 securityContext:
-  allowPrivilegeEscalation: false
+  allowPrivilegeEscalation: true
+  privileged: false
   capabilities:
+    drop: ["ALL"]
     add:
-      - IPC_LOCK
-      - SYS_ADMIN
-      - SYS_RAWIO
-      - NET_RAW
       - SYS_NICE
+      - IPC_LOCK
 
 # -- Network configuration
 network:
