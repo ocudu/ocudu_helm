@@ -93,6 +93,21 @@ The OCUDU images are built with these requirements by default, but if using a cu
 
 ---
 
+## Health Probes
+
+From chart 3.6.0, the main container uses `tty: true` + `stdin: true` so gNB's stdout is bound to a pseudo-terminal. This makes glibc's stdio line-buffered, so gNB stdout console appears in `kubectl logs` in real time instead of sitting in a block buffer until a subscriber connects.
+
+| Field | Default (liveness) | Default (readiness) | Meaning |
+|---|---|---|---|
+| `enabled` | `true` | `true` | Install the probe |
+| `initialDelaySeconds` | `90` | `15` | Delay before first check |
+| `periodSeconds` | `30` | `5` | How often to probe |
+| `timeoutSeconds` | `1` | `1` | How long a single check may take |
+| `failureThreshold` | `3` | `30` | Consecutive failures before "unhealthy" |
+| `successThreshold` | `1` | `1` | Consecutive successes to flip back |
+
+---
+
 ## RBAC (Role-Based Access Control)
 
 The chart creates minimal RBAC resources following the principle of least privilege.

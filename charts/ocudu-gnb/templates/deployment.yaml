@@ -87,6 +87,8 @@ spec:
         {{- end }}
       containers:
         - name: {{ .Chart.Name }}
+          tty: true
+          stdin: true
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ template "ocudu-gnb.image" .Values.image }}"
@@ -99,13 +101,36 @@ spec:
             {{- toYaml $cleanRes | nindent 12 }}
             {{- end }}
           {{- end }}
-          {{- if .Values.o1.enable_ocudu_o1 }}
+          {{- if and .Values.o1.enable_ocudu_o1 .Values.livenessProbe.enabled }}
+          # O1 mode: liveness is tied to the O1 adapter's /config-healthy endpoint.
           livenessProbe:
             httpGet:
               path: /config-healthy
               port: {{ .Values.o1.healthcheckPort }}
-            initialDelaySeconds: 10
-            periodSeconds: 3
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          {{- else if and (not .Values.o1.enable_ocudu_o1) .Values.livenessProbe.enabled }}
+          livenessProbe:
+            exec:
+              command: ["pgrep", "gnb"]
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            exec:
+              command: ["pgrep", "gnb"]
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
           {{- end }}
           env:
             - name: POD_IP

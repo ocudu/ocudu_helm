@@ -11,6 +11,14 @@
   - **Requires node containerd with** `device_ownership_from_security_context = true`.
   - See [docs/security.md](docs/security.md) for the full prerequisite discussion.
 - **values-o1.yaml**: mirrors the same securityContext + podSecurityContext defaults.
+- **entrypoint.sh**: `exec gnb -c <cfg>` so gNB becomes the container's PID 1.
+  - Fixes CNTi `single_process_type` (previously the process tree was `bash -> gnb -> (optional tee)` i.e. multiple process types).
+  - Signal handling delegated to gnb itself (`sig_term_handled` passes)
+  - Restart-on-exit delegated to Kubernetes `restartPolicy`.
+  - Stdout file-redirection removed; stdout now flows through the container runtime — see the `tty:true` note below.
+
+### Added
+- Liveness and readiness probes
 
 ## 3.5.3 (2026-04-09)
 

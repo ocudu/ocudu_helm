@@ -515,27 +515,8 @@ process_and_run_gnb() {
     
     log_info "Configuration processing complete: $updated_config"
 
-    # Run gNB as the container's sole process (exec replaces the bash wrapper).
-    # Required for CNTi single_process_type: before this change the process tree
-    # was bash -> gnb -> (optional tee), i.e. multiple process types. With exec
-    # and shell-only redirection, gnb becomes PID 1 directly.
-    #
-    # Signal handling: bash-level SIGTERM/SIGINT traps no longer apply after
-    # exec. gnb handles SIGTERM/SIGINT itself (CNTi sig_term_handled passes).
-    # Restart-on-exit: previously handled by the main loop in this script;
-    # now delegated to Kubernetes (Deployment restartPolicy: Always).
-    if [ "$PRESERVE_OLD_LOGS" = "true" ]; then
-        local log_path
-        log_path=$(update_config_paths "$updated_config") || log_fatal "Log path setup failed"
-        log_info "Starting gNB with log preservation in: $log_path"
-        # Shell redirection (no tee subprocess) keeps gnb the only process type.
-        # Trade-off: kubectl logs will not show gNB stdout when PRESERVE_OLD_LOGS=true;
-        # consult ${log_path}/gnb.stdout on the persistence mount instead.
-        exec gnb -c "$updated_config" >> "${log_path}/gnb.stdout" 2>&1
-    else
-        log_info "Starting gNB (logs not preserved)"
-        exec gnb -c "$updated_config"
-    fi
+    log_info "Starting gNB"
+    exec gnb -c "$updated_config"
 }
 
 # Main entry point
