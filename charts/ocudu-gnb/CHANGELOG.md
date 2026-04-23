@@ -19,6 +19,7 @@
 
 ### Added
 - Liveness and readiness probes
+- **`tini` as PID 1** (container `command: ["/usr/bin/tini", "--"]`): reaps zombies, forwards signals, and satisfies CNTi requirements 
 
 ## 3.5.3 (2026-04-09)
 

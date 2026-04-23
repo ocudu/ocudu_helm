@@ -155,8 +155,8 @@ spec:
           {{- end }}
             - name: ENABLE_OCUDU_O1
               value: '{{ default false .Values.o1.enable_ocudu_o1 }}'
-          command: [ "/bin/bash" ]
-          args: [ "-c", "/etc/entrypoint/entrypoint-srsgnb.sh /etc/config/gnb-config.yml" ]
+          command: [ "/usr/bin/tini", "--" ]
+          args: [ "/bin/bash", "-c", "/etc/entrypoint/entrypoint-srsgnb.sh /etc/config/gnb-config.yml" ]
           volumeMounts:
             - name: entrypoint-volume-srsgnb
               mountPath: /etc/entrypoint
