@@ -14,6 +14,7 @@ SR-IOV (Single Root I/O Virtualization) provides high-performance network interf
 1. **Multus CNI** - Enables multiple network interfaces
 2. **SR-IOV CNI Plugin** - Handles VF attachment
 3. **SR-IOV Device Plugin** - Exposes VFs as Kubernetes resources
+4. **static CPU Manager** - Ensures CPU isolation for performance
 
 ## Setup Steps
 
