@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.6.1
+
+### Changed
+
+- Image tag to include required changes from minimal capabilities
+- Instructions to include static CPU Manager as a requirement for SRIOV Device Plugin
+
 ## 3.6.0
 
 ### Changed
