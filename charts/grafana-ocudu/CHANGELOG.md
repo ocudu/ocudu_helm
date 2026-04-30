@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.3.3 (2026-04-30)
+
+### Changed
+- Bump default Grafana image tag to `1.7.2` (fixes SQL reserved keyword `time` in dashboard queries and removes invalid `pusch_rsrp_db` field reference)
+
 ## 2.3.2 (2026-04-09)
 
 ### Added

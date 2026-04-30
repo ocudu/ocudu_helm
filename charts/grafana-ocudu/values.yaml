@@ -30,7 +30,7 @@ grafana:
     repository: ocudu/ocudu/grafana
     # -- Image tag
     # @default -- Matches OCUDU release version
-    tag: "1.7.1"
+    tag: "1.7.2"
   # -- Environment variables for Grafana configuration
   env:
     # -- Grafana HTTP port
