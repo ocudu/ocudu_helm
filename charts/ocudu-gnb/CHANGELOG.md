@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.6.2
+
+### Fixed
+
+- fixed `netconf-server` cli arguments
+
+### Changed
+
+- Bumped o1-adapter and netconf server images newest version
+- Updated default values for O1
+
 ## 3.6.1
 
 ### Changed
