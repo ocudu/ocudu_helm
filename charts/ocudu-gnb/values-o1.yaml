@@ -20,8 +20,7 @@ image:
 
 # -- Image pull secrets for private registries
 # @default -- See values.yaml
-imagePullSecrets:
-  - name: regcred
+imagePullSecrets: []
 
 # -- Override the name of the chart
 # Leaving empty allows Helm to use the chart name for resource naming
@@ -317,7 +316,7 @@ o1:
     password: "sample1"
   o1Adapter:
     image:
-      repository: registry.gitlab.com/softwareradiosystems/srsran_5g_enterprise/o1_adapter
+      repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_o1_adapter/o1_adapter_nightly_amd64
       pullPolicy: IfNotPresent
       tag: 20260511_ee814fb3
     resources: {}
@@ -337,9 +336,9 @@ o1:
       # -- Session affinity (None or ClientIP)
       # sessionAffinity: None
     image:
-      repository: registry.gitlab.com/softwareradiosystems/srsran_5g_enterprise/netconf
+      repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_netconf/netconf_nightly_amd64
       pullPolicy: IfNotPresent
-      tag: 9f565237
+      tag: 20260508_db6e983c
     resources: {}
     securityContext: {}
 
@@ -347,40 +346,17 @@ o1Config:
   o1-config.xml: |-
     <?xml version="1.0" encoding="UTF-8"?>
 
-    <RRMPolicyRatio xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-rrmpolicy">
-      <id>rrm_policy1</id>
-      <attributes>
-        <resourceType>PRB</resourceType>
-        <rRMPolicyMemberList>
-          <mcc>001</mcc>
-          <mnc>01</mnc>
-          <sd>111111</sd>
-          <sst>1</sst>
-        </rRMPolicyMemberList>
-        <rRMPolicyMaxRatio>100</rRMPolicyMaxRatio>
-        <rRMPolicyMinRatio>0</rRMPolicyMinRatio>
-        <rRMPolicyDedicatedRatio>0</rRMPolicyDedicatedRatio>
-      </attributes>
-    </RRMPolicyRatio>
-
     <!-- Main DU base config -->
     <ManagedElement xmlns="urn:3gpp:sa5:_3gpp-common-managed-element">
       <id>ran1</id>
       <attributes>
         <priorityLabel>1</priorityLabel>
       </attributes>
-      
+
       <GNBCUCPFunction xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-gnbcucpfunction">
           <id>cucp1</id>
 
           <attributes>
-            <resourceType>DRB</resourceType>
-            <rRMPolicyMemberList>
-              <mcc>001</mcc>
-              <mnc>01</mnc>
-              <sd>111111</sd>
-              <sst>1</sst>
-            </rRMPolicyMemberList>
             <gNBId>1</gNBId>
             <gNBIdLength>24</gNBIdLength>
             <gNBCUName>srscu1</gNBCUName>
@@ -389,21 +365,32 @@ o1Config:
               <mnc>01</mnc>
             </pLMNId>
             <priorityLabel>1</priorityLabel>
+            <qceIdMappingInfoList>
+              <idx>0</idx>
+              <qoECollectionEntityAddress>0.0.0.0</qoECollectionEntityAddress>
+              <qoECollectionEntityIdentity>unused</qoECollectionEntityIdentity>
+              <pLMNTarget>
+                <mcc>001</mcc>
+                <mnc>01</mnc>
+              </pLMNTarget>
+            </qceIdMappingInfoList>
           </attributes>
-          
-          <PerfMetricJob>
-            <id>defaulttrace</id>
+
+          <RRMPolicyRatio xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-rrmpolicy">
+            <id>rrm_policy1</id>
             <attributes>
-              <administrativeState>UNLOCKED</administrativeState>
-              <performanceMetrics>DRB.MaxActiveUeDl</performanceMetrics>
-              <granularityPeriod>1</granularityPeriod>
-              <!--
-              <fileReportingPeriod>10</fileReportingPeriod>
-              <fileLocation>/tmp/metrics.json</fileLocation>
-              -->
-              <streamTarget>http://192.168.2.42:9560/json</streamTarget>
+              <resourceType>DRB</resourceType>
+              <rRMPolicyMemberList>
+                <mcc>001</mcc>
+                <mnc>01</mnc>
+                <sd>11:11:11</sd>
+                <sst>1</sst>
+              </rRMPolicyMemberList>
+              <rRMPolicyMaxRatio>100</rRMPolicyMaxRatio>
+              <rRMPolicyMinRatio>0</rRMPolicyMinRatio>
+              <rRMPolicyDedicatedRatio>0</rRMPolicyDedicatedRatio>
             </attributes>
-          </PerfMetricJob>
+          </RRMPolicyRatio>
 
           <EP_NgC xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-ep">
             <id>ngc1</id>
@@ -417,77 +404,119 @@ o1Config:
           </EP_NgC>
 
       </GNBCUCPFunction>
-      
+
       <GNBCUUPFunction xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-gnbcuupfunction">
         <id>cuup1</id>
         <attributes>
           <priorityLabel>1</priorityLabel>
-          <resourceType>DRB</resourceType>
-          <rRMPolicyMemberList>
-            <mcc>001</mcc>
-            <mnc>01</mnc>
-            <sd>111111</sd>
-            <sst>1</sst>
-          </rRMPolicyMemberList>
           <gNBId>1</gNBId>
           <gNBIdLength>24</gNBIdLength>
           <pLMNInfoList>
             <mcc>001</mcc>
             <mnc>01</mnc>
-            <sd>111111</sd>
+            <sd>11:11:11</sd>
             <sst>1</sst>
           </pLMNInfoList>
         </attributes>
+        <RRMPolicyRatio xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-rrmpolicy">
+          <id>rrm_policy1</id>
+          <attributes>
+            <resourceType>DRB</resourceType>
+            <rRMPolicyMemberList>
+              <mcc>001</mcc>
+              <mnc>01</mnc>
+              <sd>11:11:11</sd>
+              <sst>1</sst>
+            </rRMPolicyMemberList>
+            <rRMPolicyMaxRatio>100</rRMPolicyMaxRatio>
+            <rRMPolicyMinRatio>0</rRMPolicyMinRatio>
+            <rRMPolicyDedicatedRatio>0</rRMPolicyDedicatedRatio>
+          </attributes>
+        </RRMPolicyRatio>
       </GNBCUUPFunction>
-      
+
       <GNBDUFunction xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-gnbdufunction">
         <id>du1</id>
         <attributes>
-          <resourceType>PRB</resourceType>
-          <rRMPolicyMemberList>
-              <mcc>001</mcc>
-              <mnc>01</mnc>
-              <sd>111111</sd>
-              <sst>1</sst>
-          </rRMPolicyMemberList>
           <gNBId>411</gNBId>
           <gNBIdLength>23</gNBIdLength>
           <gNBDUId>3</gNBDUId>
           <priorityLabel>1</priorityLabel>
         </attributes>
-        <NRCellDU xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-nrcelldu">
-          <id>nrcelldu1</id>
+        <RRMPolicyRatio xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-rrmpolicy">
+          <id>rrm_policy1</id>
           <attributes>
             <resourceType>PRB</resourceType>
             <rRMPolicyMemberList>
               <mcc>001</mcc>
               <mnc>01</mnc>
-              <sd>111111</sd>
+              <sd>11:11:11</sd>
               <sst>1</sst>
             </rRMPolicyMemberList>
+            <rRMPolicyMaxRatio>100</rRMPolicyMaxRatio>
+            <rRMPolicyMinRatio>0</rRMPolicyMinRatio>
+            <rRMPolicyDedicatedRatio>0</rRMPolicyDedicatedRatio>
+          </attributes>
+        </RRMPolicyRatio>
+        <NRCellDU xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-nrcelldu">
+          <id>nrcelldu1</id>
+          <RRMPolicyRatio xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-rrmpolicy">
+            <id>rrm_policy1</id>
+            <attributes>
+              <resourceType>PRB</resourceType>
+              <rRMPolicyMemberList>
+                <mcc>001</mcc>
+                <mnc>01</mnc>
+                <sd>11:11:11</sd>
+                <sst>1</sst>
+              </rRMPolicyMemberList>
+              <rRMPolicyMaxRatio>100</rRMPolicyMaxRatio>
+              <rRMPolicyMinRatio>0</rRMPolicyMinRatio>
+              <rRMPolicyDedicatedRatio>0</rRMPolicyDedicatedRatio>
+            </attributes>
+          </RRMPolicyRatio>
+          <attributes>
             <priorityLabel>1</priorityLabel>
             <cellLocalId>0</cellLocalId>
             <administrativeState>UNLOCKED</administrativeState>
             <pLMNInfoList>
               <mcc>001</mcc>
               <mnc>01</mnc>
-              <sd>111111</sd>
+              <sd>11:11:11</sd>
               <sst>1</sst>
             </pLMNInfoList>
+            <nPNIdentityList>
+              <idx>0</idx>
+              <plmnid>
+                <mcc>001</mcc>
+                <mnc>01</mnc>
+              </plmnid>
+              <cAGIdList>unused</cAGIdList>
+              <nIDList>unused</nIDList>
+            </nPNIdentityList>
             <nRPCI>1</nRPCI>
             <nRTAC>7</nRTAC>
             <arfcnDL>632192</arfcnDL>
             <arfcnUL>632192</arfcnUL>
             <bSChannelBwDL>100</bSChannelBwDL>
             <bSChannelBwUL>100</bSChannelBwUL>
+            <rimRSMonitoringStartTime>1970-01-01T00:00:00Z</rimRSMonitoringStartTime>
+            <rimRSMonitoringStopTime>1970-01-01T00:00:00Z</rimRSMonitoringStopTime>
+            <rimRSMonitoringWindowDuration>1</rimRSMonitoringWindowDuration>
+            <rimRSMonitoringWindowStartingOffset>0</rimRSMonitoringWindowStartingOffset>
+            <rimRSMonitoringWindowPeriodicity>24</rimRSMonitoringWindowPeriodicity>
+            <rimRSMonitoringOccasionInterval>1</rimRSMonitoringOccasionInterval>
+            <rimRSMonitoringOccasionStartingOffset>0</rimRSMonitoringOccasionStartingOffset>
+            <victimSetRef>RimRSSet=unused</victimSetRef>
+            <aggressorSetRef>RimRSSet=unused</aggressorSetRef>
             <ssbFrequency>3000000</ssbFrequency>
             <ssbPeriodicity>10</ssbPeriodicity>
             <ssbSubCarrierSpacing>30</ssbSubCarrierSpacing>
             <ssbOffset>0</ssbOffset>
             <ssbDuration>1</ssbDuration>
             <nRSectorCarrierRef>SCarr=not_used</nRSectorCarrierRef>
-              <srs_nrcelldu_extensions xmlns="urn:srsran-nrcelldu-extension:1.0">
-                <srs_nrcelldu_ofh_extensions>
+              <ocudu_nrcelldu_extensions xmlns="urn:ocudu-nrcelldu-extension:1.0">
+                <ocudu_nrcelldu_ofh_extensions>
                   <network_interface>0000:01:01.0</network_interface>
                   <ru_mac_addr>70:b3:d5:e1:5d:67</ru_mac_addr>
                   <du_mac_addr>50:7c:6f:55:c8:08</du_mac_addr>
@@ -518,30 +547,30 @@ o1Config:
                   <ignore_ecpri_payload_size>false</ignore_ecpri_payload_size>
                   <ignore_ecpri_seq_id>false</ignore_ecpri_seq_id>
                   <iq_scaling>10.0</iq_scaling>
-                </srs_nrcelldu_ofh_extensions>
-                <srs_nrcelldu_base_extensions>
+                </ocudu_nrcelldu_ofh_extensions>
+                <ocudu_nrcelldu_base_extensions>
                   <nof_antennas_dl>4</nof_antennas_dl>
                   <nof_antennas_ul>4</nof_antennas_ul>
                   <common_scs>KHZ_30</common_scs>
-                </srs_nrcelldu_base_extensions>            
-                <srs_nrcelldu_ssb_extensions>
+                </ocudu_nrcelldu_base_extensions>            
+                <ocudu_nrcelldu_ssb_extensions>
                   <ssb_block_power_dbm>0</ssb_block_power_dbm>
-                </srs_nrcelldu_ssb_extensions>
-                <srs_nrcelldu_prach_extensions>
+                </ocudu_nrcelldu_ssb_extensions>
+                <ocudu_nrcelldu_prach_extensions>
                   <prach_config_index>159</prach_config_index>
                   <prach_root_sequence_index>1</prach_root_sequence_index>
-                </srs_nrcelldu_prach_extensions>
-                <srs_nrcelldu_pdsch_extensions>
+                </ocudu_nrcelldu_prach_extensions>
+                <ocudu_nrcelldu_pdsch_extensions>
                   <mcs_table>qam64</mcs_table>
-                </srs_nrcelldu_pdsch_extensions>
-                <srs_nrcelldu_tdd_extensions>
+                </ocudu_nrcelldu_pdsch_extensions>
+                <ocudu_nrcelldu_tdd_extensions>
                   <dl_ul_tx_period>10</dl_ul_tx_period>
                   <nof_dl_slots>7</nof_dl_slots>
                   <nof_dl_symbols>6</nof_dl_symbols>
                   <nof_ul_slots>2</nof_ul_slots>
                   <nof_ul_symbols>4</nof_ul_symbols>
-                </srs_nrcelldu_tdd_extensions>
-              </srs_nrcelldu_extensions>
+                </ocudu_nrcelldu_tdd_extensions>
+              </ocudu_nrcelldu_extensions>
           </attributes>
         </NRCellDU>
 
@@ -570,8 +599,8 @@ o1Config:
           </attributes>
         </EP_F1U>
 
-        <srs_gnbdufunction_extensions xmlns="urn:srsran-gnbdufunction-extension:1.0">
-          <srs_gnbdufunction_testmode_extensions>
+        <ocudu_gnbdufunction_extensions xmlns="urn:ocudu-gnbdufunction-extension:1.0">
+          <ocudu_gnbdufunction_testmode_extensions>
             <enabled>true</enabled>
             <rnti>68</rnti>
             <ri>4</ri>
@@ -579,21 +608,21 @@ o1Config:
             <nof_ues>1</nof_ues>
             <pdsch_active>true</pdsch_active>
             <pusch_active>true</pusch_active>
-          </srs_gnbdufunction_testmode_extensions>
-          <srs_gnbdufunction_log_extensions>
+          </ocudu_gnbdufunction_testmode_extensions>
+          <ocudu_log_extensions>
             <filename>/tmp/gnb.log</filename>
             <all_level>warning</all_level>
-          </srs_gnbdufunction_log_extensions>
-          <srs_hal_extensions>
+          </ocudu_log_extensions>
+          <ocudu_hal_extensions>
             <eal_args>--lcores (0-1)@(0-23)</eal_args>
-          </srs_hal_extensions>
+          </ocudu_hal_extensions>
 
-          <srs_remote_control_extensions>
+          <ocudu_remote_control_extensions>
             <enabled>true</enabled>
             <bind_addr>0.0.0.0</bind_addr>
-          </srs_remote_control_extensions>
+          </ocudu_remote_control_extensions>
 
-          <srs_metrics_extensions>
+          <ocudu_metrics_extensions>
             <autostart_stdout_metrics>true</autostart_stdout_metrics>
             <enable_json>true</enable_json>
             <enable_log>false</enable_log>
@@ -610,8 +639,8 @@ o1Config:
               <enable_pdcp>false</enable_pdcp>
               <enable_du_low>false</enable_du_low>
             </layers>
-          </srs_metrics_extensions>
-        </srs_gnbdufunction_extensions>
+          </ocudu_metrics_extensions>
+        </ocudu_gnbdufunction_extensions>
 
       </GNBDUFunction>
     </ManagedElement>
