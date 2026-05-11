@@ -264,8 +264,10 @@ spec:
               protocol: TCP
           command: [ "/usr/local/bin/entrypoint.sh" ]
           args:
+            - "--config"
+            - "gnb"
+            - "--custom-config"
             - "/etc/netconf/o1-config.xml"
-            - "/etc/netconf-running"
           volumeMounts:
             - name: o1-config-volume
               mountPath: /etc/netconf

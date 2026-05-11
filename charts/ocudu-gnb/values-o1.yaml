@@ -319,7 +319,7 @@ o1:
     image:
       repository: registry.gitlab.com/softwareradiosystems/srsran_5g_enterprise/o1_adapter
       pullPolicy: IfNotPresent
-      tag: 9f565237
+      tag: 20260511_ee814fb3
     resources: {}
     securityContext: {}
   netconfServer:
