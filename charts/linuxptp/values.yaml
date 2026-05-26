@@ -24,7 +24,7 @@ image:
   pullPolicy: IfNotPresent
   # -- Image tag (overrides chart appVersion)
   # @default -- Chart appVersion (`4.4.0`)
-  tag: v4.4_2.0.0
+  tag: v4.4_2.1.0
 
 # -- Image pull secrets for private registries
 # Remove or update if not using a private registry
@@ -151,8 +151,14 @@ affinity: {}
 interfaceNameList: "ens3f1np1"
 
 # ============================================================================
-# Health Probes
+# ptp4l Container Configuration
 # ============================================================================
+
+# -- ptp4l-specific settings
+ptp4l:
+  # -- Maximum allowed offsetFromMaster in nanoseconds before the health file is removed
+  # @default -- `25`
+  offsetLimitNs: 25
 
 # -- Startup probe configuration
 # Allows time for PTP to establish initial synchronization (can take 5+ minutes)

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.0 (2026-05-26)
+
+### Fixed
+- ptp4l zombie processes: wrap ptp4l in entrypoint script so it is no longer PID 1 and probe forks are properly reaped
+- Replace exec probes (liveness-ptp4l.sh) with health file (`/tmp/ptp4l-healthy`) to eliminate spurious restarts from pmc timeouts under load
+
+### Added
+- `ptp4l.offsetLimitNs` value (default: 25ns) to configure the offset threshold
+
 ## 2.1.3 (2026-04-09)
 
 ### Changed

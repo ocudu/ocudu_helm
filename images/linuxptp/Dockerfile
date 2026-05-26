@@ -23,7 +23,8 @@ COPY --from=builder /linuxptp-agent/linuxptp/phc_ctl /usr/local/bin/
 COPY --from=builder /linuxptp-agent/linuxptp/ts2phc /usr/local/bin/
 COPY scripts/ /usr/local/bin/
 
-RUN apt update && apt install -y musl-dev bc ntpdate && \
+RUN chmod +x /usr/local/bin/entrypoint-ptp4l.sh && \
+    apt update && apt install -y musl-dev bc ntpdate && \
     apt clean && \
     rm -rf /var/lib/apt/lists/* && \
     ldconfig
