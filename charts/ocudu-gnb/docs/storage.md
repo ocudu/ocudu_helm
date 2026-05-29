@@ -30,7 +30,7 @@ persistence:
     storageClassName: ""  # Use default StorageClass
     accessMode: ReadWriteOnce
     size: 10Gi
-  mountPath: "/tmp"
+  mountPath: "/var/log/srs"
 ```
 
 ### Configuration with Specific StorageClass
@@ -43,7 +43,7 @@ persistence:
     storageClassName: "fast-ssd"  # Your StorageClass name
     accessMode: ReadWriteOnce
     size: 10Gi
-  mountPath: "/tmp"
+  mountPath: "/var/log/srs"
 ```
 
 ### Configuration with Different Access Modes
@@ -56,7 +56,7 @@ persistence:
     storageClassName: "nfs"
     accessMode: ReadWriteMany  # For shared access
     size: 50Gi
-  mountPath: "/tmp"
+  mountPath: "/var/log/srs"
 ```
 
 ## hostPath Storage (Bare-metal)
@@ -72,7 +72,7 @@ persistence:
   hostPath:
     path: "/mnt/debugging-logs"
     type: DirectoryOrCreate
-  mountPath: "/tmp"
+  mountPath: "/var/log/srs"
 ```
 
 ### Important Considerations
@@ -113,7 +113,7 @@ persistence:
 
 **⚠️ Warning**: Logs will be lost when the pod restarts.
 
-> **Note**: When `persistence.enabled: false`, the volume for debugging logs is not mounted. If your gNB config specifies `log.filename: /tmp/debugging-logs/gnb.log`, the directory `/tmp/debugging-logs/` won't exist. Either enable persistence or change the log path to `/tmp/gnb.log` in your config.
+> **Note**: When `persistence.enabled: false`, the volume for debugging logs is not mounted. If your gNB config specifies `log.filename: /var/log/srs/debugging-logs/gnb.log`, the directory `/var/log/srs/debugging-logs/` won't exist. Either enable persistence or change the log path to `/var/log/srs/gnb.log` in your config.
 
 ## Common Scenarios
 
@@ -219,8 +219,8 @@ affinity:
 
 ```bash
 # Copy data from old pod to new
-kubectl cp <old-pod>:/tmp/logs ./backup
-kubectl cp ./backup <new-pod>:/tmp/logs
+kubectl cp <old-pod>:/var/log/srs/logs ./backup
+kubectl cp ./backup <new-pod>:/var/log/srs/logs
 ```
 
 ### From PVC to hostPath

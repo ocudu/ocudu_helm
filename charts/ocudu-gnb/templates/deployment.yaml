@@ -154,6 +154,8 @@ spec:
             - name: RESOURCE_EXTENDED
               value: {{ .Values.sriovConfig.extendedResourceName | quote }}
           {{- end }}
+            - name: SRS_LOG_DIR
+              value: {{ .Values.persistence.mountPath | quote }}
           {{- if .Values.persistence.enabled }}
             - name: PRESERVE_OLD_LOGS
               value: {{ .Values.persistence.preserveOldLogs | quote }}

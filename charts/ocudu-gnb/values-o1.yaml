@@ -617,7 +617,7 @@ o1Config:
             <pusch_active>true</pusch_active>
           </ocudu_gnbdufunction_testmode_extensions>
           <ocudu_log_extensions>
-            <filename>/tmp/gnb.log</filename>
+            <filename>/var/log/srs/gnb.log</filename>
             <all_level>warning</all_level>
           </ocudu_log_extensions>
           <ocudu_hal_extensions>

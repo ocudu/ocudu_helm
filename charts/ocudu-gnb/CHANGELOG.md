@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.6.4
+
+### Changed
+- Replace `/tmp` with `/var/log/srs` for log, PCAP, and config paths
+
 ## 3.6.3
 
 ### Added
@@ -140,7 +145,7 @@ This is a clean break from the srsRAN chart. To migrate:
 
 ### Fixed
 - LoadBalancer service now correctly respects `service.enabled: false` when determining `USE_EXT_CORE`
-- Log file paths must exist when `persistence.enabled: false` (use `/tmp/` for ephemeral logs)
+- Log file paths must exist when `persistence.enabled: false` (use `/var/log/srs/` for ephemeral logs)
 
 ### Changed
 - Remove hardcoded `fullnameOverride` and `nameOverride` to support multiple instances in same namespace

@@ -497,22 +497,22 @@ terminate() {
 # Process config and run gNB
 process_and_run_gnb() {
     local config_file="$1"
-    local updated_config="/tmp/gnb-config.yml"
-    
-    # Copy config to temp location
+    local updated_config="${SRS_LOG_DIR}/gnb-config.yml"
+
+    # Copy config to working location
     if ! cp "$config_file" "$updated_config"; then
         log_fatal "Failed to copy config file to $updated_config"
     fi
-    
+
     # Apply all config transformations
     inject_ip_overrides "$updated_config" || log_fatal "IP override injection failed"
     update_hal_eal_args "$updated_config" || log_fatal "HAL EAL args update failed"
-    
+
     if [ -n "${DEVICE_LIST}" ]; then
         update_network_interfaces_and_macs "$updated_config" "${DEVICE_LIST}" || \
             log_fatal "Network interface update failed"
     fi
-    
+
     log_info "Configuration processing complete: $updated_config"
 
     log_info "Starting gNB"
@@ -628,6 +628,7 @@ CONFIG_CREATE_TIMEOUT="${CONFIG_CREATE_TIMEOUT:-30}"
 ENABLE_OCUDU_O1="${ENABLE_OCUDU_O1:-false}"
 HOSTNETWORK="${HOSTNETWORK:-true}"
 USE_EXT_CORE="${USE_EXT_CORE:-false}"
+SRS_LOG_DIR="${SRS_LOG_DIR:-/var/log/srs}"
 
 # Run main
 main "$@"
