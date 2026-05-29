@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.6.3
+
+### Added
+
+- netconf-server: optional NETCONF-over-TLS endpoint on port 6513 via `o1.netconfServer.tls.enabled`
+- netconf-server: optional cert Secret mount via `o1.netconfServer.tls.certSecret`; omit for auto-generated self-signed certs
+
 ## 3.6.2
 
 ### Fixed

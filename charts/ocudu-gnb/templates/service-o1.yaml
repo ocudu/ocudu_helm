@@ -36,4 +36,10 @@ spec:
       {{- if and (eq (.Values.o1.netconfServer.service.type | default "NodePort") "NodePort") (.Values.o1.netconfServer.service.nodePort) }}
       nodePort: {{ .Values.o1.netconfServer.service.nodePort }}
       {{- end }}
+    {{- if .Values.o1.netconfServer.tls.enabled }}
+    - name: netconf-tls
+      port: 6513
+      targetPort: 6513
+      protocol: TCP
+    {{- end }}
 {{- end }}

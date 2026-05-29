@@ -48,6 +48,11 @@ spec:
           configMap:
             name: {{ include "ocudu-gnb.o1ConfigmapName" . }}
             defaultMode: 0777
+        {{- if and .Values.o1.netconfServer.tls.enabled .Values.o1.netconfServer.tls.certSecret }}
+        - name: netconf-tls-certs
+          secret:
+            secretName: {{ .Values.o1.netconfServer.tls.certSecret }}
+        {{- end }}
         {{- else }}
         - name: config-volume
           configMap:
@@ -262,17 +267,32 @@ spec:
             - name: netconf
               containerPort: {{ .Values.o1.o1Port }}
               protocol: TCP
+            {{- if .Values.o1.netconfServer.tls.enabled }}
+            - name: netconf-tls
+              containerPort: 6513
+              protocol: TCP
+            {{- end }}
           command: [ "/usr/local/bin/entrypoint.sh" ]
           args:
             - "--config"
             - "gnb"
             - "--custom-config"
             - "/etc/netconf/o1-config.xml"
+            {{- if .Values.o1.netconfServer.tls.enabled }}
+            - "--enable-tls"
+            - "--tls-cert-dir"
+            - "/etc/netconf-tls"
+            {{- end }}
           volumeMounts:
             - name: o1-config-volume
               mountPath: /etc/netconf
             - name: netconf-running-config-volume
               mountPath: /etc/netconf-running
+            {{- if and .Values.o1.netconfServer.tls.enabled .Values.o1.netconfServer.tls.certSecret }}
+            - name: netconf-tls-certs
+              mountPath: /etc/netconf-tls
+              readOnly: true
+            {{- end }}
         {{- end }}
       dnsPolicy: ClusterFirstWithHostNet
       {{- with .Values.nodeSelector }}
