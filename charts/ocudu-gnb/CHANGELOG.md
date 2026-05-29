@@ -4,6 +4,7 @@
 
 ### Changed
 - Replace `/tmp` with `/var/log/srs` for log, PCAP, and config paths
+- Save a snapshot of the final rendered config to `${SRS_LOG_DIR}/gnb-config-rendered.yaml` before exec
 
 ## 3.6.3
 

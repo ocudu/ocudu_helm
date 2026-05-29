@@ -515,6 +515,8 @@ process_and_run_gnb() {
 
     log_info "Configuration processing complete: $updated_config"
 
+    cp "$updated_config" "${SRS_LOG_DIR}/gnb-config-rendered.yaml"
+
     log_info "Starting gNB"
     exec gnb -c "$updated_config"
 }
@@ -535,6 +537,7 @@ main() {
     log_info "PRESERVE_OLD_LOGS: ${PRESERVE_OLD_LOGS}"
     log_info "HOSTNETWORK: ${HOSTNETWORK}"
     log_info "USE_EXT_CORE: ${USE_EXT_CORE}"
+    log_info "SRS_LOG_DIR: ${SRS_LOG_DIR}"
     
     # Setup signal handling
     trap terminate SIGTERM SIGINT
