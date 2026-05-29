@@ -16,7 +16,7 @@ image:
   # -- Image tag
   # Format: <date>_<commit>
   # @default -- Chart appVersion
-  tag:  20260424_6a7afc6c
+  tag: 20260528_ef8af93d
 
 # -- Image pull secrets for private registries
 # @default -- See values.yaml
