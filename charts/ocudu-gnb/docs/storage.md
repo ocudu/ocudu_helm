@@ -179,13 +179,25 @@ kubectl get storageclass
 
 ### hostPath Permission Denied
 
+`fsGroup` does not apply to hostPath volumes — Kubernetes only sets group ownership for PVC and emptyDir volumes. When the chart default runs as uid=1000, a directory created by `DirectoryOrCreate` or by root will be inaccessible.
+
+Pre-create the directory on the node with the correct ownership before deploying:
+
+```bash
+# On the node (as root) — adjust path to match hostPath.path in your values
+mkdir -p /var/lib/ocudu-gnb
+chown 1000:1000 /var/lib/ocudu-gnb
+```
+
+To verify or fix after the fact:
+
 ```bash
 # Check directory ownership on node
-ls -la /mnt/debugging-logs
+ls -la /var/lib/ocudu-gnb
 
 # Fix permissions (on node)
-sudo chown 1000:1000 /mnt/debugging-logs
-sudo chmod 755 /mnt/debugging-logs
+chown 1000:1000 /var/lib/ocudu-gnb
+chmod 755 /var/lib/ocudu-gnb
 ```
 
 ### Pod Scheduled on Wrong Node (hostPath)
