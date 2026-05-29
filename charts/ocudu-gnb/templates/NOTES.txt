@@ -1,142 +1,30 @@
-# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
-# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
-
-#
-# Copyright 2021-2026 Software Radio Systems Limited
-#
-# By using this file, you agree to the terms and conditions set
-# forth in the LICENSE file which can be found at the top level of
-# the distribution.
-#
-
-════════════════════════════════════════════════════════════════════════════════
-  OCUDU - 5G gNB (CU/DU Combined) Chart
-════════════════════════════════════════════════════════════════════════════════
-
-✓ Successfully deployed {{ .Chart.Name }} (version {{ .Chart.Version }})
-  Release: {{ .Release.Name }}
-  Namespace: {{ .Release.Namespace }}
-
-────────────────────────────────────────────────────────────────────────────────
-DEPLOYMENT CONFIGURATION
-────────────────────────────────────────────────────────────────────────────────
-
-Network Mode:     {{ if .Values.network.hostNetwork }}hostNetwork (host networking){{ else }}CNI (container networking with SR-IOV){{ end }}
-Storage Type:     {{ if .Values.persistence.enabled }}{{ .Values.persistence.type | upper }} ({{ if eq .Values.persistence.type "pvc" }}dynamic provisioning{{ else }}host path{{ end }}){{ else }}Ephemeral (no persistence){{ end }}
-O1 Interface:     {{ if .Values.o1.enable_ocudu_o1 }}Enabled (NETCONF management){{ else }}Disabled{{ end }}
-RBAC:             {{ if .Values.rbac.create }}Enabled (Role + RoleBinding){{ else }}Disabled{{ end }}
-
-────────────────────────────────────────────────────────────────────────────────
-SERVICE ACCESS
-────────────────────────────────────────────────────────────────────────────────
-
+{{- /*
+SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+*/ -}}
+{{ .Release.Name }} deployed to namespace: {{ .Release.Namespace }}
+{{- $services := list }}
 {{- if .Values.metricsService.enabled }}
-
-Metrics Service (Telegraf/InfluxDB):
-   Service: {{ include "ocudu-gnb.fullname" . }}-metrics
-   Port:    {{ .Values.metricsService.port }}
-   Type:    {{ .Values.metricsService.type | default "ClusterIP" }}
-
-   {{- if eq (.Values.metricsService.type | default "ClusterIP") "ClusterIP" }}
-   Access within cluster:
-   {{ include "ocudu-gnb.fullname" . }}-metrics.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.metricsService.port }}
-   {{- else if eq .Values.metricsService.type "NodePort" }}
-   Access via NodePort:
-   kubectl get svc {{ include "ocudu-gnb.fullname" . }}-metrics -n {{ .Release.Namespace }}
-   {{- if .Values.metricsService.nodePort }}
-   NodePort: {{ .Values.metricsService.nodePort }}
-   {{- end }}
-   {{- else if eq .Values.metricsService.type "LoadBalancer" }}
-   Access via LoadBalancer:
-   kubectl get svc {{ include "ocudu-gnb.fullname" . }}-metrics -n {{ .Release.Namespace }}
-   {{- end }}
+{{- $ports := printf "%v/TCP" .Values.metricsService.port }}
+{{- $svc := printf "  %-40s %-14s %s" (printf "%s-metrics" (include "ocudu-gnb.fullname" .)) (.Values.metricsService.type | default "ClusterIP") $ports }}
+{{- $services = append $services $svc }}
 {{- end }}
-
 {{- if and .Values.o1.enable_ocudu_o1 .Values.o1.netconfServer.service }}
-
-O1 NETCONF Service:
-   Service: {{ include "ocudu-gnb.fullname" . }}-o1
-   Port:    {{ .Values.o1.o1Port }}
-   Type:    {{ .Values.o1.netconfServer.service.type | default "NodePort" }}
-
-   {{- if eq (.Values.o1.netconfServer.service.type | default "NodePort") "NodePort" }}
-   Access via NodePort:
-   kubectl get svc {{ include "ocudu-gnb.fullname" . }}-o1 -n {{ .Release.Namespace }}
-   {{- if .Values.o1.netconfServer.service.nodePort }}
-   NodePort: {{ .Values.o1.netconfServer.service.nodePort }}
-   {{- end }}
-   {{- else if eq .Values.o1.netconfServer.service.type "LoadBalancer" }}
-   Access via LoadBalancer:
-   kubectl get svc {{ include "ocudu-gnb.fullname" . }}-o1 -n {{ .Release.Namespace }}
-   {{- end }}
+{{- $ports := printf "%v/TCP" (.Values.o1.o1Port | default 830) }}
+{{- $svc := printf "  %-40s %-14s %s" (printf "%s-o1" (include "ocudu-gnb.fullname" .)) (.Values.o1.netconfServer.service.type | default "NodePort") $ports }}
+{{- $services = append $services $svc }}
 {{- end }}
-
 {{- if .Values.service.enabled }}
-
-5G Core Service (N2/N3):
-   Service: {{ include "ocudu-gnb.fullname" . }}-lb
-   Type:    {{ .Values.service.type | default "LoadBalancer" }}
-
-   Ports:
-   {{- if .Values.service.ports.n2.enabled }}
-   - N2 (Control): {{ .Values.service.ports.n2.port }}/{{ .Values.service.ports.n2.protocol }}
-     {{- if and (eq (.Values.service.type | default "LoadBalancer") "NodePort") (.Values.service.ports.n2.nodePort) }}
-     NodePort: {{ .Values.service.ports.n2.nodePort }}
-     {{- end }}
-   {{- end }}
-   {{- if .Values.service.ports.n3.enabled }}
-   - N3 (User):    {{ .Values.service.ports.n3.port }}/{{ .Values.service.ports.n3.protocol }}
-     {{- if and (eq (.Values.service.type | default "LoadBalancer") "NodePort") (.Values.service.ports.n3.nodePort) }}
-     NodePort: {{ .Values.service.ports.n3.nodePort }}
-     {{- end }}
-   {{- end }}
-
-   {{- if eq (.Values.service.type | default "LoadBalancer") "ClusterIP" }}
-   Access within cluster:
-   {{ include "ocudu-gnb.fullname" . }}-lb.{{ .Release.Namespace }}.svc.cluster.local
-   {{- else if eq .Values.service.type "NodePort" }}
-   Access via NodePort:
-   kubectl get svc {{ include "ocudu-gnb.fullname" . }}-lb -n {{ .Release.Namespace }}
-   {{- else if eq .Values.service.type "LoadBalancer" }}
-   Access via LoadBalancer:
-   {{- if .Values.service.loadBalancerIP }}
-   IP: {{ .Values.service.loadBalancerIP }}
-   {{- end }}
-   kubectl get svc {{ include "ocudu-gnb.fullname" . }}-lb -n {{ .Release.Namespace }}
-   {{- end }}
+{{- $ports := list }}
+{{- if .Values.service.ports.n2.enabled }}{{- $ports = append $ports (printf "%v/SCTP" .Values.service.ports.n2.port) }}{{- end }}
+{{- if .Values.service.ports.n3.enabled }}{{- $ports = append $ports (printf "%v/UDP" .Values.service.ports.n3.port) }}{{- end }}
+{{- $svc := printf "  %-40s %-14s %s" (printf "%s-lb" (include "ocudu-gnb.fullname" .)) (.Values.service.type | default "LoadBalancer") ($ports | join " ") }}
+{{- $services = append $services $svc }}
 {{- end }}
+{{- if $services }}
 
-────────────────────────────────────────────────────────────────────────────────
-DOCUMENTATION
-────────────────────────────────────────────────────────────────────────────────
-
-For detailed configuration guides, see:
-   - Network Modes:      docs/network-modes.md
-   - SR-IOV Setup:       docs/sriov-setup.md
-   - NetworkPolicy:      docs/networkpolicy.md
-   - Security Hardening: docs/security.md
-   - Storage Options:    docs/storage.md
-   - Hugepages Config:   docs/hugepages.md
-
-Main README:          README.md
-Project Home:         https://www.srsran.com/
-Issue Tracker:        https://gitlab.com/ocudu/ocudu_elements/ocudu_helm/-/issues
-
-────────────────────────────────────────────────────────────────────────────────
-TROUBLESHOOTING
-────────────────────────────────────────────────────────────────────────────────
-
-If pods are not starting:
-- Check RBAC permissions: kubectl auth can-i get pods --as=system:serviceaccount:{{ .Release.Namespace }}:{{ .Values.serviceAccount.name }}
-{{- if not .Values.network.hostNetwork }}
-- Verify SR-IOV resources: kubectl describe node <node-name> | grep -A5 "Allocatable"
+Services:
+{{- range $services }}
+{{ . }}
 {{- end }}
-{{- if and .Values.resources.limits (or (index .Values.resources.limits "hugepages-1Gi") (index .Values.resources.limits "hugepages-2Mi")) }}
-- Check hugepages availability: kubectl get nodes -o custom-columns=NAME:.metadata.name,HUGEPAGES-1GI:.status.allocatable.hugepages-1Gi,HUGEPAGES-2MI:.status.allocatable.hugepages-2Mi
 {{- end }}
-- Review events: kubectl get events -n {{ .Release.Namespace }} --sort-by='.lastTimestamp'
-
-If gNB is not connecting to 5G Core:
-- Verify N2/N3 configuration in gnb_config.yaml
-- Check network connectivity to AMF and UPF
-- Review gNB logs for connection errors
