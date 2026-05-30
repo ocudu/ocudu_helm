@@ -80,22 +80,18 @@ spec:
           emptyDir:
             medium: HugePages-2Mi
         {{- end }}
-        {{- if and .Values.metricsService.enabled .Values.metricsService.powercap.enabled }}
-        - name: powercap-sysfs
-          hostPath:
-            path: /sys/class/powercap
-            type: Directory
-        - name: powercap-devices
-          hostPath:
-            path: /sys/devices/virtual/powercap
-            type: Directory
-        {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           tty: true
           stdin: true
           securityContext:
+            {{- if and .Values.metricsService.enabled .Values.metricsService.powercap.enabled }}
+            {{- $ctx := deepCopy .Values.securityContext }}
+            {{- $_ := set $ctx.capabilities "add" (append $ctx.capabilities.add "PERFMON") }}
+            {{- toYaml $ctx | nindent 12 }}
+            {{- else }}
             {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- end }}
           image: "{{ template "ocudu-gnb.image" .Values.image }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- if or .Values.resources .Values.sriovConfig.enabled }}
@@ -185,14 +181,6 @@ spec:
             {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-2Mi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-2Mi")) }}
             - name: hugepage-2mi
               mountPath: /hugepages-2Mi
-            {{- end }}
-            {{- if and .Values.metricsService.enabled .Values.metricsService.powercap.enabled }}
-            - name: powercap-sysfs
-              mountPath: /sys/class/powercap
-              readOnly: true
-            - name: powercap-devices
-              mountPath: /sys/devices/virtual/powercap
-              readOnly: true
             {{- end }}
           {{- if .Values.o1.enable_ocudu_o1 }}
           lifecycle:

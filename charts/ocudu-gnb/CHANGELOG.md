@@ -5,6 +5,8 @@
 ### Changed
 - Replace `/tmp` with `/var/log/srs` for log, PCAP, and config paths
 - Save a snapshot of the final rendered config to `${SRS_LOG_DIR}/gnb-config-rendered.yaml` before exec
+- Replace powercap hostPath mounts (`/sys/class/powercap`, `/sys/devices/virtual/powercap`) with `CAP_PERFMON`; the binary now reads RAPL energy via `perf_event_open()` (kernel >= 5.8, no host mounts needed)
+- `metricsService.powercap.enabled` now defaults to `false` (opt-in)
 
 ## 3.6.3
 
