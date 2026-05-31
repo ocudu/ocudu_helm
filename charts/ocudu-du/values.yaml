@@ -140,7 +140,7 @@ persistence:
   hostPath:
     path: "/mnt/debugging-logs"
     type: DirectoryOrCreate
-  mountPath: "/tmp"
+  mountPath: "/var/log/srs"
   preserveOldLogs: true
 
 # -- DU configuration file
