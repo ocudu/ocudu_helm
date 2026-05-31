@@ -104,6 +104,103 @@ tolerations: {}
 # -- Pod affinity configuration
 affinity: {}
 
+# -- Metrics service configuration
+# Exposes CU metrics endpoint for Telegraf collection
+metricsService:
+  # -- Enable metrics service
+  enabled: false
+  # -- Enable power consumption metrics via RAPL
+  # @default -- `false`
+  powercap:
+    enabled: false
+
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+
+  # -- LoadBalancer IP address (optional, when type is LoadBalancer)
+  # @default -- `""` (auto-assign)
+  loadBalancerIP: ""
+
+  # -- LoadBalancer class (optional, for clusters with multiple LB implementations)
+  # @default -- `""` (use default)
+  loadBalancerClass: ""
+
+  # -- External traffic policy (Cluster or Local)
+  # @default -- `Cluster`
+  externalTrafficPolicy: Cluster
+
+  # -- Session affinity (None or ClientIP)
+  # @default -- `None`
+  sessionAffinity: None
+
+  # -- NodePort (optional, only used when type is NodePort)
+  # @default -- `""` (auto-assign)
+  nodePort: ""
+
+  # -- Service port (must match the port in cu-config.yml)
+  port: 8001
+
+  # -- Target port (container port)
+  targetPort: 8001
+
+# -- Service configuration for N2 and N3 interfaces
+service:
+  # -- Enable service for N2/N3 interfaces (5GC connectivity)
+  enabled: false
+
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `LoadBalancer`
+  type: LoadBalancer
+
+  # -- LoadBalancer IP address (optional, cluster-dependent)
+  # @default -- `""` (auto-assign)
+  loadBalancerIP: ""
+
+  # -- LoadBalancer class (optional, for clusters with multiple LB implementations)
+  # @default -- `""` (use default)
+  loadBalancerClass: ""
+
+  # -- External traffic policy (Cluster or Local)
+  # @default -- `Cluster`
+  externalTrafficPolicy: Cluster
+
+  # -- Session affinity (None or ClientIP)
+  # @default -- `None`
+  sessionAffinity: None
+
+  # -- Port configuration for N2 and N3 interfaces
+  ports:
+    # -- N2 interface (NGAP - control plane to AMF)
+    n2:
+      # -- Enable N2 port
+      enabled: true
+      # -- External port
+      port: 38412
+      # -- Container target port
+      # @default -- Same as port
+      targetPort: 38412
+      # -- Protocol (SCTP for NGAP)
+      protocol: SCTP
+      # -- NodePort (optional, only used when type is NodePort)
+      # @default -- `""` (auto-assign)
+      nodePort: ""
+
+    # -- N3 interface (GTP-U - user plane to UPF)
+    n3:
+      # -- Enable N3 port
+      enabled: true
+      # -- External port
+      port: 2152
+      # -- Container target port
+      # @default -- Same as port
+      targetPort: 2152
+      # -- Protocol (UDP for GTP-U)
+      protocol: UDP
+      # -- NodePort (optional, only used when type is NodePort)
+      # @default -- `""` (auto-assign)
+      nodePort: ""
+
 # -- Persistent storage configuration
 persistence:
   enabled: true
