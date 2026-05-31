@@ -1,0 +1,39 @@
+{{- if .Values.metricsService.enabled }}
+
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ocudu-du.fullname" . }}-metrics
+  labels:
+    {{- include "ocudu-du.labels" . | nindent 4 }}
+    app.kubernetes.io/component: metrics
+spec:
+  type: {{ .Values.metricsService.type | default "ClusterIP" }}
+  {{- if eq .Values.metricsService.type "LoadBalancer" }}
+  {{- if .Values.metricsService.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.metricsService.loadBalancerIP }}
+  {{- end }}
+  {{- if .Values.metricsService.loadBalancerClass }}
+  loadBalancerClass: {{ .Values.metricsService.loadBalancerClass }}
+  {{- end }}
+  {{- with .Values.metricsService.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ . }}
+  {{- end }}
+  {{- end }}
+  {{- with .Values.metricsService.sessionAffinity }}
+  sessionAffinity: {{ . }}
+  {{- end }}
+  selector:
+    {{- include "ocudu-du.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: metrics
+      port: {{ .Values.metricsService.port }}
+      targetPort: {{ .Values.metricsService.targetPort | default .Values.metricsService.port }}
+      protocol: TCP
+      {{- if and (eq .Values.metricsService.type "NodePort") (.Values.metricsService.nodePort) }}
+      nodePort: {{ .Values.metricsService.nodePort }}
+      {{- end }}
+{{- end }}

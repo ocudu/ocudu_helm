@@ -152,6 +152,109 @@ tolerations: {}
 # -- Pod affinity configuration
 affinity: {}
 
+# -- Metrics service configuration
+# Exposes DU metrics endpoint for Telegraf collection
+metricsService:
+  # -- Enable metrics service
+  enabled: false
+  # -- Enable power consumption metrics via RAPL
+  # When true, adds CAP_PERFMON to the container to allow perf_event_open() RAPL reads.
+  # The binary tries three methods in order:
+  #   1. sysfs powercap (/sys/class/powercap) — works if the host exposes it in the container
+  #   2. perf_event_open() — requires CAP_PERFMON and kernel >= 5.8 (no host mounts needed)
+  #   3. MSR (/dev/cpu/0/msr) — requires CAP_SYS_RAWIO (not added by this chart)
+  # If none succeed, energy metrics are silently unavailable (no crash).
+  # @default -- `false`
+  powercap:
+    enabled: false
+
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+
+  # -- LoadBalancer IP address (optional, when type is LoadBalancer)
+  # @default -- `""` (auto-assign)
+  loadBalancerIP: ""
+
+  # -- LoadBalancer class (optional, for clusters with multiple LB implementations)
+  # @default -- `""` (use default)
+  loadBalancerClass: ""
+
+  # -- External traffic policy (Cluster or Local)
+  # @default -- `Cluster`
+  externalTrafficPolicy: Cluster
+
+  # -- Session affinity (None or ClientIP)
+  # @default -- `None`
+  sessionAffinity: None
+
+  # -- NodePort (optional, only used when type is NodePort)
+  # @default -- `""` (auto-assign)
+  nodePort: ""
+
+  # -- Service port (must match the port in du-config.yml)
+  port: 8001
+
+  # -- Target port (container port)
+  targetPort: 8001
+
+# -- Service configuration for F1-C and F1-U interfaces
+service:
+  # -- Enable service for F1 interfaces (CU-CP/CU-UP connectivity)
+  enabled: false
+
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `LoadBalancer`
+  type: LoadBalancer
+
+  # -- LoadBalancer IP address (optional, cluster-dependent)
+  # @default -- `""` (auto-assign)
+  loadBalancerIP: ""
+
+  # -- LoadBalancer class (optional, for clusters with multiple LB implementations)
+  # @default -- `""` (use default)
+  loadBalancerClass: ""
+
+  # -- External traffic policy (Cluster or Local)
+  # @default -- `Cluster`
+  externalTrafficPolicy: Cluster
+
+  # -- Session affinity (None or ClientIP)
+  # @default -- `None`
+  sessionAffinity: None
+
+  # -- Port configuration for F1-C and F1-U interfaces
+  ports:
+    # -- F1-C interface (F1AP - control plane to CU-CP)
+    f1c:
+      # -- Enable F1-C port
+      enabled: true
+      # -- External port
+      port: 38472
+      # -- Container target port (must match du-config.yml)
+      # @default -- Same as port
+      targetPort: 38472
+      # -- Protocol (SCTP for F1AP)
+      protocol: SCTP
+      # -- NodePort (optional, only used when type is NodePort)
+      # @default -- `""` (auto-assign)
+      nodePort: ""
+
+    # -- F1-U interface (GTP-U - user plane to CU-UP)
+    f1u:
+      # -- Enable F1-U port
+      enabled: true
+      # -- External port
+      port: 2152
+      # -- Container target port (must match du-config.yml)
+      # @default -- Same as port
+      targetPort: 2152
+      # -- Protocol (UDP for GTP-U)
+      protocol: UDP
+      # -- NodePort (optional, only used when type is NodePort)
+      # @default -- `""` (auto-assign)
+      nodePort: ""
+
 # -- Persistent storage configuration
 persistence:
   enabled: true
