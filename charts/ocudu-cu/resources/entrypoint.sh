@@ -4,8 +4,11 @@
 # SPDX-License-Identifier: BSD-3-Clause-Open-MPI
 
 # This script runs the OCUDU CU (ocu) binary with the provided configuration file.
+# - When HOSTNETWORK=false, injects POD_IP into cu_cp.amf.bind_addr and
+#   cu_up.ngu.socket[].bind_addr. When USE_EXT_CORE=true, also sets ext_addr to LB_IP.
 # - If PRESERVE_OLD_LOGS=true, log file paths are updated with a timestamp and a
 #   'current' symlink is created for easy navigation.
+# - The rendered config is snapshotted to ${SRS_LOG_DIR}/cu-config-rendered.yml.
 # - The binary is restarted automatically on clean exit.
 # - SIGTERM/SIGINT are forwarded gracefully to the ocu process.
 #
@@ -132,36 +135,71 @@ update_config_paths() {
     return 0
 }
 
+# Inject POD_IP into cu_cp.amf.bind_addr and cu_up.ngu.socket[].bind_addr.
+# When USE_EXT_CORE=true, also sets cu_up.ngu.socket[].ext_addr to LB_IP.
+inject_ip_overrides() {
+    local config_file="$1"
+
+    if [ "${HOSTNETWORK}" = "true" ]; then
+        log_info "HOSTNETWORK=true, skipping IP override injection"
+        return 0
+    fi
+
+    if [ -z "$POD_IP" ]; then
+        log_error "POD_IP not set, cannot inject IP overrides"
+        return 1
+    fi
+
+    if [ "${USE_EXT_CORE}" = "true" ] && [ -z "$LB_IP" ]; then
+        log_error "USE_EXT_CORE=true but LB_IP not set"
+        return 1
+    fi
+
+    log_info "Injecting IP overrides (POD_IP=${POD_IP}, USE_EXT_CORE=${USE_EXT_CORE})"
+
+    local tmpfile
+    tmpfile=$(mktemp) || {
+        log_error "Failed to create temporary file for IP injection"
+        return 1
+    }
+
+    {
+        echo "cu_cp:"
+        echo "  amf:"
+        echo "    bind_addr: ${POD_IP}"
+        echo "cu_up:"
+        echo "  ngu:"
+        echo "    socket:"
+        echo "      - bind_addr: ${POD_IP}"
+        if [ "${USE_EXT_CORE}" = "true" ]; then
+            echo "        ext_addr: ${LB_IP}"
+        fi
+    } > "$tmpfile"
+
+    cat "$config_file" >> "$tmpfile"
+
+    if ! mv "$tmpfile" "$config_file"; then
+        log_error "Failed to inject IP overrides into config"
+        rm -f "$tmpfile"
+        return 1
+    fi
+
+    log_info "Successfully injected IP overrides"
+    return 0
+}
+
 #==============================================================================
 # Signal Handling
 #==============================================================================
 
+CU_PID=""
 terminate() {
-    log_info "Received termination signal, forwarding to CU process"
-
-    local cu_pid
-    cu_pid=$(pgrep ocu)
-
-    if [ -z "$cu_pid" ]; then
-        log_warn "No CU process found"
-        exit 0
+    if [ -n "$CU_PID" ]; then
+        log_info "Forwarding SIGTERM to ocu (PID $CU_PID)"
+        kill -TERM "$CU_PID" 2>/dev/null
+        wait "$CU_PID"
     fi
-
-    if ! kill -0 "$cu_pid" 2>/dev/null; then
-        log_warn "CU process no longer running"
-        exit 0
-    fi
-
-    log_info "Sending SIGTERM to CU (PID: $cu_pid)"
-    if kill -TERM "$cu_pid"; then
-        wait "$pipe_pid"
-        local exit_code=$?
-        log_info "CU terminated with exit code $exit_code"
-        exit "$exit_code"
-    else
-        log_error "Failed to send SIGTERM to CU"
-        exit 1
-    fi
+    exit 0
 }
 
 #==============================================================================
@@ -170,32 +208,20 @@ terminate() {
 
 process_and_run_cu() {
     local config_file="$1"
-    local updated_config="/tmp/cu-config.yml"
+    local updated_config="${SRS_LOG_DIR}/cu-config.yml"
 
-    if ! cp "$config_file" "$updated_config"; then
-        log_fatal "Failed to copy config file to $updated_config"
-    fi
+    cp "$config_file" "$updated_config" || log_fatal "Failed to copy config"
+
+    inject_ip_overrides "$updated_config" || log_fatal "IP override injection failed"
 
     if [ "$PRESERVE_OLD_LOGS" = "true" ]; then
-        local log_path
-        log_path=$(update_config_paths "$updated_config") || log_fatal "Log path setup failed"
-
-        log_info "Starting CU with log preservation in: $log_path"
-        {
-            stdbuf -oL ocu -c "$updated_config" 2>&1 | tee -a "${log_path}/cu.stdout"
-            exit ${PIPESTATUS[0]}
-        } &
-    else
-        log_info "Starting CU (logs not preserved)"
-        ocu -c "$updated_config" &
+        update_config_paths "$updated_config" || log_fatal "Log path setup failed"
     fi
 
-    pipe_pid=$!
-    wait "$pipe_pid"
-    local exit_code=$?
+    cp "$updated_config" "${SRS_LOG_DIR}/cu-config-rendered.yml"
 
-    log_info "CU exited with code $exit_code"
-    return $exit_code
+    log_info "Starting CU"
+    exec stdbuf -oL ocu -c "$updated_config"
 }
 
 #==============================================================================
@@ -204,25 +230,24 @@ process_and_run_cu() {
 
 main() {
     local config_file="$1"
+    [ -z "$config_file" ] && log_fatal "Usage: $0 <config_file>"
 
-    if [ -z "$config_file" ]; then
-        log_fatal "Usage: $0 <config_file>"
-    fi
-
-    log_info "=== OCUDU CU Entrypoint Script ==="
-    log_info "Config file: $config_file"
+    log_info "=== OCUDU CU Entrypoint ==="
+    log_info "Config: $config_file"
+    log_info "HOSTNETWORK: ${HOSTNETWORK}"
+    log_info "SRS_LOG_DIR: ${SRS_LOG_DIR}"
     log_info "PRESERVE_OLD_LOGS: ${PRESERVE_OLD_LOGS}"
 
     trap terminate SIGTERM SIGINT
 
-    validate_config_file "$config_file" || log_fatal "Config validation failed"
-
     while true; do
+        validate_config_file "$config_file" || log_fatal "Config validation failed"
+
         process_and_run_cu "$config_file"
         local exit_code=$?
 
         if [ $exit_code -ne 0 ]; then
-            log_error "CU failed with exit code $exit_code"
+            log_error "CU exited with code $exit_code"
             exit $exit_code
         fi
 
@@ -234,8 +259,9 @@ main() {
 # Script Initialization
 #==============================================================================
 
-# set -euo pipefail
-
 PRESERVE_OLD_LOGS="${PRESERVE_OLD_LOGS:-false}"
+SRS_LOG_DIR="${SRS_LOG_DIR:-/var/log/srs}"
+HOSTNETWORK="${HOSTNETWORK:-false}"
+USE_EXT_CORE="${USE_EXT_CORE:-false}"
 
 main "$@"
