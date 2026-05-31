@@ -68,7 +68,13 @@ spec:
           tty: true
           stdin: true
           securityContext:
+            {{- if and .Values.metricsService.enabled .Values.metricsService.powercap.enabled }}
+            {{- $ctx := deepCopy .Values.securityContext }}
+            {{- $_ := set $ctx.capabilities "add" (append $ctx.capabilities.add "PERFMON") }}
+            {{- toYaml $ctx | nindent 12 }}
+            {{- else }}
             {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- end }}
           image: "{{ template "ocudu-du.image" .Values.image }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- $hasLimits := and .Values.resources .Values.resources.limits (gt (len .Values.resources.limits) 0) }}
