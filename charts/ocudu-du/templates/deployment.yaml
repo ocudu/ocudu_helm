@@ -63,6 +63,8 @@ spec:
         {{- end }}
       containers:
         - name: {{ .Chart.Name }}
+          tty: true
+          stdin: true
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ template "ocudu-du.image" .Values.image }}"
@@ -74,8 +76,8 @@ spec:
           env:
             - name: PRESERVE_OLD_LOGS
               value: {{ .Values.persistence.preserveOldLogs | quote }}
-          command: [ "/bin/bash" ]
-          args: [ "-c", "/etc/entrypoint/entrypoint-srsdu.sh /etc/config/du-config.yml" ]
+          command: [ "/usr/bin/tini", "--" ]
+          args: [ "/bin/bash", "-c", "/etc/entrypoint/entrypoint-srsdu.sh /etc/config/du-config.yml" ]
           volumeMounts:
             - name: entrypoint-volume-srsdu
               mountPath: /etc/entrypoint

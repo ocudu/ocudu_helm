@@ -220,38 +220,6 @@ update_hal_eal_args() {
 }
 
 #==============================================================================
-# Signal Handling
-#==============================================================================
-
-terminate() {
-    log_info "Received termination signal, forwarding to DU process"
-
-    local du_pid
-    du_pid=$(pgrep odu)
-
-    if [ -z "$du_pid" ]; then
-        log_warn "No DU process found"
-        exit 0
-    fi
-
-    if ! kill -0 "$du_pid" 2>/dev/null; then
-        log_warn "DU process no longer running"
-        exit 0
-    fi
-
-    log_info "Sending SIGTERM to DU (PID: $du_pid)"
-    if kill -TERM "$du_pid"; then
-        wait "$pipe_pid"
-        local exit_code=$?
-        log_info "DU terminated with exit code $exit_code"
-        exit "$exit_code"
-    else
-        log_error "Failed to send SIGTERM to DU"
-        exit 1
-    fi
-}
-
-#==============================================================================
 # Main Execution Functions
 #==============================================================================
 
@@ -259,32 +227,16 @@ process_and_run_du() {
     local config_file="$1"
     local updated_config="/tmp/du-config.yml"
 
-    if ! cp "$config_file" "$updated_config"; then
-        log_fatal "Failed to copy config file to $updated_config"
-    fi
+    cp "$config_file" "$updated_config" || log_fatal "Failed to copy config file to $updated_config"
 
     update_hal_eal_args "$updated_config" || log_fatal "HAL EAL args update failed"
 
     if [ "$PRESERVE_OLD_LOGS" = "true" ]; then
-        local log_path
-        log_path=$(update_config_paths "$updated_config") || log_fatal "Log path setup failed"
-
-        log_info "Starting DU with log preservation in: $log_path"
-        {
-            stdbuf -oL odu -c "$updated_config" 2>&1 | tee -a "${log_path}/du.stdout"
-            exit ${PIPESTATUS[0]}
-        } &
-    else
-        log_info "Starting DU (logs not preserved)"
-        odu -c "$updated_config" &
+        update_config_paths "$updated_config" || log_fatal "Log path setup failed"
     fi
 
-    pipe_pid=$!
-    wait "$pipe_pid"
-    local exit_code=$?
-
-    log_info "DU exited with code $exit_code"
-    return $exit_code
+    log_info "Starting DU"
+    exec stdbuf -oL odu -c "$updated_config"
 }
 
 #==============================================================================
@@ -302,21 +254,8 @@ main() {
     log_info "Config file: $config_file"
     log_info "PRESERVE_OLD_LOGS: ${PRESERVE_OLD_LOGS}"
 
-    trap terminate SIGTERM SIGINT
-
     validate_config_file "$config_file" || log_fatal "Config validation failed"
-
-    while true; do
-        process_and_run_du "$config_file"
-        local exit_code=$?
-
-        if [ $exit_code -ne 0 ]; then
-            log_error "DU failed with exit code $exit_code"
-            exit $exit_code
-        fi
-
-        log_info "DU exited cleanly, restarting..."
-    done
+    process_and_run_du "$config_file"
 }
 
 #==============================================================================
