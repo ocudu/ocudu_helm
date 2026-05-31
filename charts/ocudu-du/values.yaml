@@ -255,6 +255,81 @@ service:
       # @default -- `""` (auto-assign)
       nodePort: ""
 
+# -- NetworkPolicy configuration
+# Restricts network traffic to/from the DU pod for enhanced security
+# IMPORTANT: NetworkPolicy only works when network.hostNetwork is false
+networkPolicy:
+  # -- Enable NetworkPolicy
+  # Only effective when network.hostNetwork is false
+  # @default -- `false`
+  enabled: false
+
+  # -- Ingress rules (incoming traffic to DU)
+  ingress:
+    # -- Allow traffic from CU (F1-C/F1-U interfaces)
+    cu:
+      # -- Enable CU ingress
+      # @default -- `true`
+      enabled: true
+      # -- Source selectors for CU traffic
+      from:
+        - podSelector:
+            matchLabels:
+              app: ocudu-cu
+        - ipBlock:
+            cidr: 10.0.0.0/8  # Adjust for your network CIDR
+
+    # -- Allow traffic from monitoring systems
+    monitoring:
+      # -- Enable monitoring ingress
+      # @default -- `true`
+      enabled: true
+      # -- Source selectors for monitoring traffic
+      from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+        - podSelector:
+            matchLabels:
+              app: telegraf
+
+    # -- Custom ingress rules
+    # @default -- `[]`
+    custom: []
+
+  # -- Egress rules (outgoing traffic from DU)
+  egress:
+    # -- Allow traffic to CU (F1-C/F1-U)
+    cu:
+      # -- Enable CU egress
+      # @default -- `true`
+      enabled: true
+      # -- Destination selectors for CU traffic
+      to:
+        - podSelector:
+            matchLabels:
+              app: ocudu-cu
+        - ipBlock:
+            cidr: 10.0.0.0/8  # Adjust for your network CIDR
+
+    # -- Allow traffic to monitoring systems
+    monitoring:
+      # -- Enable monitoring egress
+      # @default -- `true`
+      enabled: true
+      # -- Destination selectors for monitoring traffic
+      to:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+        - podSelector:
+            matchLabels:
+              app: influxdb
+
+    # -- Custom egress rules
+    # @default -- `[]`
+    custom: []
+
 # -- Persistent storage configuration
 persistence:
   enabled: true

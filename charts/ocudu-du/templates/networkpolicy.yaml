@@ -1,0 +1,85 @@
+{{- if and .Values.networkPolicy.enabled (not .Values.network.hostNetwork) }}
+
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "ocudu-du.fullname" . }}
+  labels:
+    {{- include "ocudu-du.labels" . | nindent 4 }}
+  annotations:
+    description: "Network policy for DU (only effective when hostNetwork: false)"
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "ocudu-du.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    {{- if .Values.networkPolicy.ingress.cu.enabled }}
+    # Allow traffic from CU (F1-C/F1-U interfaces)
+    - from:
+      {{- toYaml .Values.networkPolicy.ingress.cu.from | nindent 6 }}
+      ports:
+        - protocol: SCTP
+          port: 38472  # F1-C interface (F1AP)
+        - protocol: UDP
+          port: 2152   # F1-U interface (GTP-U)
+    {{- end }}
+
+    {{- if and .Values.metricsService.enabled .Values.networkPolicy.ingress.monitoring.enabled }}
+    # Allow traffic from monitoring systems (Telegraf)
+    - from:
+      {{- toYaml .Values.networkPolicy.ingress.monitoring.from | nindent 6 }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.metricsService.port }}
+    {{- end }}
+
+    {{- range .Values.networkPolicy.ingress.custom }}
+    # Custom ingress rule
+    - {{ toYaml . | nindent 6 }}
+    {{- end }}
+
+  egress:
+    {{- if .Values.networkPolicy.egress.cu.enabled }}
+    # Allow traffic to CU (F1-C/F1-U)
+    - to:
+      {{- toYaml .Values.networkPolicy.egress.cu.to | nindent 6 }}
+      ports:
+        - protocol: SCTP
+          port: 38472  # F1-C (F1AP)
+        - protocol: UDP
+          port: 2152   # F1-U (GTP-U)
+    {{- end }}
+
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+    {{- if .Values.networkPolicy.egress.monitoring.enabled }}
+    # Allow traffic to monitoring systems
+    - to:
+      {{- toYaml .Values.networkPolicy.egress.monitoring.to | nindent 6 }}
+      ports:
+        - protocol: TCP
+          port: 8086  # InfluxDB
+    {{- end }}
+
+    {{- range .Values.networkPolicy.egress.custom }}
+    # Custom egress rule
+    - {{ toYaml . | nindent 6 }}
+    {{- end }}
+{{- end }}
