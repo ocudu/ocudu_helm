@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.2 (2026-05-31)
+
+### Changed
+
+- entrypoint.sh: replace backgrounded `odu &` launch with `exec stdbuf -oL odu -c <cfg>` so odu becomes the container process directly, eliminating block-buffered stdout delay
+- entrypoint.sh: remove manual `SIGTERM` handler and restart loop — tini and Kubernetes `restartPolicy` handle these respectively
+- entrypoint.sh: replace `/tmp/du-config.yml` with `/var/log/srs/du-config.yml` as the working config copy path
+- deployment.yaml: set `tty: true` and `stdin: true` on the container to force line-buffered stdout
+- deployment.yaml: switch container command to `tini --` as PID 1 for zombie reaping and signal forwarding
+- values.yaml: update default `persistence.mountPath` from `/tmp` to `/var/log/srs`
+
+### Added
+
+- Liveness and readiness probes (`pgrep odu`), gated on `livenessProbe.enabled` and `readinessProbe.enabled`
+
 ## 1.0.1 (2026-04-11)
 
 ### Added
