@@ -121,6 +121,14 @@ spec:
             successThreshold: {{ .Values.readinessProbe.successThreshold }}
           {{- end }}
           env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: HOSTNETWORK
+              value: '{{ .Values.network.hostNetwork }}'
+            - name: SRS_LOG_DIR
+              value: {{ .Values.persistence.mountPath | quote }}
             - name: PRESERVE_OLD_LOGS
               value: {{ .Values.persistence.preserveOldLogs | quote }}
           {{- if and .Values.sriovConfig .Values.sriovConfig.enabled }}
