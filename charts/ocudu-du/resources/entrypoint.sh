@@ -4,8 +4,16 @@
 # SPDX-License-Identifier: BSD-3-Clause-Open-MPI
 
 # This script runs the OCUDU DU (odu) binary with the provided configuration file.
+# - If a hal section exists with eal_args, replaces the CPU core list inside @(...)
+#   with the CPUs available to the container as read from cgroups (v1/v2).
+# - When HOSTNETWORK=false and an SR-IOV VF is allocated (RESOURCE_EXTENDED):
+#     ru_ofh + hal present  -> DPDK: replaces network_interface with BDF and du_mac_addr
+#     ru_ofh + no hal       -> fatal error (SR-IOV without DPDK config)
+#     no ru_ofh             -> SR-IOV replacement skipped silently
+#   When HOSTNETWORK=true, network_interface is set by the user in the config directly.
 # - If PRESERVE_OLD_LOGS=true, log file paths are updated with a timestamp and a
 #   'current' symlink is created for easy navigation.
+# - The rendered config is snapshotted to ${SRS_LOG_DIR}/du-config-rendered.yml.
 # - The binary is restarted automatically on clean exit.
 # - SIGTERM/SIGINT are forwarded gracefully to the odu process.
 #
@@ -220,20 +228,169 @@ update_hal_eal_args() {
 }
 
 #==============================================================================
+# SR-IOV Detection Functions
+#==============================================================================
+
+has_hal_section() {
+    grep -q "^[[:space:]]*hal:" "$1"
+}
+
+has_hal_eal_args() {
+    grep -q "^[[:space:]]*eal_args:" "$1"
+}
+
+has_ru_ofh_section() {
+    grep -q "^[[:space:]]*ru_ofh:" "$1"
+}
+
+#==============================================================================
+# Network Configuration Functions
+#==============================================================================
+
+# Get MAC address for a PCI BDF without requiring CAP_SYSLOG.
+# Try order:
+#   1. Direct sysfs net address  (VF still bound to kernel driver)
+#   2. PF ip-link VF entry       (VF bound to vfio-pci / DPDK)
+#   3. dmesg fallback            (last resort; may fail without CAP_SYSLOG)
+get_mac_for_bdf() {
+    local bdf="$1"
+    local mac=""
+
+    # 1. Direct sysfs — works when VF is bound to a kernel net driver
+    local sysfs_net="/sys/bus/pci/devices/${bdf}/net"
+    if [ -d "$sysfs_net" ]; then
+        mac=$(cat "${sysfs_net}"/*/address 2>/dev/null | head -1)
+    fi
+
+    # 2. Via Physical Function — works for DPDK/vfio-pci bound VFs
+    if [ -z "$mac" ]; then
+        local physfn_link="/sys/bus/pci/devices/${bdf}/physfn"
+        if [ -L "$physfn_link" ]; then
+            local pf_bdf
+            pf_bdf=$(basename "$(readlink -f "$physfn_link")")
+            local pf_net="/sys/bus/pci/devices/${pf_bdf}/net"
+            if [ -d "$pf_net" ]; then
+                local pf_iface
+                pf_iface=$(ls "$pf_net" 2>/dev/null | head -1)
+                if [ -n "$pf_iface" ]; then
+                    local vf_idx=0
+                    while [ -L "/sys/bus/pci/devices/${pf_bdf}/virtfn${vf_idx}" ]; do
+                        local vf_bdf
+                        vf_bdf=$(basename "$(readlink -f "/sys/bus/pci/devices/${pf_bdf}/virtfn${vf_idx}")")
+                        if [ "$vf_bdf" = "$bdf" ]; then
+                            mac=$(ip link show "$pf_iface" 2>/dev/null \
+                                | grep "vf ${vf_idx} " \
+                                | sed -n 's/.*link\/ether \([0-9a-fA-F:]\+\).*/\1/p')
+                            break
+                        fi
+                        vf_idx=$((vf_idx + 1))
+                    done
+                fi
+            fi
+        fi
+    fi
+
+    # 3. dmesg fallback (requires CAP_SYSLOG on kernels >= 5.8; may fail in restricted containers)
+    if [ -z "$mac" ]; then
+        mac=$(dmesg 2>/dev/null | grep "$bdf" | grep "MAC address:" | tail -n 1 \
+            | sed -n 's/.*MAC address: \([0-9a-fA-F:]\+\).*/\1/p')
+    fi
+
+    echo "$mac"
+}
+
+# Replace network_interface with BDF and update du_mac_addr for a single VF (DPDK mode)
+update_single_network_interface_and_mac() {
+    local config_file="$1"
+    local bdf="$2"
+
+    log_info "Updating network_interface to BDF: $bdf"
+
+    local tmpfile
+    tmpfile=$(mktemp) || {
+        log_error "Failed to create temporary file for network update"
+        return 1
+    }
+
+    local mac
+    mac=$(get_mac_for_bdf "$bdf")
+
+    local replaced=0
+    while IFS= read -r line || [ -n "$line" ]; do
+        if echo "$line" | grep -qE "^[[:space:]]*network_interface:" && [ "$replaced" -eq 0 ]; then
+            local indent
+            indent=$(echo "$line" | sed -n 's/^\([[:space:]]*\).*/\1/p')
+            echo "${indent}network_interface: $bdf" >> "$tmpfile"
+            log_info "Set network_interface to: $bdf"
+            replaced=1
+        elif echo "$line" | grep -qE "^[[:space:]]*du_mac_addr:" && [ "$replaced" -eq 1 ]; then
+            local indent
+            indent=$(echo "$line" | sed -n 's/^\([[:space:]]*\).*/\1/p')
+            if [ -n "$mac" ]; then
+                echo "${indent}du_mac_addr: $mac" >> "$tmpfile"
+                log_info "Set du_mac_addr to: $mac"
+            else
+                log_warn "Could not determine MAC for BDF $bdf, keeping original"
+                echo "$line" >> "$tmpfile"
+            fi
+        else
+            echo "$line" >> "$tmpfile"
+        fi
+    done < "$config_file"
+
+    if ! mv "$tmpfile" "$config_file"; then
+        log_error "Failed to update config file with network interface"
+        rm -f "$tmpfile"
+        return 1
+    fi
+
+    return 0
+}
+
+#==============================================================================
+# Signal Handling
+#==============================================================================
+
+DU_PID=""
+terminate() {
+    if [ -n "$DU_PID" ]; then
+        log_info "Forwarding SIGTERM to odu (PID $DU_PID)"
+        kill -TERM "$DU_PID" 2>/dev/null
+        wait "$DU_PID"
+    fi
+    exit 0
+}
+
+#==============================================================================
 # Main Execution Functions
 #==============================================================================
 
 process_and_run_du() {
     local config_file="$1"
-    local updated_config="/var/log/ocudu/du-config.yml"
+    local updated_config="${SRS_LOG_DIR}/du-config.yml"
 
-    cp "$config_file" "$updated_config" || log_fatal "Failed to copy config file to $updated_config"
+    cp "$config_file" "$updated_config" || log_fatal "Failed to copy config"
 
     update_hal_eal_args "$updated_config" || log_fatal "HAL EAL args update failed"
+
+    if [ -n "${DEVICE_BDF}" ] && [ "${HOSTNETWORK}" = "false" ]; then
+        if has_ru_ofh_section "$updated_config"; then
+            if has_hal_section "$updated_config"; then
+                update_single_network_interface_and_mac "$updated_config" "${DEVICE_BDF}" || \
+                    log_fatal "DPDK network interface update failed"
+            else
+                log_fatal "SR-IOV device present with ru_ofh but no hal section — DPDK config required"
+            fi
+        else
+            log_info "No ru_ofh section found, skipping SR-IOV network_interface replacement"
+        fi
+    fi
 
     if [ "$PRESERVE_OLD_LOGS" = "true" ]; then
         update_config_paths "$updated_config" || log_fatal "Log path setup failed"
     fi
+
+    cp "$updated_config" "${SRS_LOG_DIR}/du-config-rendered.yml"
 
     log_info "Starting DU"
     exec stdbuf -oL odu -c "$updated_config"
@@ -245,25 +402,53 @@ process_and_run_du() {
 
 main() {
     local config_file="$1"
+    [ -z "$config_file" ] && log_fatal "Usage: $0 <config_file>"
 
-    if [ -z "$config_file" ]; then
-        log_fatal "Usage: $0 <config_file>"
-    fi
-
-    log_info "=== OCUDU DU Entrypoint Script ==="
-    log_info "Config file: $config_file"
+    log_info "=== OCUDU DU Entrypoint ==="
+    log_info "Config: $config_file"
+    log_info "HOSTNETWORK: ${HOSTNETWORK}"
+    log_info "SRS_LOG_DIR: ${SRS_LOG_DIR}"
     log_info "PRESERVE_OLD_LOGS: ${PRESERVE_OLD_LOGS}"
 
-    validate_config_file "$config_file" || log_fatal "Config validation failed"
-    process_and_run_du "$config_file"
+    trap terminate SIGTERM SIGINT
+
+    while true; do
+        validate_config_file "$config_file" || log_fatal "Config validation failed"
+
+        # Validate SR-IOV consistency up front
+        if [ -n "${DEVICE_BDF}" ] && [ "${HOSTNETWORK}" = "false" ]; then
+            if has_ru_ofh_section "$config_file" && has_hal_section "$config_file"; then
+                if ! has_hal_eal_args "$config_file"; then
+                    log_fatal "SR-IOV DPDK mode: hal section found but eal_args missing"
+                fi
+            fi
+        fi
+
+        process_and_run_du "$config_file"
+        local exit_code=$?
+
+        if [ $exit_code -ne 0 ]; then
+            log_error "DU exited with code $exit_code"
+            exit $exit_code
+        fi
+
+        log_info "DU exited cleanly, restarting..."
+    done
 }
 
 #==============================================================================
 # Script Initialization
 #==============================================================================
 
-# set -euo pipefail
-
 PRESERVE_OLD_LOGS="${PRESERVE_OLD_LOGS:-false}"
+SRS_LOG_DIR="${SRS_LOG_DIR:-/var/log/srs}"
+HOSTNETWORK="${HOSTNETWORK:-false}"
+RESOURCE_EXTENDED="${RESOURCE_EXTENDED:-intel.com/intel_sriov_dpdk}"
+
+# Convert resource name to env var format: foo.bar/baz -> PCIDEVICE_FOO_BAR_BAZ
+if [ -n "${RESOURCE_EXTENDED}" ]; then
+    env_var_name="PCIDEVICE_$(echo "${RESOURCE_EXTENDED}" | tr '/.a-z' '___A-Z')"
+    DEVICE_BDF="${!env_var_name:-}"
+fi
 
 main "$@"
