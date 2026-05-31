@@ -2,8 +2,21 @@
 
 ## 1.1.0 (2026-06-01)
 
+### Added
+
+- SR-IOV device plugin resource allocation (`sriovConfig.enabled`, `sriovConfig.extendedResourceName`)
+- `RESOURCE_EXTENDED` env var injected into container when SR-IOV is enabled
+- CAP_PERFMON capability conditionally added when `metricsService.powercap.enabled=true`
+- `POD_IP`, `HOSTNETWORK`, `SRS_LOG_DIR` env vars in deployment
+- entrypoint.sh: SR-IOV DPDK support — BDF injection into `network_interface` and `du_mac_addr` discovery via sysfs/ip-link/dmesg
+- entrypoint.sh: in-process restart loop with SIGTERM forwarding to odu
+- entrypoint.sh: rendered config snapshot to `${SRS_LOG_DIR}/du-config-rendered.yml`
+- NOTES.txt
+
 ### Changed
+
 - Replace all SRS-specific references with OCUDU equivalents: `entrypoint-srsdu.sh` → `entrypoint-ocudu-du.sh`, `entrypoint-volume-srsdu` → `entrypoint-volume-ocudu-du`, `srs-logs` → `ocudu-logs`, `/var/log/srs` → `/var/log/ocudu`
+- values.yaml: default config log/pcap paths updated from `/tmp` to `/var/log/srs`
 
 ## 1.0.2 (2026-05-31)
 

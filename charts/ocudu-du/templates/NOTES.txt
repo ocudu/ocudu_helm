@@ -1,0 +1,12 @@
+Release:   {{ include "ocudu-du.fullname" . }}
+Namespace: {{ .Release.Namespace }}
+
+{{- if or .Values.service.enabled .Values.metricsService.enabled }}
+Services:
+  {{- if .Values.service.enabled }}
+  - {{ include "ocudu-du.fullname" . }}-lb   {{ .Values.service.type }}   F1-C/SCTP:38472  F1-U/UDP:2152
+  {{- end }}
+  {{- if .Values.metricsService.enabled }}
+  - {{ include "ocudu-du.fullname" . }}-metrics   {{ .Values.metricsService.type }}   TCP:{{ .Values.metricsService.port }}
+  {{- end }}
+{{- end }}
