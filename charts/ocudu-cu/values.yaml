@@ -48,15 +48,52 @@ podAnnotations: {}
 # -- Extra labels applied to the Deployment and Pod template
 extraLabels: {}
 
-# -- Pod-level security context
-podSecurityContext: {}
+# -- DU liveness probe configuration.
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 90
+  periodSeconds: 30
+  timeoutSeconds: 1
+  failureThreshold: 3
+  successThreshold: 1
 
-# -- Container-level security context
+# -- DU readiness probe configuration.
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 15
+  periodSeconds: 5
+  timeoutSeconds: 1
+  failureThreshold: 30
+  successThreshold: 1
+
+# -- Pod-level security context. Runs the container as a non-root user by default.
+# @default -- see below
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+# -- Container-level security context.
 securityContext:
-  privileged: true
+  allowPrivilegeEscalation: true
+  privileged: false
+  capabilities:
+    drop: ["ALL"]
+    add:
+      - SYS_NICE
+      - IPC_LOCK
 
 # -- Resource requests and limits
 resources: {}
+
+# -- Network configuration
+network:
+  # -- Enable host network mode
+  # false (default): Uses CNI network (NetworkPolicy supported)
+  # true: Uses host network namespace directly (NetworkPolicy NOT supported)
+  # @default -- `false`
+  hostNetwork: false
 
 # -- Node selector for pod assignment
 nodeSelector: {}
@@ -79,7 +116,7 @@ persistence:
   hostPath:
     path: "/mnt/debugging-logs"
     type: DirectoryOrCreate
-  mountPath: "/tmp"
+  mountPath: "/var/log/srs"
   preserveOldLogs: true
 
 # -- CU configuration file
@@ -104,7 +141,7 @@ config:
           - bind_addr: 127.0.10.1
 
     log:
-      filename: /tmp/cu.log
+      filename: /var/log/srs/cu.log
       all_level: warning
 
     metrics:
@@ -113,4 +150,4 @@ config:
 
     pcap:
       ngap_enable: false
-      ngap_filename: /tmp/cu_ngap.pcap
+      ngap_filename: /var/log/srs/cu_ngap.pcap
