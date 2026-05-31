@@ -66,12 +66,28 @@ readinessProbe:
   failureThreshold: 30
   successThreshold: 1
 
-# -- Pod-level security context
-podSecurityContext: {}
+# -- Pod-level security context. Runs the container as a non-root user by default.
+# @default -- see below
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
 
-# -- Container-level security context
+# -- Container-level security context.
+#
+# Default: minimum-privilege shape for SR-IOV Device Plugin + vfio-pci.
+# Requires the image to have file capabilities baked into /usr/local/bin/odu
+# (setcap cap_sys_nice,cap_ipc_lock+ep) and containerd
+# `device_ownership_from_security_context = true` on the node.
 securityContext:
-  privileged: true
+  allowPrivilegeEscalation: true
+  privileged: false
+  capabilities:
+    drop: ["ALL"]
+    add:
+      - SYS_NICE
+      - IPC_LOCK
 
 # -- Resource requests and limits
 # Hugepages are automatically configured when defined in limits or requests.
@@ -118,6 +134,14 @@ resources:
     # memory: 16Gi
     # hugepages-1Gi: 2Gi
     # hugepages-2Mi: 2Gi
+
+# -- Network configuration
+network:
+  # -- Enable host network mode
+  # false (default): Uses CNI network with SR-IOV for production (NetworkPolicy supported)
+  # true: Uses host network namespace directly (simple setup, NetworkPolicy NOT supported)
+  # @default -- `false`
+  hostNetwork: false
 
 # -- Node selector for pod assignment
 nodeSelector: {}
