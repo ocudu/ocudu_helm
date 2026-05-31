@@ -71,9 +71,28 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ template "ocudu-du.image" .Values.image }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- with .Values.resources }}
+          {{- $hasLimits := and .Values.resources .Values.resources.limits (gt (len .Values.resources.limits) 0) }}
+          {{- $hasRequests := and .Values.resources .Values.resources.requests (gt (len .Values.resources.requests) 0) }}
+          {{- if or $hasLimits $hasRequests .Values.sriovConfig.enabled }}
           resources:
-            {{- toYaml . | nindent 12 }}
+            {{- if or $hasLimits .Values.sriovConfig.enabled }}
+            limits:
+              {{- if $hasLimits }}
+              {{- toYaml .Values.resources.limits | nindent 14 }}
+              {{- end }}
+              {{- if .Values.sriovConfig.enabled }}
+              {{ .Values.sriovConfig.extendedResourceName }}: 1
+              {{- end }}
+            {{- end }}
+            {{- if or $hasRequests .Values.sriovConfig.enabled }}
+            requests:
+              {{- if $hasRequests }}
+              {{- toYaml .Values.resources.requests | nindent 14 }}
+              {{- end }}
+              {{- if .Values.sriovConfig.enabled }}
+              {{ .Values.sriovConfig.extendedResourceName }}: 1
+              {{- end }}
+            {{- end }}
           {{- end }}
           {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
@@ -98,6 +117,10 @@ spec:
           env:
             - name: PRESERVE_OLD_LOGS
               value: {{ .Values.persistence.preserveOldLogs | quote }}
+          {{- if and .Values.sriovConfig .Values.sriovConfig.enabled }}
+            - name: RESOURCE_EXTENDED
+              value: {{ .Values.sriovConfig.extendedResourceName | quote }}
+          {{- end }}
           command: [ "/usr/bin/tini", "--" ]
           args: [ "/bin/bash", "-c", "/etc/entrypoint/entrypoint-ocudu-du.sh /etc/config/du-config.yml" ]
           volumeMounts:

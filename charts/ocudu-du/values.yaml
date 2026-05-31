@@ -330,6 +330,19 @@ networkPolicy:
     # @default -- `[]`
     custom: []
 
+# -- SR-IOV configuration
+sriovConfig:
+  # -- Enable SR-IOV device plugin resource allocation
+  # When enabled, requests one SR-IOV VF from the device plugin
+  # @default -- `false`
+  enabled: false
+  # -- Extended resource name advertised by the SR-IOV device plugin
+  # Common values:
+  #   intel.com/intel_sriov_dpdk     (DPDK / vfio-pci, for use with hal section)
+  #   intel.com/intel_sriov_netdevice (kernel netdev — NOT supported for DU, use DPDK only)
+  # @default -- `intel.com/intel_sriov_dpdk`
+  extendedResourceName: "intel.com/intel_sriov_dpdk"
+
 # -- Persistent storage configuration
 persistence:
   enabled: true
