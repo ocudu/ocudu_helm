@@ -144,6 +144,47 @@ metricsService:
   # -- Target port (container port)
   targetPort: 8001
 
+# -- Service configuration for F1-U interface (DU↔CU-UP GTP-U, hostNetwork=false only)
+# When hostNetwork=false, F1-U (UDP:2152) and NGU/N3 (UDP:2152) would collide on the
+# same pod IP. This service maps external UDP:2152 to an internal port (default 2151)
+# so the ocu binary can bind both on different ports.
+# Set cu_up.f1u.bind_port in the config to match f1uService.ports.f1u.targetPort.
+f1uService:
+  # -- Enable F1-U service (only needed when network.hostNetwork is false)
+  enabled: true
+
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `LoadBalancer`
+  type: LoadBalancer
+
+  # -- LoadBalancer IP address (optional, cluster-dependent)
+  # @default -- `""` (auto-assign)
+  loadBalancerIP: ""
+
+  # -- LoadBalancer class (optional, for clusters with multiple LB implementations)
+  # @default -- `""` (use default)
+  loadBalancerClass: ""
+
+  # -- External traffic policy (Cluster or Local)
+  # @default -- `Cluster`
+  externalTrafficPolicy: Cluster
+
+  # -- Session affinity (None or ClientIP)
+  # @default -- `None`
+  sessionAffinity: None
+
+  # -- Port configuration for F1-U interface
+  ports:
+    # -- F1-U interface (GTP-U - user plane to DU)
+    f1u:
+      # -- External port (what the DU connects to — standard GTP-U port)
+      port: 2152
+      # -- Container target port (must match cu_up.f1u.bind_port in the config)
+      targetPort: 2151
+      # -- NodePort (optional, only used when type is NodePort)
+      # @default -- `""` (auto-assign)
+      nodePort: ""
+
 # -- Service configuration for N2 and N3 interfaces
 service:
   # -- Enable service for N2/N3 interfaces (5GC connectivity)
@@ -329,6 +370,7 @@ config:
 
     cu_up:
       f1u:
+        bind_port: 2151
         socket:
           - bind_addr: 127.0.10.1
 
