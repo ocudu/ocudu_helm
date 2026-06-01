@@ -8,7 +8,7 @@
 #   cu_up.ngu.socket[].bind_addr. When USE_EXT_CORE=true, also sets ext_addr to LB_IP.
 # - If PRESERVE_OLD_LOGS=true, log file paths are updated with a timestamp and a
 #   'current' symlink is created for easy navigation.
-# - The rendered config is snapshotted to ${SRS_LOG_DIR}/cu-config-rendered.yml.
+# - The rendered config is snapshotted to ${OCUDU_LOG_DIR}/cu-config-rendered.yml.
 # - The binary is restarted automatically on clean exit.
 # - SIGTERM/SIGINT are forwarded gracefully to the ocu process.
 #
@@ -208,7 +208,7 @@ terminate() {
 
 process_and_run_cu() {
     local config_file="$1"
-    local updated_config="${SRS_LOG_DIR}/cu-config.yml"
+    local updated_config="${OCUDU_LOG_DIR}/cu-config.yml"
 
     cp "$config_file" "$updated_config" || log_fatal "Failed to copy config"
 
@@ -218,7 +218,7 @@ process_and_run_cu() {
         update_config_paths "$updated_config" || log_fatal "Log path setup failed"
     fi
 
-    cp "$updated_config" "${SRS_LOG_DIR}/cu-config-rendered.yml"
+    cp "$updated_config" "${OCUDU_LOG_DIR}/cu-config-rendered.yml"
 
     log_info "Starting CU"
     exec stdbuf -oL ocu -c "$updated_config"
@@ -235,7 +235,7 @@ main() {
     log_info "=== OCUDU CU Entrypoint ==="
     log_info "Config: $config_file"
     log_info "HOSTNETWORK: ${HOSTNETWORK}"
-    log_info "SRS_LOG_DIR: ${SRS_LOG_DIR}"
+    log_info "OCUDU_LOG_DIR: ${OCUDU_LOG_DIR}"
     log_info "PRESERVE_OLD_LOGS: ${PRESERVE_OLD_LOGS}"
 
     trap terminate SIGTERM SIGINT
@@ -260,7 +260,7 @@ main() {
 #==============================================================================
 
 PRESERVE_OLD_LOGS="${PRESERVE_OLD_LOGS:-false}"
-SRS_LOG_DIR="${SRS_LOG_DIR:-/var/log/srs}"
+OCUDU_LOG_DIR="${OCUDU_LOG_DIR:-/var/log/srs}"
 HOSTNETWORK="${HOSTNETWORK:-false}"
 USE_EXT_CORE="${USE_EXT_CORE:-false}"
 

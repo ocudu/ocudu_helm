@@ -127,7 +127,7 @@ spec:
                   fieldPath: status.podIP
             - name: HOSTNETWORK
               value: '{{ .Values.network.hostNetwork }}'
-            - name: SRS_LOG_DIR
+            - name: OCUDU_LOG_DIR
               value: {{ .Values.persistence.mountPath | quote }}
             - name: PRESERVE_OLD_LOGS
               value: {{ .Values.persistence.preserveOldLogs | quote }}

@@ -13,7 +13,7 @@
 #   When HOSTNETWORK=true, network_interface is set by the user in the config directly.
 # - If PRESERVE_OLD_LOGS=true, log file paths are updated with a timestamp and a
 #   'current' symlink is created for easy navigation.
-# - The rendered config is snapshotted to ${SRS_LOG_DIR}/du-config-rendered.yml.
+# - The rendered config is snapshotted to ${OCUDU_LOG_DIR}/du-config-rendered.yml.
 # - The binary is restarted automatically on clean exit.
 # - SIGTERM/SIGINT are forwarded gracefully to the odu process.
 #
@@ -367,7 +367,7 @@ terminate() {
 
 process_and_run_du() {
     local config_file="$1"
-    local updated_config="${SRS_LOG_DIR}/du-config.yml"
+    local updated_config="${OCUDU_LOG_DIR}/du-config.yml"
 
     cp "$config_file" "$updated_config" || log_fatal "Failed to copy config"
 
@@ -390,7 +390,7 @@ process_and_run_du() {
         update_config_paths "$updated_config" || log_fatal "Log path setup failed"
     fi
 
-    cp "$updated_config" "${SRS_LOG_DIR}/du-config-rendered.yml"
+    cp "$updated_config" "${OCUDU_LOG_DIR}/du-config-rendered.yml"
 
     log_info "Starting DU"
     exec stdbuf -oL odu -c "$updated_config"
@@ -407,7 +407,7 @@ main() {
     log_info "=== OCUDU DU Entrypoint ==="
     log_info "Config: $config_file"
     log_info "HOSTNETWORK: ${HOSTNETWORK}"
-    log_info "SRS_LOG_DIR: ${SRS_LOG_DIR}"
+    log_info "OCUDU_LOG_DIR: ${OCUDU_LOG_DIR}"
     log_info "PRESERVE_OLD_LOGS: ${PRESERVE_OLD_LOGS}"
 
     trap terminate SIGTERM SIGINT
@@ -441,7 +441,7 @@ main() {
 #==============================================================================
 
 PRESERVE_OLD_LOGS="${PRESERVE_OLD_LOGS:-false}"
-SRS_LOG_DIR="${SRS_LOG_DIR:-/var/log/srs}"
+OCUDU_LOG_DIR="${OCUDU_LOG_DIR:-/var/log/srs}"
 HOSTNETWORK="${HOSTNETWORK:-false}"
 RESOURCE_EXTENDED="${RESOURCE_EXTENDED:-intel.com/intel_sriov_dpdk}"
 
