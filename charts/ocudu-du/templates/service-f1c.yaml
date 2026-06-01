@@ -1,0 +1,39 @@
+{{- if .Values.f1cService.enabled }}
+
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ocudu-du.fullname" . }}-f1c
+  labels:
+    {{- include "ocudu-du.labels" . | nindent 4 }}
+    app.kubernetes.io/component: f1c
+spec:
+  type: {{ .Values.f1cService.type | default "ClusterIP" }}
+  {{- if eq (.Values.f1cService.type | default "ClusterIP") "LoadBalancer" }}
+  {{- if .Values.f1cService.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.f1cService.loadBalancerIP }}
+  {{- end }}
+  {{- if .Values.f1cService.loadBalancerClass }}
+  loadBalancerClass: {{ .Values.f1cService.loadBalancerClass }}
+  {{- end }}
+  {{- with .Values.f1cService.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ . }}
+  {{- end }}
+  {{- end }}
+  {{- with .Values.f1cService.sessionAffinity }}
+  sessionAffinity: {{ . }}
+  {{- end }}
+  ports:
+    - name: f1c
+      port: {{ .Values.f1cService.port }}
+      targetPort: {{ .Values.f1cService.port }}
+      protocol: SCTP
+      {{- if .Values.f1cService.nodePort }}
+      nodePort: {{ .Values.f1cService.nodePort }}
+      {{- end }}
+  selector:
+    {{- include "ocudu-du.selectorLabels" . | nindent 4 }}
+{{- end }}

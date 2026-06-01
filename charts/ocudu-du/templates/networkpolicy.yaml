@@ -26,9 +26,9 @@ spec:
       {{- toYaml .Values.networkPolicy.ingress.cu.from | nindent 6 }}
       ports:
         - protocol: SCTP
-          port: 38472  # F1-C interface (F1AP)
+          port: {{ .Values.f1cService.port }}  # F1-C interface (F1AP)
         - protocol: UDP
-          port: 2152   # F1-U interface (GTP-U)
+          port: {{ .Values.f1uService.port }}  # F1-U interface (GTP-U)
     {{- end }}
 
     {{- if and .Values.metricsService.enabled .Values.networkPolicy.ingress.monitoring.enabled }}
@@ -52,9 +52,9 @@ spec:
       {{- toYaml .Values.networkPolicy.egress.cu.to | nindent 6 }}
       ports:
         - protocol: SCTP
-          port: 38472  # F1-C (F1AP)
+          port: {{ .Values.f1cService.port }}  # F1-C (F1AP)
         - protocol: UDP
-          port: 2152   # F1-U (GTP-U)
+          port: {{ .Values.f1uService.port }}  # F1-U (GTP-U)
     {{- end }}
 
     # Allow DNS resolution
