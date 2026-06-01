@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.0 (2026-06-01)
+
+### Changed
+- Replace all SRS-specific references with OCUDU equivalents: `srsk8s.bcn` → `cluster.local` as default `global.clusterDomain`
+
 ## 1.1.3 (2026-04-09)
 
 ### Changed

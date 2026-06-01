@@ -32,7 +32,7 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       volumes:
-        - name: entrypoint-volume-srsdu
+        - name: entrypoint-volume-ocudu-du
           configMap:
             name: {{ include "ocudu-du.entrypointConfigmapName" . }}
             defaultMode: 0777
@@ -41,11 +41,11 @@ spec:
             name: {{ include "ocudu-du.mainConfigmapName" . }}
         {{- if .Values.persistence.enabled }}
           {{- if eq .Values.persistence.type "pvc" }}
-        - name: srs-logs
+        - name: ocudu-logs
           persistentVolumeClaim:
             claimName: {{ include "ocudu-du.fullname" . }}-logs
           {{- else if eq .Values.persistence.type "hostPath" }}
-        - name: srs-logs
+        - name: ocudu-logs
           hostPath:
             path: {{ .Values.persistence.hostPath.path }}
             type: {{ .Values.persistence.hostPath.type }}
@@ -97,14 +97,14 @@ spec:
             - name: PRESERVE_OLD_LOGS
               value: {{ .Values.persistence.preserveOldLogs | quote }}
           command: [ "/usr/bin/tini", "--" ]
-          args: [ "/bin/bash", "-c", "/etc/entrypoint/entrypoint-srsdu.sh /etc/config/du-config.yml" ]
+          args: [ "/bin/bash", "-c", "/etc/entrypoint/entrypoint-ocudu-du.sh /etc/config/du-config.yml" ]
           volumeMounts:
-            - name: entrypoint-volume-srsdu
+            - name: entrypoint-volume-ocudu-du
               mountPath: /etc/entrypoint
             - name: config-volume
               mountPath: /etc/config/
             {{- if .Values.persistence.enabled }}
-            - name: srs-logs
+            - name: ocudu-logs
               mountPath: {{ .Values.persistence.mountPath }}
             {{- end }}
             {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-1Gi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-1Gi")) }}

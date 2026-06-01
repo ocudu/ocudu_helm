@@ -12,7 +12,7 @@ image:
   pullPolicy: IfNotPresent
 
 # -- Name of the tuned profile to create and apply
-profileName: srs-tuned
+profileName: ocudu-tuned
 
 # -- Content of the tuned profile configuration file
 # This example profile configures system parameters for low-latency RAN workloads including:

@@ -30,7 +30,7 @@ persistence:
     storageClassName: ""  # Use default StorageClass
     accessMode: ReadWriteOnce
     size: 10Gi
-  mountPath: "/var/log/srs"
+  mountPath: "/var/log/ocudu"
 ```
 
 ### Configuration with Specific StorageClass
@@ -43,7 +43,7 @@ persistence:
     storageClassName: "fast-ssd"  # Your StorageClass name
     accessMode: ReadWriteOnce
     size: 10Gi
-  mountPath: "/var/log/srs"
+  mountPath: "/var/log/ocudu"
 ```
 
 ### Configuration with Different Access Modes
@@ -56,7 +56,7 @@ persistence:
     storageClassName: "nfs"
     accessMode: ReadWriteMany  # For shared access
     size: 50Gi
-  mountPath: "/var/log/srs"
+  mountPath: "/var/log/ocudu"
 ```
 
 ## hostPath Storage (Bare-metal)
@@ -72,7 +72,7 @@ persistence:
   hostPath:
     path: "/mnt/debugging-logs"
     type: DirectoryOrCreate
-  mountPath: "/var/log/srs"
+  mountPath: "/var/log/ocudu"
 ```
 
 ### Important Considerations
@@ -113,7 +113,7 @@ persistence:
 
 **⚠️ Warning**: Logs will be lost when the pod restarts.
 
-> **Note**: When `persistence.enabled: false`, the volume for debugging logs is not mounted. If your gNB config specifies `log.filename: /var/log/srs/debugging-logs/gnb.log`, the directory `/var/log/srs/debugging-logs/` won't exist. Either enable persistence or change the log path to `/var/log/srs/gnb.log` in your config.
+> **Note**: When `persistence.enabled: false`, the volume for debugging logs is not mounted. If your gNB config specifies `log.filename: /var/log/ocudu/debugging-logs/gnb.log`, the directory `/var/log/ocudu/debugging-logs/` won't exist. Either enable persistence or change the log path to `/var/log/ocudu/gnb.log` in your config.
 
 ## Common Scenarios
 
@@ -185,19 +185,19 @@ Pre-create the directory on the node with the correct ownership before deploying
 
 ```bash
 # On the node (as root) — adjust path to match hostPath.path in your values
-mkdir -p /var/lib/ocudu-gnb
-chown 1000:1000 /var/lib/ocudu-gnb
+mkdir -p /var/lib/ocudu-gnb-logs
+chown 1000:1000 /var/lib/ocudu-gnb-logs
 ```
 
 To verify or fix after the fact:
 
 ```bash
 # Check directory ownership on node
-ls -la /var/lib/ocudu-gnb
+ls -la /var/lib/ocudu-gnb-logs
 
 # Fix permissions (on node)
-chown 1000:1000 /var/lib/ocudu-gnb
-chmod 755 /var/lib/ocudu-gnb
+chown 1000:1000 /var/lib/ocudu-gnb-logs
+chmod 755 /var/lib/ocudu-gnb-logs
 ```
 
 ### Pod Scheduled on Wrong Node (hostPath)
@@ -231,8 +231,8 @@ affinity:
 
 ```bash
 # Copy data from old pod to new
-kubectl cp <old-pod>:/var/log/srs/logs ./backup
-kubectl cp ./backup <new-pod>:/var/log/srs/logs
+kubectl cp <old-pod>:/var/log/ocudu/logs ./backup
+kubectl cp ./backup <new-pod>:/var/log/ocudu/logs
 ```
 
 ### From PVC to hostPath

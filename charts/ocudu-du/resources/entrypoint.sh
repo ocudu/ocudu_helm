@@ -225,7 +225,7 @@ update_hal_eal_args() {
 
 process_and_run_du() {
     local config_file="$1"
-    local updated_config="/var/log/srs/du-config.yml"
+    local updated_config="/var/log/ocudu/du-config.yml"
 
     cp "$config_file" "$updated_config" || log_fatal "Failed to copy config file to $updated_config"
 

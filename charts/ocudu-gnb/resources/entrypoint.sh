@@ -497,7 +497,7 @@ terminate() {
 # Process config and run gNB
 process_and_run_gnb() {
     local config_file="$1"
-    local updated_config="${SRS_LOG_DIR}/gnb-config.yml"
+    local updated_config="${OCUDU_LOG_DIR}/gnb-config.yml"
 
     # Copy config to working location
     if ! cp "$config_file" "$updated_config"; then
@@ -515,7 +515,7 @@ process_and_run_gnb() {
 
     log_info "Configuration processing complete: $updated_config"
 
-    cp "$updated_config" "${SRS_LOG_DIR}/gnb-config-rendered.yaml"
+    cp "$updated_config" "${OCUDU_LOG_DIR}/gnb-config-rendered.yaml"
 
     log_info "Starting gNB"
     exec gnb -c "$updated_config"
@@ -537,7 +537,7 @@ main() {
     log_info "PRESERVE_OLD_LOGS: ${PRESERVE_OLD_LOGS}"
     log_info "HOSTNETWORK: ${HOSTNETWORK}"
     log_info "USE_EXT_CORE: ${USE_EXT_CORE}"
-    log_info "SRS_LOG_DIR: ${SRS_LOG_DIR}"
+    log_info "OCUDU_LOG_DIR: ${OCUDU_LOG_DIR}"
     
     # Setup signal handling
     trap terminate SIGTERM SIGINT
@@ -631,7 +631,7 @@ CONFIG_CREATE_TIMEOUT="${CONFIG_CREATE_TIMEOUT:-30}"
 ENABLE_OCUDU_O1="${ENABLE_OCUDU_O1:-false}"
 HOSTNETWORK="${HOSTNETWORK:-true}"
 USE_EXT_CORE="${USE_EXT_CORE:-false}"
-SRS_LOG_DIR="${SRS_LOG_DIR:-/var/log/srs}"
+OCUDU_LOG_DIR="${OCUDU_LOG_DIR:-/var/log/ocudu}"
 
 # Run main
 main "$@"

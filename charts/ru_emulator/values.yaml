@@ -33,13 +33,13 @@ fullnameOverride: ""
 # Example:
 # ```yaml
 # configmap:
-#   nameOverride: "ru-emu-srskit-rack1-config"
+#   nameOverride: "ru-emu-config"
 # ```
 # @default -- `{}` (use generated name)
 configmap: {}
 # To pin a custom name (e.g., via Terraform --set):
 # configmap:
-#   nameOverride: "ru-emu-srskit-rack1-config"
+#   nameOverride: "ru-emu-config"
 
 # -- Additional pod annotations
 # @default -- `{}` (no additional annotations)

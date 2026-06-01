@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.0 (2026-06-01)
+
+### Changed
+- Replace all SRS-specific references with OCUDU equivalents: `grafana-srsran` → `grafana-ocudu`
+
 ## 2.3.3 (2026-04-30)
 
 ### Changed

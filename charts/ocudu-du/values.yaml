@@ -140,7 +140,7 @@ persistence:
   hostPath:
     path: "/mnt/debugging-logs"
     type: DirectoryOrCreate
-  mountPath: "/var/log/srs"
+  mountPath: "/var/log/ocudu"
   preserveOldLogs: true
 
 # -- DU configuration file

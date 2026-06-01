@@ -5,9 +5,9 @@
 global:
   # -- Kubernetes cluster domain suffix (MANDATORY - must match your cluster)
   # This is used to construct service FQDNs (e.g., service.namespace.svc.cluster.local)
-  # Common values: "cluster.local" (default K8s), "srsk8s.bcn" (example custom domain)
-  # @default -- "srsk8s.bcn" (MUST be changed to match your cluster)
-  clusterDomain: "srsk8s.bcn"
+  # Common values: "cluster.local" (default K8s), "cluster.local" (example custom domain)
+  # @default -- "cluster.local" (MUST be changed to match your cluster)
+  clusterDomain: "cluster.local"
   
   # -- Image pull secrets for private registries
   # @default -- `[]` (no pull secrets)

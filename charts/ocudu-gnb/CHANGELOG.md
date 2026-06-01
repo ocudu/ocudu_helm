@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.7.0 (2026-06-01)
+
+### Changed
+- Replace all SRS-specific references with OCUDU equivalents: `entrypoint-srsgnb.sh` → `entrypoint-ocudu-gnb.sh`, `entrypoint-volume-srsgnb` → `entrypoint-volume-ocudu-gnb`, `srs-logs` → `ocudu-logs`, `srs-o1-adapter` → `ocudu-o1-adapter`, `SRS_LOG_DIR` → `OCUDU_LOG_DIR`, `/var/log/srs` → `/var/log/ocudu`, `.srsk8s.bcn` → `.cluster.local`
+
 ## 3.6.4
 
 ### Changed

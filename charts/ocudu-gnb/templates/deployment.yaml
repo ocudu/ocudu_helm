@@ -33,7 +33,7 @@ spec:
       hostNetwork: true
       {{- end }}
       volumes:
-        - name: entrypoint-volume-srsgnb
+        - name: entrypoint-volume-ocudu-gnb
           configMap:
             name: {{ include "ocudu-gnb.entrypointConfigmapName" . }}
             defaultMode: 0777
@@ -60,11 +60,11 @@ spec:
         {{- end }}
         {{- if .Values.persistence.enabled }}
           {{- if eq .Values.persistence.type "pvc" }}
-        - name: srs-logs
+        - name: ocudu-logs
           persistentVolumeClaim:
             claimName: {{ include "ocudu-gnb.fullname" . }}-logs
           {{- else if eq .Values.persistence.type "hostPath" }}
-        - name: srs-logs
+        - name: ocudu-logs
           hostPath:
             path: {{ .Values.persistence.hostPath.path }}
             type: {{ .Values.persistence.hostPath.type }}
@@ -150,7 +150,7 @@ spec:
             - name: RESOURCE_EXTENDED
               value: {{ .Values.sriovConfig.extendedResourceName | quote }}
           {{- end }}
-            - name: SRS_LOG_DIR
+            - name: OCUDU_LOG_DIR
               value: {{ .Values.persistence.mountPath | quote }}
           {{- if .Values.persistence.enabled }}
             - name: PRESERVE_OLD_LOGS
@@ -159,9 +159,9 @@ spec:
             - name: ENABLE_OCUDU_O1
               value: '{{ default false .Values.o1.enable_ocudu_o1 }}'
           command: [ "/usr/bin/tini", "--" ]
-          args: [ "/bin/bash", "-c", "/etc/entrypoint/entrypoint-srsgnb.sh /etc/config/gnb-config.yml" ]
+          args: [ "/bin/bash", "-c", "/etc/entrypoint/entrypoint-ocudu-gnb.sh /etc/config/gnb-config.yml" ]
           volumeMounts:
-            - name: entrypoint-volume-srsgnb
+            - name: entrypoint-volume-ocudu-gnb
               mountPath: /etc/entrypoint
             {{- if .Values.o1.enable_ocudu_o1 }}
             - name: o1-gnb-config
@@ -171,7 +171,7 @@ spec:
               mountPath: /etc/config/
             {{- end }}
             {{- if .Values.persistence.enabled }}
-            - name: srs-logs
+            - name: ocudu-logs
               mountPath: {{ .Values.persistence.mountPath }}
             {{- end }}
             {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-1Gi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-1Gi")) }}
@@ -207,7 +207,7 @@ spec:
                     exit 1
           {{- end }}
         {{- if .Values.o1.enable_ocudu_o1 }}
-        - name: srs-o1-adapter
+        - name: ocudu-o1-adapter
           securityContext:
             {{- toYaml .Values.o1.o1Adapter.securityContext | nindent 12 }}
           image: "{{ template "ocudu-gnb.o1.o1Adapter.image" .Values.o1.o1Adapter.image }}"

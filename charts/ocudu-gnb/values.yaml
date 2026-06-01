@@ -385,8 +385,8 @@ persistence:
     type: DirectoryOrCreate
   
   # -- Mount path inside the container where logs are written
-  # @default -- `/var/log/srs`
-  mountPath: "/var/log/srs"
+  # @default -- `/var/log/ocudu`
+  mountPath: "/var/log/ocudu"
   
   # -- Preserve logs from previous runs (append mode)
   # When true, logs are appended; when false, logs are overwritten
@@ -618,14 +618,14 @@ config:
         nof_ul_symbols: 4
 
     log:
-      filename: /var/log/srs/gnb.log
+      filename: /var/log/ocudu/gnb.log
       all_level: warning
 
     pcap:
       mac_enable: false
-      mac_filename: /var/log/srs/gnb_mac.pcap
+      mac_filename: /var/log/ocudu/gnb_mac.pcap
       ngap_enable: false
-      ngap_filename: /var/log/srs/gnb_ngap.pcap
+      ngap_filename: /var/log/ocudu/gnb_ngap.pcap
 
     metrics:
       autostart_stdout_metrics: true

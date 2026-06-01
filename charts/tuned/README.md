@@ -42,12 +42,12 @@ helm install tuned-ocudu oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_he
 **Local installation**:
 ```bash
 cd charts/tuned
-helm install tuned-srs ./
+helm install tuned-ocudu ./
 ```
 
 **With custom configuration**:
 ```bash
-helm install tuned-srs ./ -f my-values.yaml
+helm install tuned-ocudu ./ -f my-values.yaml
 ```
 
 ## Verifying Installation
@@ -67,7 +67,7 @@ kubectl exec -it <pod-name> -- tuned-adm active
 ## Uninstalling the Chart
 
 ```bash
-helm uninstall tuned-srs
+helm uninstall tuned-ocudu
 ```
 
 The command removes all Kubernetes components associated with the chart.
@@ -81,7 +81,7 @@ The command removes all Kubernetes components associated with the chart.
 | `image.repository` | string | `"softwareradiosystems/tuned"` | Container image repository |
 | `image.tag` | string | `"v2.21.0_1.0.0"` | Image tag (overrides Chart appVersion) |
 | `image.pullPolicy` | string | `"IfNotPresent"` | Image pull policy |
-| `profileName` | string | `"srs-tuned"` | Name of the tuned profile |
+| `profileName` | string | `"ocudu-tuned"` | Name of the tuned profile |
 | `profileContent` | string | See values.yaml | Tuned profile configuration |
 | `startupScriptContent` | string | See values.yaml | Custom startup script |
 | `securityContext.privileged` | bool | `true` | **REQUIRED**: Enable privileged mode for system tuning |

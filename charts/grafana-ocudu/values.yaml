@@ -278,9 +278,4 @@ telegraf:
   
   # -- Tolerations for pod assignment
   # Example configuration for dedicated hardware
-  tolerations:
-    - key: "machine"
-      operator: "Equal"
-      value: "srskit-rack1"
-      effect: "NoSchedule"
-  
+  tolerations: []

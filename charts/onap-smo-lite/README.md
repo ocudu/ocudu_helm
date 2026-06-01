@@ -28,7 +28,7 @@ This chart deploys a minimal ONAP SMO environment consisting of:
 
 **You MUST configure `global.clusterDomain` to match your Kubernetes cluster's DNS zone.**
 
-By default, the chart uses `srsk8s.bcn` which is specific to the development environment. 
+By default, the chart uses `cluster.local` which is specific to the development environment. 
 Most Kubernetes clusters use `cluster.local` as the default domain.
 
 **Find your cluster domain:**
@@ -104,7 +104,7 @@ Expected pods: sdnc-web, sdnr, sdnrdb (Elasticsearch), kafka, zookeeper, ves-col
 
 | Parameter | Description | Default | Required |
 |-----------|-------------|---------|----------|
-| **`global.clusterDomain`** | **Kubernetes cluster DNS zone** | `srsk8s.bcn` | **✅ YES** |
+| **`global.clusterDomain`** | **Kubernetes cluster DNS zone** | `cluster.local` | **✅ YES** |
 | `sdncWeb.service.nodePort` | NodePort for SDN-R Web UI access | `30080` | No |
 | `sdnr.adminCredentials.username` | SDN-R admin username | `root` | No |
 | `sdnr.adminCredentials.password` | SDN-R admin password | `root` | No |

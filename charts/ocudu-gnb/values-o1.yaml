@@ -304,13 +304,13 @@ o1:
   netconfServerAddr: "localhost"
   o1Port: 830
   healthcheckPort: 5000
-  oamIpv4Address: "onap-smo-ves-collector.onap.svc.srsk8s.bcn"
+  oamIpv4Address: "onap-smo-ves-collector.onap.svc.cluster.local"
   log_level: "DEBUG"  # available log levels: CRITICAL, FATAL, ERROR, WARN, WARNING, INFO, DEBUG, NOTSET
   ws:
     host: "localhost"
     port: 8001
   ves:
-    host: "onap-smo-ves-collector.onap.svc.srsk8s.bcn"
+    host: "onap-smo-ves-collector.onap.svc.cluster.local"
     port: 8443
     username: "sample1"
     password: "sample1"
@@ -366,7 +366,7 @@ o1Config:
           <attributes>
             <gNBId>1</gNBId>
             <gNBIdLength>24</gNBIdLength>
-            <gNBCUName>srscu1</gNBCUName>
+            <gNBCUName>ocudu-cu</gNBCUName>
             <pLMNId>
               <mcc>001</mcc>
               <mnc>01</mnc>
@@ -617,7 +617,7 @@ o1Config:
             <pusch_active>true</pusch_active>
           </ocudu_gnbdufunction_testmode_extensions>
           <ocudu_log_extensions>
-            <filename>/var/log/srs/gnb.log</filename>
+            <filename>/var/log/ocudu/gnb.log</filename>
             <all_level>warning</all_level>
           </ocudu_log_extensions>
           <ocudu_hal_extensions>

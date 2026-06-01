@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.3.0 (2026-06-01)
+
+### Changed
+- Replace all SRS-specific references with OCUDU equivalents: `linuxptp-srs` → `linuxptp`, `srsadmin-gnb` → `gnb-sa`
+
 ## 2.2.0 (2026-05-26)
 
 ### Fixed

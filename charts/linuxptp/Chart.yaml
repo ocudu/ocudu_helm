@@ -25,5 +25,5 @@ annotations:
   artifacthub.io/operator: "false"
   artifacthub.io/prerelease: "true"
 type: application
-version: 2.2.0
+version: 2.3.0
 appVersion: "4.4.0"

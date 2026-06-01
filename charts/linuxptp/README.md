@@ -39,14 +39,14 @@ helm install linuxptp-ocudu oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu
 **Local installation**:
 ```bash
 cd charts/linuxptp
-helm install linuxptp-srs ./ \
+helm install linuxptp ./ \
   --set interfaceNameList="ens3f0np0" \
   --set nodeSelector."kubernetes\.io/hostname"=node1
 ```
 
 **Multiple interfaces** (dual PTP paths):
 ```bash
-helm install linuxptp-srs ./ \
+helm install linuxptp ./ \
   --set interfaceNameList="ens3f0np0;ens3f1np1"
 ```
 
@@ -72,7 +72,7 @@ ptp4l[123.456]: rms 25 max 45 freq +1234 +/- 12 delay 150 +/- 10
 ## Uninstalling the Chart
 
 ```bash
-helm uninstall linuxptp-srs
+helm uninstall linuxptp
 ```
 
 The command removes all Kubernetes components associated with the chart.

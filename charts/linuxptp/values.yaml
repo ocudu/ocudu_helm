@@ -61,7 +61,7 @@ serviceAccount:
   # -- Additional service account annotations
   annotations: {}
   # -- Service account name
-  name: "srsadmin-gnb"
+  name: "gnb-sa"
 
 # -- Additional pod annotations
 # @default -- `{}` (no additional annotations)

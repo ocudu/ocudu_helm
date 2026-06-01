@@ -22,4 +22,4 @@ kind: ConfigMap
 metadata:
   name: {{ include "ocudu-gnb.entrypointConfigmapName" . }}
 data:
-  entrypoint-srsgnb.sh: {{ tpl (.Files.Get "resources/entrypoint.sh") . | quote | default 000 }}
+  entrypoint-ocudu-gnb.sh: {{ tpl (.Files.Get "resources/entrypoint.sh") . | quote | default 000 }}

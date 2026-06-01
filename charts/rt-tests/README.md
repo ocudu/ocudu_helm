@@ -37,12 +37,12 @@ helm install rt-tests-ocudu oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu
 **From local chart**:
 ```bash
 cd charts/rt-tests
-helm install rt-tests-srs ./
+helm install rt-tests-ocudu ./
 ```
 
 **With custom configuration**:
 ```bash
-helm install rt-tests-srs ./ -f my-values.yaml
+helm install rt-tests-ocudu ./ -f my-values.yaml
 ```
 
 ## Verifying Installation
@@ -62,7 +62,7 @@ kubectl wait --for=condition=complete --timeout=300s job/rt-tests-chart-job
 ## Uninstalling the Chart
 
 ```bash
-helm uninstall rt-tests-srs
+helm uninstall rt-tests-ocudu
 ```
 
 The command removes all Kubernetes components associated with the chart.

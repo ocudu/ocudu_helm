@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0 (2026-06-01)
+
+### Changed
+- Replace all SRS-specific references with OCUDU equivalents: `entrypoint-srsdu.sh` → `entrypoint-ocudu-du.sh`, `entrypoint-volume-srsdu` → `entrypoint-volume-ocudu-du`, `srs-logs` → `ocudu-logs`, `/var/log/srs` → `/var/log/ocudu`
+
 ## 1.0.2 (2026-05-31)
 
 ### Changed

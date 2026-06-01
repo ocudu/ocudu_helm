@@ -13,4 +13,4 @@ kind: ConfigMap
 metadata:
   name: {{ include "ocudu-cu.entrypointConfigmapName" . }}
 data:
-  entrypoint-srscu.sh: {{ tpl (.Files.Get "resources/entrypoint.sh") . | quote | default 000 }}
+  entrypoint-ocudu-cu.sh: {{ tpl (.Files.Get "resources/entrypoint.sh") . | quote | default 000 }}

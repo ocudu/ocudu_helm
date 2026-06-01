@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.0 (2026-06-01)
+
+### Changed
+- Replace all SRS-specific references with OCUDU equivalents: `rt-tests-srs` → `rt-tests-ocudu`
+
 ## 2.1.3 (2026-04-09)
 
 ### Changed

@@ -32,7 +32,7 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       volumes:
-        - name: entrypoint-volume-srscu
+        - name: entrypoint-volume-ocudu-cu
           configMap:
             name: {{ include "ocudu-cu.entrypointConfigmapName" . }}
             defaultMode: 0777
@@ -41,11 +41,11 @@ spec:
             name: {{ include "ocudu-cu.mainConfigmapName" . }}
         {{- if .Values.persistence.enabled }}
           {{- if eq .Values.persistence.type "pvc" }}
-        - name: srs-logs
+        - name: ocudu-logs
           persistentVolumeClaim:
             claimName: {{ include "ocudu-cu.fullname" . }}-logs
           {{- else if eq .Values.persistence.type "hostPath" }}
-        - name: srs-logs
+        - name: ocudu-logs
           hostPath:
             path: {{ .Values.persistence.hostPath.path }}
             type: {{ .Values.persistence.hostPath.type }}
@@ -65,14 +65,14 @@ spec:
             - name: PRESERVE_OLD_LOGS
               value: {{ .Values.persistence.preserveOldLogs | quote }}
           command: [ "/bin/bash" ]
-          args: [ "-c", "/etc/entrypoint/entrypoint-srscu.sh /etc/config/cu-config.yml" ]
+          args: [ "-c", "/etc/entrypoint/entrypoint-ocudu-cu.sh /etc/config/cu-config.yml" ]
           volumeMounts:
-            - name: entrypoint-volume-srscu
+            - name: entrypoint-volume-ocudu-cu
               mountPath: /etc/entrypoint
             - name: config-volume
               mountPath: /etc/config/
             {{- if .Values.persistence.enabled }}
-            - name: srs-logs
+            - name: ocudu-logs
               mountPath: {{ .Values.persistence.mountPath }}
             {{- end }}
       {{- with .Values.nodeSelector }}
