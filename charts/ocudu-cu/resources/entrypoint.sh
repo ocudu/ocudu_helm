@@ -260,7 +260,7 @@ main() {
 #==============================================================================
 
 PRESERVE_OLD_LOGS="${PRESERVE_OLD_LOGS:-false}"
-OCUDU_LOG_DIR="${OCUDU_LOG_DIR:-/var/log/srs}"
+OCUDU_LOG_DIR="${OCUDU_LOG_DIR:-/var/log/ocudu}"
 HOSTNETWORK="${HOSTNETWORK:-false}"
 USE_EXT_CORE="${USE_EXT_CORE:-false}"
 

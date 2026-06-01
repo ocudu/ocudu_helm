@@ -441,7 +441,7 @@ main() {
 #==============================================================================
 
 PRESERVE_OLD_LOGS="${PRESERVE_OLD_LOGS:-false}"
-OCUDU_LOG_DIR="${OCUDU_LOG_DIR:-/var/log/srs}"
+OCUDU_LOG_DIR="${OCUDU_LOG_DIR:-/var/log/ocudu}"
 HOSTNETWORK="${HOSTNETWORK:-false}"
 RESOURCE_EXTENDED="${RESOURCE_EXTENDED:-intel.com/intel_sriov_dpdk}"
 

@@ -370,7 +370,7 @@ config:
       pci: 1
 
     log:
-      filename: /var/log/srs/du.log
+      filename: /var/log/ocudu/du.log
       all_level: warning
 
     metrics:
@@ -380,8 +380,8 @@ config:
 
     pcap:
       mac_enable: false
-      mac_filename: /var/log/srs/du_mac.pcap
+      mac_filename: /var/log/ocudu/du_mac.pcap
       f1ap_enable: false
-      f1ap_filename: /var/log/srs/du_f1ap.pcap
+      f1ap_filename: /var/log/ocudu/du_f1ap.pcap
       f1u_enable: false
-      f1u_filename: /var/log/srs/du_f1u.pcap
+      f1u_filename: /var/log/ocudu/du_f1u.pcap

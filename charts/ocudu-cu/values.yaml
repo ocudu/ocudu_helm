@@ -335,7 +335,7 @@ persistence:
   hostPath:
     path: "/mnt/debugging-logs"
     type: DirectoryOrCreate
-  mountPath: "/var/log/srs"
+  mountPath: "/var/log/ocudu"
   preserveOldLogs: true
 
 # -- CU configuration file
@@ -361,7 +361,7 @@ config:
           - bind_addr: 127.0.10.1
 
     log:
-      filename: /var/log/srs/cu.log
+      filename: /var/log/ocudu/cu.log
       all_level: warning
 
     metrics:
@@ -370,4 +370,4 @@ config:
 
     pcap:
       ngap_enable: false
-      ngap_filename: /var/log/srs/cu_ngap.pcap
+      ngap_filename: /var/log/ocudu/cu_ngap.pcap

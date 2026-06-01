@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0 (2026-06-01)
+
+### Changed
+
+- Rename default log/pcap paths from `/var/log/srs` to `/var/log/ocudu` in entrypoint.sh and values.yaml
+
 ## 1.1.0 (2026-06-01)
 
 ### Added
