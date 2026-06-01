@@ -1,10 +1,19 @@
 Release:   {{ include "ocudu-cu.fullname" . }}
 Namespace: {{ .Release.Namespace }}
 
-{{- if or .Values.service.enabled .Values.metricsService.enabled }}
+{{- if or .Values.n2Service.enabled .Values.n3Service.enabled .Values.f1cService.enabled .Values.f1uService.enabled .Values.metricsService.enabled }}
 Services:
-  {{- if .Values.service.enabled }}
-  - {{ include "ocudu-cu.fullname" . }}-lb   {{ .Values.service.type }}   N2/SCTP:38412  N3/UDP:2152
+  {{- if .Values.n2Service.enabled }}
+  - {{ include "ocudu-cu.fullname" . }}-n2   {{ .Values.n2Service.type }}   SCTP:{{ .Values.n2Service.port }}
+  {{- end }}
+  {{- if .Values.n3Service.enabled }}
+  - {{ include "ocudu-cu.fullname" . }}-n3   {{ .Values.n3Service.type }}   UDP:{{ .Values.n3Service.port }}
+  {{- end }}
+  {{- if .Values.f1cService.enabled }}
+  - {{ include "ocudu-cu.fullname" . }}-f1c   {{ .Values.f1cService.type }}   SCTP:{{ .Values.f1cService.port }}
+  {{- end }}
+  {{- if and .Values.f1uService.enabled (not .Values.network.hostNetwork) }}
+  - {{ include "ocudu-cu.fullname" . }}-f1u   {{ .Values.f1uService.type }}   UDP:{{ .Values.f1uService.port }}->{{ .Values.f1uService.targetPort }}
   {{- end }}
   {{- if .Values.metricsService.enabled }}
   - {{ include "ocudu-cu.fullname" . }}-metrics   {{ .Values.metricsService.type }}   TCP:{{ .Values.metricsService.port }}

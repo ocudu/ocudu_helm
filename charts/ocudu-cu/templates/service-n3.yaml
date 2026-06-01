@@ -1,0 +1,39 @@
+{{- if .Values.n3Service.enabled }}
+
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ocudu-cu.fullname" . }}-n3
+  labels:
+    {{- include "ocudu-cu.labels" . | nindent 4 }}
+    app.kubernetes.io/component: n3
+spec:
+  type: {{ .Values.n3Service.type | default "ClusterIP" }}
+  {{- if eq (.Values.n3Service.type | default "ClusterIP") "LoadBalancer" }}
+  {{- if .Values.n3Service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.n3Service.loadBalancerIP }}
+  {{- end }}
+  {{- if .Values.n3Service.loadBalancerClass }}
+  loadBalancerClass: {{ .Values.n3Service.loadBalancerClass }}
+  {{- end }}
+  {{- with .Values.n3Service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ . }}
+  {{- end }}
+  {{- end }}
+  {{- with .Values.n3Service.sessionAffinity }}
+  sessionAffinity: {{ . }}
+  {{- end }}
+  ports:
+    - name: n3
+      port: {{ .Values.n3Service.port }}
+      targetPort: {{ .Values.n3Service.port }}
+      protocol: UDP
+      {{- if .Values.n3Service.nodePort }}
+      nodePort: {{ .Values.n3Service.nodePort }}
+      {{- end }}
+  selector:
+    {{- include "ocudu-cu.selectorLabels" . | nindent 4 }}
+{{- end }}

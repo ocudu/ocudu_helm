@@ -39,7 +39,7 @@ spec:
         - protocol: SCTP
           port: 38472  # F1-C interface (F1AP)
         - protocol: UDP
-          port: {{ .Values.f1uService.ports.f1u.targetPort }}  # F1-U interface (GTP-U, internal port)
+          port: {{ .Values.f1uService.targetPort }}  # F1-U interface (GTP-U, internal port)
     {{- end }}
 
     {{- if and .Values.metricsService.enabled .Values.networkPolicy.ingress.monitoring.enabled }}

@@ -144,103 +144,89 @@ metricsService:
   # -- Target port (container port)
   targetPort: 8001
 
-# -- Service configuration for F1-U interface (DU↔CU-UP GTP-U, hostNetwork=false only)
-# When hostNetwork=false, F1-U (UDP:2152) and NGU/N3 (UDP:2152) would collide on the
-# same pod IP. This service maps external UDP:2152 to an internal port (default 2151)
-# so the ocu binary can bind both on different ports.
-# Set cu_up.f1u.bind_port in the config to match f1uService.ports.f1u.targetPort.
-f1uService:
-  # -- Enable F1-U service (only needed when network.hostNetwork is false)
+# -- Service for N2 interface (NGAP - SCTP:38412 to AMF)
+n2Service:
+  # -- Enable N2 service
   enabled: true
-
   # -- Service type (ClusterIP, NodePort, or LoadBalancer)
-  # @default -- `LoadBalancer`
-  type: LoadBalancer
-
-  # -- LoadBalancer IP address (optional, cluster-dependent)
-  # @default -- `""` (auto-assign)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+  # -- LoadBalancer IP address (optional)
   loadBalancerIP: ""
-
-  # -- LoadBalancer class (optional, for clusters with multiple LB implementations)
-  # @default -- `""` (use default)
+  # -- LoadBalancer class (optional)
   loadBalancerClass: ""
-
   # -- External traffic policy (Cluster or Local)
-  # @default -- `Cluster`
   externalTrafficPolicy: Cluster
-
   # -- Session affinity (None or ClientIP)
-  # @default -- `None`
   sessionAffinity: None
+  # -- Service port
+  port: 38412
+  # -- NodePort (optional, only used when type is NodePort)
+  nodePort: ""
 
-  # -- Port configuration for F1-U interface
-  ports:
-    # -- F1-U interface (GTP-U - user plane to DU)
-    f1u:
-      # -- External port (what the DU connects to — standard GTP-U port)
-      port: 2152
-      # -- Container target port (must match cu_up.f1u.bind_port in the config)
-      targetPort: 2151
-      # -- NodePort (optional, only used when type is NodePort)
-      # @default -- `""` (auto-assign)
-      nodePort: ""
-
-# -- Service configuration for N2 and N3 interfaces
-service:
-  # -- Enable service for N2/N3 interfaces (5GC connectivity)
-  enabled: false
-
+# -- Service for N3 interface (NGU/GTP-U - UDP:2152 to UPF)
+n3Service:
+  # -- Enable N3 service
+  enabled: true
   # -- Service type (ClusterIP, NodePort, or LoadBalancer)
-  # @default -- `LoadBalancer`
-  type: LoadBalancer
-
-  # -- LoadBalancer IP address (optional, cluster-dependent)
-  # @default -- `""` (auto-assign)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+  # -- LoadBalancer IP address (optional)
   loadBalancerIP: ""
-
-  # -- LoadBalancer class (optional, for clusters with multiple LB implementations)
-  # @default -- `""` (use default)
+  # -- LoadBalancer class (optional)
   loadBalancerClass: ""
-
   # -- External traffic policy (Cluster or Local)
-  # @default -- `Cluster`
   externalTrafficPolicy: Cluster
-
   # -- Session affinity (None or ClientIP)
-  # @default -- `None`
   sessionAffinity: None
+  # -- Service port
+  port: 2152
+  # -- NodePort (optional, only used when type is NodePort)
+  nodePort: ""
 
-  # -- Port configuration for N2 and N3 interfaces
-  ports:
-    # -- N2 interface (NGAP - control plane to AMF)
-    n2:
-      # -- Enable N2 port
-      enabled: true
-      # -- External port
-      port: 38412
-      # -- Container target port
-      # @default -- Same as port
-      targetPort: 38412
-      # -- Protocol (SCTP for NGAP)
-      protocol: SCTP
-      # -- NodePort (optional, only used when type is NodePort)
-      # @default -- `""` (auto-assign)
-      nodePort: ""
+# -- Service for F1-C interface (F1AP - SCTP:38472 to DU)
+f1cService:
+  # -- Enable F1-C service
+  enabled: true
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+  # -- LoadBalancer IP address (optional)
+  loadBalancerIP: ""
+  # -- LoadBalancer class (optional)
+  loadBalancerClass: ""
+  # -- External traffic policy (Cluster or Local)
+  externalTrafficPolicy: Cluster
+  # -- Session affinity (None or ClientIP)
+  sessionAffinity: None
+  # -- Service port
+  port: 38472
+  # -- NodePort (optional, only used when type is NodePort)
+  nodePort: ""
 
-    # -- N3 interface (GTP-U - user plane to UPF)
-    n3:
-      # -- Enable N3 port
-      enabled: true
-      # -- External port
-      port: 2152
-      # -- Container target port
-      # @default -- Same as port
-      targetPort: 2152
-      # -- Protocol (UDP for GTP-U)
-      protocol: UDP
-      # -- NodePort (optional, only used when type is NodePort)
-      # @default -- `""` (auto-assign)
-      nodePort: ""
+# -- Service for F1-U interface (GTP-U - UDP:2152→2151 to DU, hostNetwork=false only)
+# Maps external UDP:2152 to pod UDP:2151 so F1-U and NGU can coexist on the same pod IP.
+# Must match cu_up.f1u.bind_port in the config.
+f1uService:
+  # -- Enable F1-U service (only rendered when network.hostNetwork is false)
+  enabled: true
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+  # -- LoadBalancer IP address (optional)
+  loadBalancerIP: ""
+  # -- LoadBalancer class (optional)
+  loadBalancerClass: ""
+  # -- External traffic policy (Cluster or Local)
+  externalTrafficPolicy: Cluster
+  # -- Session affinity (None or ClientIP)
+  sessionAffinity: None
+  # -- External port (what the DU connects to)
+  port: 2152
+  # -- Container target port (must match cu_up.f1u.bind_port in the config)
+  targetPort: 2151
+  # -- NodePort (optional, only used when type is NodePort)
+  nodePort: ""
 
 # -- NetworkPolicy configuration
 # Restricts network traffic to/from the CU pod for enhanced security
