@@ -7,7 +7,7 @@ image:
   repository: registry.gitlab.com/ocudu/ocudu/ocudu_nightly_avx512
   # -- Image pull policy
   pullPolicy: IfNotPresent
-  # -- Image tag
+  # -- Image tag. Always quote in values files — tags like 20260529_abc123e1 are parsed as floats by YAML.
   # @default -- Chart appVersion
   tag: ""
 
