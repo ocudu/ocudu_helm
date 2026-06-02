@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.2 (2026-06-02)
+
+### Changed
+
+- Add `PERFMON` to default securityContext capabilities to allow exec of `odu` binary with file caps
+
 ## 1.2.1 (2026-06-02)
 
 ### Added
