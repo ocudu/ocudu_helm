@@ -325,7 +325,7 @@ networkPolicy:
 
 # -- Persistent storage configuration
 persistence:
-  enabled: true
+  enabled: false
   # -- Storage type: "pvc" or "hostPath"
   type: hostPath
   pvc:
@@ -336,7 +336,7 @@ persistence:
     path: "/mnt/debugging-logs"
     type: DirectoryOrCreate
   mountPath: "/var/log/ocudu"
-  preserveOldLogs: true
+  preserveOldLogs: false
 
 # -- CU configuration file
 config:

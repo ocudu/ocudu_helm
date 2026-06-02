@@ -52,6 +52,9 @@ spec:
             path: {{ .Values.persistence.hostPath.path }}
             type: {{ .Values.persistence.hostPath.type }}
           {{- end }}
+        {{- else }}
+        - name: ocudu-logs
+          emptyDir: {}
         {{- end }}
         {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-1Gi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-1Gi")) }}
         - name: hugepage-1gi
@@ -142,10 +145,8 @@ spec:
               mountPath: /etc/entrypoint
             - name: config-volume
               mountPath: /etc/config/
-            {{- if .Values.persistence.enabled }}
             - name: ocudu-logs
               mountPath: {{ .Values.persistence.mountPath }}
-            {{- end }}
             {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-1Gi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-1Gi")) }}
             - name: hugepage-1gi
               mountPath: /hugepages-1Gi
