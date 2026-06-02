@@ -6,15 +6,15 @@ Kubernetes Helm charts for deploying OCUDU 5G Radio Access Network (RAN) compone
 
 ## Available Charts
 
-### Production Chart
+### OCUDU Helm Charts
 
-| Chart | Version | Description | Status |
-|-------|---------|-------------|--------|
-| [ocudu-gnb](charts/ocudu-gnb/) | 3.0.x | 5G gNB (CU/DU Combined) with O1, DPDK, SR-IOV support | 🟢 **Production Ready** |
+| Chart | Version | Description |
+|-------|---------|-------------|
+| [ocudu-gnb](charts/ocudu-gnb/) | 3.7.x | 5G gNB (CU/DU Combined) with O1, DPDK, SR-IOV support |
+| [ocudu-cu](charts/ocudu-cu/) | 1.2.x | 5G CU (Central Unit) with N2/N3/F1 services |
+| [ocudu-du](charts/ocudu-du/) | 1.2.x | 5G DU (Distributed Unit) with F1, SR-IOV, DPDK support |
 
-**This is the only Helm Chart under active maintenance**
-
-### PoC/Demo Charts
+### Infrastructure Charts
 
 | Chart | Version | Description |
 |-------|---------|-------------|
@@ -25,13 +25,6 @@ Kubernetes Helm charts for deploying OCUDU 5G Radio Access Network (RAN) compone
 | [rt-tests](charts/rt-tests/) | 2.0.x | Real-time performance testing tools |
 | [ru_emulator](charts/ru_emulator/) | 2.0.x | Radio Unit (O-RU) emulator for testing |
 | [tuned](charts/tuned/) | 1.0.x | System tuning profiles for low-latency |
-
-⚠️ **PoC/Demo Status** means:
-- Intended for **development, testing, and proof-of-concept deployments only**
-- May use insecure defaults (privileged mode, anonymous access, etc.)
-- Minimal security hardening
-- **Not actively maintained**
-- **Not intended for production use**
 
 ## Usage
 
@@ -54,10 +47,10 @@ helm install my-release ocudu/<chart-name> \
   --namespace <namespace> \
   --create-namespace
 
-# For production deployments, use custom values
+# Install with custom values
 helm install my-gnb ocudu/ocudu-gnb \
-  -f my-production-values.yaml \
-  --namespace ran-prod \
+  -f my-values.yaml \
+  --namespace ran \
   --create-namespace
 ```
 
@@ -65,6 +58,8 @@ helm install my-gnb ocudu/ocudu-gnb \
 
 Refer to each chart's README for detailed configuration options:
 - [ocudu-gnb](charts/ocudu-gnb/README.md)
+- [ocudu-cu](charts/ocudu-cu/README.md)
+- [ocudu-du](charts/ocudu-du/README.md)
 - [linuxptp](charts/linuxptp/README.md)
 - [grafana-ocudu](charts/grafana-ocudu/README.md)
 - [influxdb3](charts/influxdb3/README.md)
