@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.4.1 (2026-06-02)
+
+### Changed
+
+- Update default image tag to `20260601_1a976144`
+
 ## 2.4.0
 
 ### Changed
