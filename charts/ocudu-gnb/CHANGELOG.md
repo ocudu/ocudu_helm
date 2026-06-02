@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.7.3 (2026-06-03)
+
+### Changed
+
+- Add `PERFMON` to default securityContext capabilities to allow exec of `gnb` binary with file caps
+- entrypoint.sh: use `stdbuf -oL` for line-buffered stdout
+
 ## 3.7.2 (2026-06-02)
 
 ### Added
