@@ -99,8 +99,8 @@ spec:
               value: {{ .Values.persistence.mountPath | quote }}
             - name: PRESERVE_OLD_LOGS
               value: {{ .Values.persistence.preserveOldLogs | quote }}
-          command: [ "/bin/bash" ]
-          args: [ "-c", "/etc/entrypoint/entrypoint-ocudu-cu.sh /etc/config/cu-config.yml" ]
+          command: [ "/usr/bin/tini", "--" ]
+          args: [ "/bin/bash", "-c", "/etc/entrypoint/entrypoint-ocudu-cu.sh /etc/config/cu-config.yml" ]
           volumeMounts:
             - name: entrypoint-volume-ocudu-cu
               mountPath: /etc/entrypoint
