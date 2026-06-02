@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.7.1 (2026-06-02)
+
+### Added
+
+- `emptyDir` volume mounted at `persistence.mountPath` when `persistence.enabled=false` — ensures log directory is always writable without requiring a hostPath or PVC
+
+### Changed
+
+- values.yaml: document that `image.tag` must be quoted in values files to avoid YAML float parsing
+
 ## 3.7.0 (2026-06-01)
 
 ### Changed
