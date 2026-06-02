@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.1 (2026-06-02)
+
+### Added
+
+- `emptyDir` volume mounted at `persistence.mountPath` when `persistence.enabled=false` — ensures log directory is always writable without requiring a hostPath or PVC
+
+### Changed
+
+- deployment.yaml: switch container command to `tini --` as PID 1 for zombie reaping and signal forwarding (fixes CNTi `specialized_init_system` and `zombie_handled` tests)
+- values.yaml: document that `image.tag` must be quoted in values files to avoid YAML float parsing
+
 ## 1.2.0 (2026-06-01)
 
 ### Changed
