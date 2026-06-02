@@ -397,6 +397,10 @@ persistence:
 o1:
   # -- Enable O1 interface containers (NETCONF server + O1 adapter)
   enable_ocudu_o1: false
+  # -- VES collector connection settings (consumed by the O1 adapter)
+  ves:
+    # -- Connection scheme: http or https
+    scheme: https
   netconfServer:
     tls:
       # -- Enable NETCONF-over-TLS endpoint on port 6513 (alongside the default SSH endpoint on o1Port)

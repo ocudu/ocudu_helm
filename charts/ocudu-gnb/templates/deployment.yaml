@@ -230,6 +230,8 @@ spec:
             - {{ .Values.o1.ves.username | quote }}
             - "--ves_password"
             - {{ .Values.o1.ves.password | quote }}
+            - "--ves_scheme"
+            - {{ .Values.o1.ves.scheme | quote }}
             - "--ws_host"
             - {{ .Values.o1.ws.host | quote }}
             - "--ws_port"

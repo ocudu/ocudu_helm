@@ -314,6 +314,7 @@ o1:
     port: 8443
     username: "sample1"
     password: "sample1"
+    scheme: "https"
   o1Adapter:
     image:
       repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_o1_adapter/o1_adapter_nightly_amd64

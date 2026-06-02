@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.7.2 (2026-06-02)
+
+### Added
+
+- connection `scheme` option for VES Collector: can be `https` or `http` - before it was hardcoded in the O1 adapter to `https`
+
 ## 3.7.1 (2026-06-02)
 
 ### Added
