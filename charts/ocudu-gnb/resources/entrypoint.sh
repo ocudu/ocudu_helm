@@ -518,7 +518,7 @@ process_and_run_gnb() {
     cp "$updated_config" "${OCUDU_LOG_DIR}/gnb-config-rendered.yaml"
 
     log_info "Starting gNB"
-    exec gnb -c "$updated_config"
+    exec stdbuf -oL gnb -c "$updated_config"
 }
 
 # Main entry point
