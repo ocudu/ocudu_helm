@@ -108,7 +108,7 @@ podSecurityContext:
 #
 # Default: minimum-privilege shape for SR-IOV Device Plugin + vfio-pci.
 # Requires the image to have file capabilities baked into /usr/local/bin/gnb
-# (setcap cap_sys_nice,cap_ipc_lock+ep) and containerd
+# (setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+ep) and containerd
 # `device_ownership_from_security_context = true` on the node.
 # See docs/security.md for details.
 securityContext:
@@ -119,6 +119,7 @@ securityContext:
     add:
       - SYS_NICE
       - IPC_LOCK
+      - PERFMON
 
 # -- gNB liveness probe configuration.
 livenessProbe:
