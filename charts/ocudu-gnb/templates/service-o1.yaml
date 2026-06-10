@@ -41,5 +41,8 @@ spec:
       port: 6513
       targetPort: 6513
       protocol: TCP
+      {{- if and (eq (.Values.o1.netconfServer.service.type | default "NodePort") "NodePort") (.Values.o1.netconfServer.tls.tlsNodePort) }}
+      nodePort: {{ .Values.o1.netconfServer.tls.tlsNodePort }}
+      {{- end }}
     {{- end }}
 {{- end }}

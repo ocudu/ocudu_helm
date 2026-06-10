@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.7.4 (2026-06-10)
+
+### Added
+
+- `o1.netconfServer.tls.tlsNodePort`: optional fixed NodePort for the NETCONF-over-TLS endpoint (port 6513); leave empty for auto-assignment
+
 ## 3.7.3 (2026-06-03)
 
 ### Changed

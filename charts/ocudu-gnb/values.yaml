@@ -410,6 +410,8 @@ o1:
       # If empty and tls.enabled is true, the container auto-generates self-signed certs at startup (dev/test only)
       # Create with: kubectl create secret generic <name> --from-file=ca.crt=./ca.crt --from-file=server.crt=./server.crt --from-file=server.key=./server.key
       certSecret: ""
+      # -- Fixed NodePort for the NETCONF-over-TLS endpoint (port 6513). Leave empty for auto-assignment.
+      tlsNodePort: ""
 
 # -- SR-IOV configuration
 # Required when network.hostNetwork is false (default)
