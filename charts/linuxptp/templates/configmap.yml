@@ -1,6 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
 # SPDX-License-Identifier: BSD-3-Clause-Open-MPI
 
+{{- if and .Values.ptp4l.authentication.enabled (not .Values.ptp4l.authentication.existingSecret) }}
+{{- fail "ptp4l.authentication.existingSecret must be set when ptp4l.authentication.enabled=true" }}
+{{- end }}
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -124,6 +128,15 @@ data:
     manufacturerIdentity    {{ .Values.config.manufacturerIdentity | default "00:00:00" }}
     userDescription         {{ .Values.config.userDescription | default ";" }}
     timeSource              {{ .Values.config.timeSource | default 0xA0 }}
+    {{- if .Values.ptp4l.authentication.enabled }}
+    #
+    # PTP Authentication TLV
+    #
+    ptp_minor_version       {{ .Values.ptp4l.authentication.ptpMinorVersion }}
+    sa_file                 {{ .Values.ptp4l.authentication.saFile }}
+    spp                     {{ .Values.ptp4l.authentication.spp }}
+    active_key_id           {{ .Values.ptp4l.authentication.activeKeyId }}
+    {{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap

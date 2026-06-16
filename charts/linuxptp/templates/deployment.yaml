@@ -1,6 +1,10 @@
 # SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
 # SPDX-License-Identifier: BSD-3-Clause-Open-MPI
 
+{{- if and .Values.ptp4l.authentication.enabled (not .Values.ptp4l.authentication.existingSecret) }}
+{{- fail "ptp4l.authentication.existingSecret must be set when ptp4l.authentication.enabled=true" }}
+{{- end }}
+
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -48,6 +52,15 @@ spec:
         - name: dev
           hostPath:
             path: "/dev"
+        {{- if .Values.ptp4l.authentication.enabled }}
+        - name: linuxptp-sa
+          secret:
+            secretName: {{ required "ptp4l.authentication.existingSecret is required when authentication.enabled=true" .Values.ptp4l.authentication.existingSecret }}
+            items:
+              - key: {{ .Values.ptp4l.authentication.secretKey }}
+                path: {{ base .Values.ptp4l.authentication.saFile }}
+            defaultMode: 0400
+        {{- end }}
       containers:
         - name: {{ .Chart.Name }}-ptp4l
           securityContext:
@@ -75,6 +88,11 @@ spec:
             - name: ptp4l-run-volume
               mountPath: "/var/run"
               readOnly: false
+            {{- if .Values.ptp4l.authentication.enabled }}
+            - name: linuxptp-sa
+              mountPath: {{ .Values.ptp4l.authentication.mountPath }}
+              readOnly: true
+            {{- end }}
           {{- if and (.Values.livenessProbe.enabled) (ne (default "0" (.Values.config.serverOnly | toString)) "1") }}
           livenessProbe:
             exec:
