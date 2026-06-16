@@ -4,6 +4,10 @@
 {{- if and .Values.ptp4l.authentication.enabled (not .Values.ptp4l.authentication.existingSecret) }}
 {{- fail "ptp4l.authentication.existingSecret must be set when ptp4l.authentication.enabled=true" }}
 {{- end }}
+{{- if and .Values.ptp4l.grandmasterAllowList.enabled (empty .Values.ptp4l.grandmasterAllowList.allowedSourceMacs) }}
+{{- fail "ptp4l.grandmasterAllowList.allowedSourceMacs must contain at least one MAC address when enabled" }}
+{{- end }}
+{{- $gmAllowListInterface := default ((split ";" .Values.interfaceNameList)._0) .Values.ptp4l.grandmasterAllowList.interface }}
 
 apiVersion: apps/v1
 kind: DaemonSet
@@ -82,6 +86,18 @@ spec:
           env:
             - name: PTP4L_OFFSET_LIMIT
               value: "{{ .Values.ptp4l.offsetLimitNs }}"
+            {{- if .Values.ptp4l.grandmasterAllowList.enabled }}
+            - name: PTP4L_GM_ALLOWLIST_ENABLED
+              value: "true"
+            - name: PTP4L_GM_ALLOWLIST_MODE
+              value: {{ .Values.ptp4l.grandmasterAllowList.mode | quote }}
+            - name: PTP4L_GM_ALLOWLIST_INTERFACE
+              value: {{ $gmAllowListInterface | quote }}
+            - name: PTP4L_GM_ALLOWLIST_PTP_ETHERTYPE
+              value: {{ .Values.ptp4l.grandmasterAllowList.ptpEthertype | quote }}
+            - name: PTP4L_GM_ALLOWLIST_ALLOWED_SOURCE_MACS
+              value: {{ join "," .Values.ptp4l.grandmasterAllowList.allowedSourceMacs | quote }}
+            {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config

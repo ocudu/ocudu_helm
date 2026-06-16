@@ -179,6 +179,19 @@ ptp4l:
     # -- LinuxPTP Authentication TLV active key ID
     activeKeyId: 1
 
+  # -- Optional source-MAC allow-list for grandmaster PTP packets
+  grandmasterAllowList:
+    # -- Drop L2 PTP packets from non-allowed source MAC addresses before ptp4l sees them
+    enabled: false
+    # -- Operator-provided legitimate grandmaster source MAC addresses
+    allowedSourceMacs: []
+    # -- Interface to protect. Empty means use the first interface from interfaceNameList
+    interface: ""
+    # -- L2 PTP ethertype used by tc flower filters
+    ptpEthertype: "0x88f7"
+    # -- Allow-list implementation mode
+    mode: "tc"
+
 # -- Startup probe configuration
 # Allows time for PTP to establish initial synchronization (can take 5+ minutes)
 startupProbe:
