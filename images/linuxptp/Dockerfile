@@ -4,7 +4,7 @@
 ARG LINUXPTP_VERSION=v4.4
 FROM ubuntu:24.04 AS builder
 
-RUN apt update && apt install -y git make gcc musl-dev && \
+RUN apt update && apt install -y git make gcc musl-dev pkg-config nettle-dev && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -24,7 +24,9 @@ COPY --from=builder /linuxptp-agent/linuxptp/ts2phc /usr/local/bin/
 COPY scripts/ /usr/local/bin/
 
 RUN chmod +x /usr/local/bin/entrypoint-ptp4l.sh && \
-    apt update && apt install -y musl-dev bc ntpdate && \
+    apt update && apt install -y musl-dev bc ntpdate iproute2 libnettle8 && \
     apt clean && \
     rm -rf /var/lib/apt/lists/* && \
-    ldconfig
+    ldconfig && \
+    chmod +x /usr/local/bin/*.sh && \
+    /usr/local/bin/check-runtime-support.sh

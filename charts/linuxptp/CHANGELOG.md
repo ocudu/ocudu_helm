@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.4.0 (2026-06-16)
+
+### Added
+- Opt-in ptp4l Authentication TLV configuration using an existing Secret for the SA file
+- Optional GM source MAC allow-listing for L2 PTP packets
+
+### Changed
+- LinuxPTP image includes auth crypto support checks and `tc` availability checks
+
 ## 2.3.0 (2026-06-01)
 
 ### Changed

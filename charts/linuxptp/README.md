@@ -94,6 +94,10 @@ The command removes all Kubernetes components associated with the chart.
 | `config.domainNumber` | string | `"24"` | PTP domain number (0-255) |
 | `config.serverOnly` | string | `"0"` | 0=slave mode, 1=master mode |
 | `config.ts2phc.enabled` | bool | `false` | Enable GNSS synchronization via ts2phc |
+| `ptp4l.authentication.enabled` | bool | `false` | Enable LinuxPTP Authentication TLV configuration |
+| `ptp4l.authentication.existingSecret` | string | `""` | Existing Secret containing the LinuxPTP SA file |
+| `ptp4l.grandmasterAllowList.enabled` | bool | `false` | Enable source-MAC allow-listing for L2 PTP packets |
+| `ptp4l.grandmasterAllowList.allowedSourceMacs` | list | `[]` | Legitimate GM source MAC addresses |
 | `ntp.enabled` | bool | `false` | Sync to NTP before starting PTP |
 
 ### Complete Parameter List
@@ -143,6 +147,39 @@ config:
     ts2phc_nmea_serialport: /dev/gnss0
     ts2phc_extts_polarity: rising
 ```
+
+### With Authentication TLV
+```bash
+kubectl create secret generic linuxptp-sa \
+  --from-file=sa.cfg=/path/to/operator-provided-sa.cfg
+```
+
+```yaml
+ptp4l:
+  authentication:
+    enabled: true
+    existingSecret: linuxptp-sa
+    secretKey: sa.cfg
+    spp: 0
+    activeKeyId: 1
+```
+
+The chart mounts an existing SA file and renders LinuxPTP Authentication TLV
+settings. It does not create keys or configure the grandmaster. Configure
+matching Authentication TLV settings on all participating PTP peers.
+
+### With GM Source MAC Allow-Listing
+```yaml
+ptp4l:
+  grandmasterAllowList:
+    enabled: true
+    allowedSourceMacs:
+      - "00:11:22:33:44:55"
+```
+
+GM allow-listing drops L2 PTP packets from unknown source MAC addresses before
+`ptp4l` sees them. It is not cryptographic authentication and can be bypassed by
+MAC spoofing.
 
 ## Architecture & Design
 
