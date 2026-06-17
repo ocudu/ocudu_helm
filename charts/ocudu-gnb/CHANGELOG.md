@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.10.1 (2026-08-06)
+
+### Changed
+
+- Changed the pod init from tini -s -d to catatonic -d
+- Added initCommand to the values.yaml and the deployment.yaml. The default is catatonic
+- Updated README.md to detail what init options are available and provide a tini example
+
 ## 3.10.0 (2026-07-30)
 
 ### Added

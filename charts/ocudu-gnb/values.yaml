@@ -111,6 +111,14 @@ podSecurityContext:
   runAsGroup: 1000
   fsGroup: 1000
 
+# -- Init process command used as container PID 1.
+# Reaps zombie processes and forwards signals to the gNB process.
+# @default -- `["/usr/bin/catatonit", "-d", "--"]`
+initCommand:
+  - /usr/bin/catatonit
+  - -d
+  - --
+
 # -- Container-level security context.
 #
 # Default: minimum-privilege shape for SR-IOV Device Plugin + vfio-pci.

@@ -96,6 +96,26 @@ resources:
     memory: 16Gi
 ```
 
+**Use tini instead of catatonit as PID 1**:
+```yaml
+initCommand:
+  - /usr/bin/tini
+  - -s
+  - -d
+  - --
+```
+
+`initCommand` defaults to catatonit. Override it when the image provides a different init binary. Availability of packaged catatonit and tini varies by OS:
+
+| OS | catatonit | tini |
+|----|-----------|------|
+| Ubuntu 24.04 | Yes (`universe`) | Yes (`universe`) |
+| Ubuntu 26.04 | Yes (`universe`) | Yes (`universe`) |
+| CentOS Stream 10 | Yes (`AppStream`) | No |
+| UBI 10 | Yes (`AppStream`) | No |
+| Hummingbird | Yes | No |
+| Arch Linux (2026.08.01) | Yes (`extra`) | AUR only |
+
 **External 5G Core with LoadBalancer**:
 ```yaml
 # N2/N3 Service - Expose gNB to external 5G Core
@@ -159,6 +179,7 @@ Find images at: [Docker Hub - softwareradiosystems](https://hub.docker.com/u/sof
 | `image.tag` | string | Chart appVersion | Image tag |
 | `image.pullPolicy` | string | `"IfNotPresent"` | Image pull policy |
 | `extraLabels` | object | `{}` | Extra labels applied to the Deployment and Pod template |
+| `initCommand` | list | `["/usr/bin/catatonit", "-d", "--"]` | Init process command used as container PID 1 |
 | `network.hostNetwork` | bool | `false` | Enable host network mode (bypasses NetworkPolicy) |
 | `sriovConfig.enabled` | bool | `true` | Enable SR-IOV device plugin |
 | `sriovConfig.extendedResourceName` | string | `"intel.com/intel_sriov_netdevice"` | SR-IOV resource name (specify resources manually in resources section) |
