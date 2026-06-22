@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.3.0 (2026-06-22)
+
+### Added
+
+- O1/NETCONF support gated on `o1.enable_ocudu_o1`: adds `ocudu-o1-adapter` and `netconf-server` sidecar containers to the DU pod
+- `service-o1.yaml`: NETCONF service (NodePort by default, optional LoadBalancer) exposing `o1.o1Port`, plus the optional TLS port 6513
+- `o1Config` ConfigMap (`o1-config.xml` ManagedElement template) rendered to the netconf-server when O1 is enabled, selected in place of the main `config` ConfigMap
+- O1-mode liveness probe via the adapter's `/config-healthy` HTTP endpoint on `o1.healthcheckPort`, plus a `postStart` hook that notifies the adapter (`/restarted`) once it is healthy
+- `o1.netconfServer.tls.{enabled,certSecret,tlsNodePort}` for the NETCONF-over-TLS endpoint on port 6513
+- `o1.*` values: `netconfServerAddr`, `o1Port`, `healthcheckPort`, `oamIpv4Address`, `log_level`, `ws.*`, `ves.*`, `o1Adapter.{image,resources,securityContext}`, `netconfServer.{image,service,resources,securityContext}`
+- entrypoint.sh: `ENABLE_OCUDU_O1`/`CONFIG_CREATE_TIMEOUT` handling — wait for the O1-generated config before launching `odu`, and remove it between restart iterations
+- `configmap.o1.nameOverride` value and `ocudu-du.o1ConfigmapName` template helper
+- `values-o1.yaml`: example values preset with O1 enabled
+
+### Changed
+
+- values.yaml: default image repository changed from `ocudu_nightly_avx512` to `images/du-dpdk`
+- deployment.yaml: set `dnsPolicy: ClusterFirstWithHostNet` on the pod spec
+
+### Fixed
+
+- entrypoint.sh: correct the SR-IOV `RESOURCE_EXTENDED` → env-var name conversion; the previous `tr` used mismatched sets and shifted the alphabet (`a`→`_`, `b`→`A`, …)
+
 ## 1.2.2 (2026-06-02)
 
 ### Changed
