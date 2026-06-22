@@ -46,7 +46,26 @@ Main configmap name
 {{- end }}
 
 {{/*
-Entrypoint script configmap name
+O1 mode configmap (values.o1Config)
+*/}}
+{{- define "ocudu-du.o1ConfigmapName" -}}
+{{- with .Values.configmap }}
+  {{- with .o1 }}
+    {{- if .nameOverride }}
+      {{- .nameOverride | trunc 63 | trimSuffix "-" -}}
+    {{- else }}
+      {{- printf "%s-o1-config" (include "ocudu-du.fullname" $) | trunc 63 | trimSuffix "-" -}}
+    {{- end }}
+  {{- else }}
+    {{- printf "%s-o1-config" (include "ocudu-du.fullname" $) | trunc 63 | trimSuffix "-" -}}
+  {{- end }}
+{{- else }}
+  {{- printf "%s-o1-config" (include "ocudu-du.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end }}
+{{- end }}
+
+{{/*
+Entrypoint script configmap
 */}}
 {{- define "ocudu-du.entrypointConfigmapName" -}}
 {{- with .Values.configmap }}
@@ -106,6 +125,28 @@ Create the name of the service account to use
 Create the image path
 */}}
 {{- define "ocudu-du.image" -}}
+{{- if eq (substr 0 7 (.tag | toString)) "sha256:" -}}
+{{- printf "%s@%s" .repository (.tag | toString) -}}
+{{- else -}}
+{{- printf "%s:%s" .repository (.tag | toString) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Create the image path for the passed in image field of netconf-server image
+*/}}
+{{- define "ocudu-du.o1.netconfServer.image" -}}
+{{- if eq (substr 0 7 (.tag | toString)) "sha256:" -}}
+{{- printf "%s@%s" .repository (.tag | toString) -}}
+{{- else -}}
+{{- printf "%s:%s" .repository (.tag | toString) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Create the image path for the passed in image field of o1-adapter image
+*/}}
+{{- define "ocudu-du.o1.o1Adapter.image" -}}
 {{- if eq (substr 0 7 (.tag | toString)) "sha256:" -}}
 {{- printf "%s@%s" .repository (.tag | toString) -}}
 {{- else -}}

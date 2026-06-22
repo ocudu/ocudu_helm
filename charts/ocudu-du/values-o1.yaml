@@ -1,0 +1,613 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# -- Number of pod replicas
+# Note: OCUDU DU is stateful and requires replicaCount: 1
+# @default -- `1` (do not change for stateful workload)
+replicaCount: 1
+
+# -- Container image configuration
+image:
+  # -- Container image repository
+  # See https://gitlab.com/ocudu/ocudu/container_registry for available images
+  repository: registry.gitlab.com/ocudu/ocudu/images/du-dpdk
+  # repository: repository: registry.gitlab.com/ocudu/ocudu/images/du-uhd
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+  # -- Image tag
+  # Format: release_<arch>-<commit>__<date>
+  # @default -- Chart appVersion
+  tag: ""
+
+# -- Image pull secrets for private registries
+# @default -- See values.yaml
+imagePullSecrets: []
+
+# -- Override the name of the chart
+# Leaving empty allows Helm to use the chart name for resource naming
+# @default -- Chart name (`ocudu-du`)
+nameOverride: ""
+
+# -- Override the full name of resources
+# IMPORTANT: Keep empty to allow multiple instances in the same namespace
+# When empty, Helm generates unique names using: <release-name>-<chart-name>
+# Example: "du1-ocudu-du", "du2-ocudu-du"
+# @default -- `<release-name>-<chart-name>`
+fullnameOverride: ""
+
+# -- ConfigMap name overrides for different components
+# Allows customization of ConfigMap names for advanced use cases
+configmap:
+  # -- Main DU configuration ConfigMap name override
+  main: { nameOverride: "" }
+  # -- O1 adapter configuration ConfigMap name override
+  o1: { nameOverride: "" }
+  # -- Entrypoint script ConfigMap name override
+  entrypoint: { nameOverride: "" }
+
+# -- Service account configuration
+serviceAccount:
+  # -- Create a service account
+  create: true
+  # -- Additional service account annotations
+  # @default -- `{}` (no annotations)
+  annotations: {}
+  # -- Service account name
+  # When empty, uses the release name for uniqueness across multiple instances
+  # @default -- `<release-name>-ocudu-du`
+  name: ""
+
+# -- RBAC (Role-Based Access Control) configuration
+rbac:
+  # -- Create Role and RoleBinding resources
+  # Grants least-privilege permissions to the service account
+  create: true
+  # -- Additional custom RBAC rules
+  # @default -- `[]` (no additional rules)
+  extraRules: []
+  # Example: Allow reading secrets
+  # - apiGroups: [""]
+  #   resources: ["secrets"]
+  #   verbs: ["get"]
+
+# -- Pod Disruption Budget configuration
+# Ensures cluster stability during node maintenance and upgrades
+# ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+podDisruptionBudget:
+  # -- Enable PodDisruptionBudget resource
+  enabled: true
+  # -- Minimum number of available pods
+  # Use 0 for single-replica deployments to allow disruption
+  # Use only one: minAvailable OR maxUnavailable (not both)
+  minAvailable: 0
+  # -- Maximum number of unavailable pods
+  # Uncomment to use maxUnavailable instead of minAvailable
+  # maxUnavailable: 1
+  # -- Unhealthy pod eviction policy
+  # AlwaysAllow: Allows eviction of unhealthy pods (recommended for production)
+  # IfHealthyBudget: Protects unhealthy pods (may block node drains)
+  # @default -- `AlwaysAllow`
+  unhealthyPodEvictionPolicy: AlwaysAllow
+
+# -- Additional pod annotations
+# @default -- `{}` (no additional annotations)
+podAnnotations: {}
+
+# -- Extra labels applied to the Deployment and Pod template
+extraLabels: {}
+
+# -- DU liveness probe configuration.
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 90
+  periodSeconds: 30
+  timeoutSeconds: 1
+  failureThreshold: 3
+  successThreshold: 1
+
+# -- DU readiness probe configuration.
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 15
+  periodSeconds: 5
+  timeoutSeconds: 1
+  failureThreshold: 30
+  successThreshold: 1
+
+# -- Pod-level security context. Runs the container as a non-root user by default.
+# @default -- see below
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+# -- Container-level security context.
+#
+# Default: minimum-privilege shape for SR-IOV Device Plugin + vfio-pci.
+# Requires the image to have file capabilities baked into /usr/local/bin/odu
+# (setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+ep) and containerd
+# `device_ownership_from_security_context = true` on the node.
+securityContext:
+  allowPrivilegeEscalation: true
+  privileged: false
+  capabilities:
+    drop: ["ALL"]
+    add:
+      - SYS_NICE
+      - IPC_LOCK
+      - PERFMON
+
+# -- Resource requests and limits
+# Hugepages are automatically configured when defined in limits or requests.
+# The chart detects hugepages-1Gi or hugepages-2Mi and creates volumes accordingly.
+#
+# Example with 1Gi hugepages (recommended for DPDK):
+# ```yaml
+# resources:
+#   limits:
+#     cpu: 12
+#     memory: 16Gi
+#     hugepages-1Gi: 2Gi
+#   requests:
+#     cpu: 12
+#     memory: 16Gi
+#     hugepages-1Gi: 2Gi
+# ```
+#
+# Example with 2Mi hugepages (alternative):
+# ```yaml
+# resources:
+#   limits:
+#     cpu: 12
+#     memory: 16Gi
+#     hugepages-2Mi: 2Gi
+#   requests:
+#     cpu: 12
+#     memory: 16Gi
+#     hugepages-2Mi: 2Gi
+# ```
+
+# @default -- `{}` (no resource constraints)
+resources:
+  # -- Resource limits for the DU container
+  # Include hugepages-1Gi or hugepages-2Mi to automatically enable hugepage volumes
+  # @default -- `{}` (no limits)
+  limits: {}
+    # cpu: 12
+    # memory: 16Gi
+    # hugepages-1Gi: 2Gi
+    # hugepages-2Mi: 2Gi
+
+  # -- Resource requests for the DU container
+  # Include hugepages-1Gi or hugepages-2Mi to automatically enable hugepage volumes
+  # @default -- `{}` (no requests)
+  requests: {}
+    # cpu: 12
+    # memory: 16Gi
+    # hugepages-1Gi: 2Gi
+    # hugepages-2Mi: 2Gi
+
+# -- Network configuration
+network:
+  # -- Enable host network mode
+  # false (default): Uses CNI network with SR-IOV for production (NetworkPolicy supported)
+  # true: Uses host network namespace directly (simple setup, NetworkPolicy NOT supported)
+  # @default -- `false`
+  hostNetwork: false
+
+# -- Node selector for pod assignment
+# Schedule pods only on nodes with matching labels
+# Example:
+# ```yaml
+# nodeSelector:
+#   node-role.kubernetes.io/worker: ""
+#   feature.node.kubernetes.io/cpu-cpuid.AVX512F: "true"
+# ```
+# @default -- `{}` (no node selector)
+nodeSelector: {}
+
+# -- Tolerations for pod assignment
+# Allows pods to be scheduled on nodes with matching taints
+# @default -- `{}` (no tolerations)
+tolerations: {}
+
+# -- Pod affinity configuration for advanced scheduling
+# @default -- `{}` (no affinity rules)
+affinity: {}
+
+# -- Metrics service configuration
+# Exposes DU metrics endpoint for Telegraf collection
+metricsService:
+  # -- Enable metrics service
+  enabled: false
+  # -- Enable power consumption metrics via RAPL
+  # When true, adds CAP_PERFMON to the container to allow perf_event_open() RAPL reads.
+  # The binary tries three methods in order:
+  #   1. sysfs powercap (/sys/class/powercap) — works if the host exposes it in the container
+  #   2. perf_event_open() — requires CAP_PERFMON and kernel >= 5.8 (no host mounts needed)
+  #   3. MSR (/dev/cpu/0/msr) — requires CAP_SYS_RAWIO (not added by this chart)
+  # If none succeed, energy metrics are silently unavailable (no crash).
+  # @default -- `false`
+  powercap:
+    enabled: false
+
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+
+  # -- LoadBalancer IP address (optional, when type is LoadBalancer)
+  # Leave empty for automatic assignment
+  # Example: "10.0.0.101"
+  # @default -- `""` (auto-assign)
+  loadBalancerIP: ""
+
+  # -- LoadBalancer class (optional, for clusters with multiple LB implementations)
+  # Example: "metallb" or "cloud-provider-lb"
+  # @default -- `""` (use default)
+  loadBalancerClass: ""
+
+  # -- External traffic policy (Cluster or Local)
+  # Only applies when type is LoadBalancer or NodePort
+  # - Cluster: Load balances across all nodes (default)
+  # - Local: Preserves source IP, only routes to local pods
+  # @default -- `Cluster`
+  externalTrafficPolicy: Cluster
+
+  # -- Session affinity (None or ClientIP)
+  # @default -- `None`
+  sessionAffinity: None
+
+  # -- NodePort (optional, only used when type is NodePort)
+  # @default -- `""` (auto-assign)
+  nodePort: ""
+
+  # -- Service port (must match the port in du-config.yml)
+  port: 8001
+
+  # -- Target port (container port)
+  targetPort: 8001
+
+# -- Service for F1-C interface (F1AP - SCTP:38472 to CU-CP)
+f1cService:
+  # -- Enable F1-C service
+  enabled: true
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+  # -- LoadBalancer IP address (optional)
+  loadBalancerIP: ""
+  # -- LoadBalancer class (optional)
+  loadBalancerClass: ""
+
+  # -- External traffic policy (Cluster or Local)
+  # - Cluster: Load balances across all nodes (default)
+  # - Local: Preserves source IP, only routes to local pods
+  # @default -- `Cluster`
+  externalTrafficPolicy: Cluster
+
+  # -- Session affinity (None or ClientIP)
+  # @default -- `None`
+  sessionAffinity: None
+  # -- Service port
+  port: 38472
+  # -- NodePort (optional, only used when type is NodePort)
+  nodePort: ""
+
+# -- Service for F1-U interface (GTP-U - UDP:2152 to CU-UP)
+f1uService:
+  # -- Enable F1-U service
+  enabled: true
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+  # -- LoadBalancer IP address (optional)
+  loadBalancerIP: ""
+  # -- LoadBalancer class (optional)
+  loadBalancerClass: ""
+  # -- External traffic policy (Cluster or Local)
+  externalTrafficPolicy: Cluster
+  # -- Session affinity (None or ClientIP)
+  sessionAffinity: None
+  # -- Service port
+  port: 2152
+  # -- NodePort (optional, only used when type is NodePort)
+  nodePort: ""
+
+# -- NetworkPolicy configuration
+# Restricts network traffic to/from the DU pod for enhanced security
+# IMPORTANT: NetworkPolicy only works when network.hostNetwork is false
+networkPolicy:
+  # -- Enable NetworkPolicy
+  # Only effective when network.hostNetwork is false
+  # @default -- `false`
+  enabled: false
+
+  # -- Ingress rules (incoming traffic to DU)
+  ingress:
+    # -- Allow traffic from CU (F1-C/F1-U interfaces)
+    cu:
+      # -- Enable CU ingress
+      # @default -- `true`
+      enabled: true
+      # -- Source selectors for CU traffic
+      from:
+        - podSelector:
+            matchLabels:
+              app: ocudu-cu
+        - ipBlock:
+            cidr: 10.0.0.0/8  # Adjust for your network CIDR
+
+    # -- Allow traffic from monitoring systems
+    monitoring:
+      # -- Enable monitoring ingress
+      # @default -- `true`
+      enabled: true
+      # -- Source selectors for monitoring traffic
+      from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+        - podSelector:
+            matchLabels:
+              app: telegraf
+
+    # -- Custom ingress rules
+    # @default -- `[]`
+    custom: []
+
+  # -- Egress rules (outgoing traffic from DU)
+  egress:
+    # -- Allow traffic to CU (F1-C/F1-U)
+    cu:
+      # -- Enable CU egress
+      # @default -- `true`
+      enabled: true
+      # -- Destination selectors for CU traffic
+      to:
+        - podSelector:
+            matchLabels:
+              app: ocudu-cu
+        - ipBlock:
+            cidr: 10.0.0.0/8  # Adjust for your network CIDR
+
+    # -- Allow traffic to monitoring systems
+    monitoring:
+      # -- Enable monitoring egress
+      # @default -- `true`
+      enabled: true
+      # -- Destination selectors for monitoring traffic
+      to:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+        - podSelector:
+            matchLabels:
+              app: influxdb
+
+    # -- Custom egress rules
+    # @default -- `[]`
+    custom: []
+
+# -- SR-IOV configuration
+sriovConfig:
+  # -- Enable SR-IOV device plugin resource allocation
+  # When enabled, requests one SR-IOV VF from the device plugin
+  # @default -- `false`
+  enabled: false
+  # -- Extended resource name advertised by the SR-IOV device plugin
+  # Common values:
+  #   intel.com/intel_sriov_dpdk     (DPDK / vfio-pci, for use with hal section)
+  #   intel.com/intel_sriov_netdevice (kernel netdev — NOT supported for DU, use DPDK only)
+  # @default -- `intel.com/intel_sriov_dpdk`
+  extendedResourceName: "intel.com/intel_sriov_dpdk"
+
+# -- Persistent storage configuration
+persistence:
+  enabled: true
+  # -- Storage type: "pvc" or "hostPath"
+  type: hostPath
+  pvc:
+    storageClassName: ""
+    accessMode: ReadWriteOnce
+    size: 10Gi
+  hostPath:
+    path: "/mnt/debugging-logs"
+    type: DirectoryOrCreate
+  mountPath: "/var/log/ocudu"
+  preserveOldLogs: true
+
+o1:
+  enable_ocudu_o1: true
+  netconfServerAddr: "localhost"
+  o1Port: 830
+  healthcheckPort: 5000
+  oamIpv4Address: "onap-smo-ves-collector.onap.svc.cluster.local"
+  log_level: "DEBUG"  # available log levels: CRITICAL, FATAL, ERROR, WARN, WARNING, INFO, DEBUG, NOTSET
+  ws:
+    host: "localhost"
+    port: 8001
+  ves:
+    host: "onap-smo-ves-collector.onap.svc.cluster.local"
+    port: 8443
+    username: "sample1"
+    password: "sample1"
+    scheme: "https"
+  o1Adapter:
+    image:
+      repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_o1_adapter/o1_adapter_nightly_amd64
+      pullPolicy: IfNotPresent
+      tag: 20260511_ee814fb3
+    resources: {}
+    securityContext: {}
+  netconfServer:
+    service:
+      # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+      type: NodePort
+      # -- NodePort (when type is NodePort)
+      nodePort: 30830
+      # -- LoadBalancer IP address (optional, when type is LoadBalancer)
+      # loadBalancerIP: ""
+      # -- LoadBalancer class (optional, for clusters with multiple LB implementations)
+      # loadBalancerClass: ""
+      # -- External traffic policy (Cluster or Local)
+      # externalTrafficPolicy: Cluster
+      # -- Session affinity (None or ClientIP)
+      # sessionAffinity: None
+    image:
+      repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_netconf/netconf_nightly_amd64
+      pullPolicy: IfNotPresent
+      tag: 20260508_db6e983c
+    tls:
+      # -- Enable NETCONF-over-TLS endpoint on port 6513 (alongside the default SSH endpoint on o1Port)
+      enabled: false
+      # -- Name of a Secret containing ca.crt, server.crt, server.key
+      # If empty, the container auto-generates self-signed certs at startup (dev/test only)
+      # Create with: kubectl create secret generic <name> --from-file=ca.crt=./ca.crt --from-file=server.crt=./server.crt --from-file=server.key=./server.key
+      certSecret: ""
+    resources: {}
+    securityContext: {}
+
+o1Config:
+  o1-config.xml: |-
+    <ManagedElement xmlns="urn:3gpp:sa5:_3gpp-common-managed-element">
+      <id>ran1</id>
+      <attributes>
+        <priorityLabel>1</priorityLabel>
+      </attributes>
+
+      <GNBDUFunction xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-gnbdufunction">
+        <id>du1</id>
+        <attributes>
+          <gNBId>411</gNBId>
+          <gNBIdLength>23</gNBIdLength>
+          <gNBDUId>3</gNBDUId>
+          <priorityLabel>1</priorityLabel>
+        </attributes>
+
+        <NRCellDU xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-nrcelldu">
+          <id>nrcelldu1</id>
+          <RRMPolicyRatio xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-rrmpolicy">
+            <id>rrm_policy1</id>
+            <attributes>
+              <resourceType>PRB</resourceType>
+              <rRMPolicyMemberList>
+                <mcc>001</mcc>
+                <mnc>01</mnc>
+                <sd>ff:ff:ff</sd>
+                <sst>1</sst>
+              </rRMPolicyMemberList>
+              <rRMPolicyMaxRatio>100</rRMPolicyMaxRatio>
+              <rRMPolicyMinRatio>0</rRMPolicyMinRatio>
+              <rRMPolicyDedicatedRatio>0</rRMPolicyDedicatedRatio>
+            </attributes>
+          </RRMPolicyRatio>
+          <attributes>
+            <priorityLabel>1</priorityLabel>
+            <cellLocalId>0</cellLocalId>
+            <administrativeState>UNLOCKED</administrativeState>
+            <pLMNInfoList>
+              <mcc>001</mcc>
+              <mnc>01</mnc>
+              <sd>ff:ff:ff</sd>
+              <sst>1</sst>
+            </pLMNInfoList>
+            <nPNIdentityList>
+              <idx>0</idx>
+              <plmnid>
+                <mcc>001</mcc>
+                <mnc>01</mnc>
+              </plmnid>
+              <cAGIdList>unused</cAGIdList>
+              <nIDList>unused</nIDList>
+            </nPNIdentityList>
+            <nRPCI>1</nRPCI>
+            <nRTAC>7</nRTAC>
+            <arfcnDL>637212</arfcnDL>
+            <arfcnUL>637212</arfcnUL>
+            <bSChannelBwDL>100</bSChannelBwDL>
+            <bSChannelBwUL>100</bSChannelBwUL>
+            <rimRSMonitoringStartTime>1970-01-01T00:00:00Z</rimRSMonitoringStartTime>
+            <rimRSMonitoringStopTime>1970-01-01T00:00:00Z</rimRSMonitoringStopTime>
+            <rimRSMonitoringWindowDuration>1</rimRSMonitoringWindowDuration>
+            <rimRSMonitoringWindowStartingOffset>0</rimRSMonitoringWindowStartingOffset>
+            <rimRSMonitoringWindowPeriodicity>24</rimRSMonitoringWindowPeriodicity>
+            <rimRSMonitoringOccasionInterval>1</rimRSMonitoringOccasionInterval>
+            <rimRSMonitoringOccasionStartingOffset>0</rimRSMonitoringOccasionStartingOffset>
+            <victimSetRef>RimRSSet=unused</victimSetRef>
+            <aggressorSetRef>RimRSSet=unused</aggressorSetRef>
+            <ssbFrequency>3000000</ssbFrequency>
+            <ssbPeriodicity>10</ssbPeriodicity>
+            <ssbSubCarrierSpacing>30</ssbSubCarrierSpacing>
+            <ssbOffset>0</ssbOffset>
+            <ssbDuration>1</ssbDuration>
+            <nRSectorCarrierRef>SCarr=not_used</nRSectorCarrierRef>
+            <ocudu_nrcelldu_extensions xmlns="urn:ocudu-nrcelldu-extension:1.0">
+              <ocudu_nrcelldu_base_extensions>
+                <nof_antennas_dl>4</nof_antennas_dl>
+                <nof_antennas_ul>2</nof_antennas_ul>
+                <common_scs>KHZ_30</common_scs>
+              </ocudu_nrcelldu_base_extensions>
+            </ocudu_nrcelldu_extensions>
+          </attributes>
+        </NRCellDU>
+
+        <!-- DU is the F1-C client: remoteAddress -> f1ap.addrs, localAddress -> f1ap.bind_addrs -->
+        <EP_F1C xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-ep">
+          <id>f1c1</id>
+          <attributes>
+            <localAddress>
+              <ipAddress>0.0.0.0</ipAddress>
+              <vlanId>100</vlanId>
+            </localAddress>
+            <remoteAddress>ocudu-cu-f1c.ocudu</remoteAddress>
+          </attributes>
+        </EP_F1C>
+
+        <!-- DU's own F1-U bind: localAddress -> f1u.socket[].bind_addr -->
+        <EP_F1U xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-ep">
+          <id>f1u1</id>
+          <attributes>
+            <localAddress>
+              <ipAddress>0.0.0.0</ipAddress>
+              <vlanId>101</vlanId>
+            </localAddress>
+          </attributes>
+        </EP_F1U>
+
+        <ocudu_gnbdufunction_extensions xmlns="urn:ocudu-gnbdufunction-extension:1.0">
+
+          <ocudu_log_extensions>
+            <filename>/var/log/srs/du.log</filename>
+            <all_level>warning</all_level>
+          </ocudu_log_extensions>
+
+          <ocudu_remote_control_extensions>
+            <enabled>true</enabled>
+            <bind_addr>0.0.0.0</bind_addr>
+          </ocudu_remote_control_extensions>
+
+          <ocudu_metrics_extensions>
+            <autostart_stdout_metrics>true</autostart_stdout_metrics>
+            <enable_json>false</enable_json>
+          </ocudu_metrics_extensions>
+
+          <ocudu_pcap_extensions>
+            <mac>
+              <enable>false</enable>
+              <filename>/var/log/srs/du_mac.pcap</filename>
+            </mac>
+            <f1ap>
+              <enable>false</enable>
+              <filename>/var/log/srs/du_f1ap.pcap</filename>
+            </f1ap>
+            <f1u>
+              <enable>false</enable>
+              <filename>/var/log/srs/du_f1u.pcap</filename>
+            </f1u>
+          </ocudu_pcap_extensions>
+
+        </ocudu_gnbdufunction_extensions>
+
+      </GNBDUFunction>
+    </ManagedElement>
