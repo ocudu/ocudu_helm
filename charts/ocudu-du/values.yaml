@@ -4,7 +4,9 @@
 # -- Container image configuration
 image:
   # -- Container image repository
-  repository: registry.gitlab.com/ocudu/ocudu/ocudu_nightly_avx512
+  # See https://gitlab.com/ocudu/ocudu/container_registry for available images
+  repository: registry.gitlab.com/ocudu/ocudu/images/du-dpdk
+  # repository: repository: registry.gitlab.com/ocudu/ocudu/images/du-uhd
   # -- Image pull policy
   pullPolicy: IfNotPresent
   # -- Image tag. Always quote in values files — tags like 20260529_abc123e1 are parsed as floats by YAML.
