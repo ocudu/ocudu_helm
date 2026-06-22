@@ -447,7 +447,7 @@ RESOURCE_EXTENDED="${RESOURCE_EXTENDED:-intel.com/intel_sriov_dpdk}"
 
 # Convert resource name to env var format: foo.bar/baz -> PCIDEVICE_FOO_BAR_BAZ
 if [ -n "${RESOURCE_EXTENDED}" ]; then
-    env_var_name="PCIDEVICE_$(echo "${RESOURCE_EXTENDED}" | tr '/.a-z' '___A-Z')"
+    env_var_name="PCIDEVICE_$(echo "${RESOURCE_EXTENDED}" | tr 'a-z' 'A-Z' | tr './' '__')"
     DEVICE_BDF="${!env_var_name:-}"
 fi
 
