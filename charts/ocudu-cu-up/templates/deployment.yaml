@@ -1,0 +1,124 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ocudu-cu-up.fullname" . }}
+  labels:
+    {{- include "ocudu-cu-up.labels" . | nindent 4 }}
+    {{- with .Values.extraLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "ocudu-cu-up.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "ocudu-cu-up.selectorLabels" . | nindent 8 }}
+        {{- with .Values.extraLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "ocudu-cu-up.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.network.hostNetwork }}
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
+      volumes:
+        - name: entrypoint-volume-ocudu-cu-up
+          configMap:
+            name: {{ include "ocudu-cu-up.entrypointConfigmapName" . }}
+            defaultMode: 0777
+        - name: config-volume
+          configMap:
+            name: {{ include "ocudu-cu-up.mainConfigmapName" . }}
+        {{- if .Values.persistence.enabled }}
+          {{- if eq .Values.persistence.type "pvc" }}
+        - name: ocudu-logs
+          persistentVolumeClaim:
+            claimName: {{ include "ocudu-cu-up.fullname" . }}-logs
+          {{- else if eq .Values.persistence.type "hostPath" }}
+        - name: ocudu-logs
+          hostPath:
+            path: {{ .Values.persistence.hostPath.path }}
+            type: {{ .Values.persistence.hostPath.type }}
+          {{- end }}
+        {{- else }}
+        - name: ocudu-logs
+          emptyDir: {}
+        {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          tty: true
+          stdin: true
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ template "ocudu-cu-up.image" .Values.image }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            exec:
+              command: ["pgrep", "ocu"]
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            exec:
+              command: ["pgrep", "ocu"]
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          {{- end }}
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: OCUDU_LOG_DIR
+              value: {{ .Values.persistence.mountPath | quote }}
+            - name: PRESERVE_OLD_LOGS
+              value: {{ .Values.persistence.preserveOldLogs | quote }}
+          command: [ "/usr/bin/tini", "--" ]
+          args: [ "/bin/bash", "-c", "/etc/entrypoint/entrypoint-ocudu-cu-up.sh /etc/config/cu-up-config.yml" ]
+          volumeMounts:
+            - name: entrypoint-volume-ocudu-cu-up
+              mountPath: /etc/entrypoint
+            - name: config-volume
+              mountPath: /etc/config/
+            - name: ocudu-logs
+              mountPath: {{ .Values.persistence.mountPath }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
