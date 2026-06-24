@@ -104,6 +104,38 @@ tolerations: {}
 # -- Pod affinity configuration
 affinity: {}
 
+# -- Metrics service configuration
+# Exposes CU-UP metrics endpoint for Telegraf collection
+metricsService:
+  # -- Enable metrics service
+  enabled: false
+  # -- Enable power consumption metrics via RAPL
+  # @default -- `false`
+  powercap:
+    enabled: false
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+  # -- LoadBalancer IP address (optional, when type is LoadBalancer)
+  # @default -- `""` (auto-assign)
+  loadBalancerIP: ""
+  # -- LoadBalancer class (optional, for clusters with multiple LB implementations)
+  # @default -- `""` (use default)
+  loadBalancerClass: ""
+  # -- External traffic policy (Cluster or Local)
+  # @default -- `Cluster`
+  externalTrafficPolicy: Cluster
+  # -- Session affinity (None or ClientIP)
+  # @default -- `None`
+  sessionAffinity: None
+  # -- NodePort (optional, only used when type is NodePort)
+  # @default -- `""` (auto-assign)
+  nodePort: ""
+  # -- Service port (must match the port in cu-up-config.yml)
+  port: 8001
+  # -- Target port (container port)
+  targetPort: 8001
+
 # -- Persistent storage configuration
 persistence:
   enabled: true
