@@ -66,14 +66,18 @@ readinessProbe:
   failureThreshold: 30
   successThreshold: 1
 
-# -- Pod-level security context
+# -- Pod-level security context. Runs the container as a non-root user by default.
+# @default -- see below
 podSecurityContext:
-  runAsNonRoot: false
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
 
 # -- Container-level security context
 securityContext:
-  privileged: true
   allowPrivilegeEscalation: true
+  privileged: false
   capabilities:
     drop: ["ALL"]
     add:
@@ -86,9 +90,10 @@ resources: {}
 # -- Network configuration
 network:
   # -- Enable host network mode
-  # true (default): Uses host network namespace directly
-  # false: Uses CNI network
-  hostNetwork: true
+  # false (default): Uses CNI network (NetworkPolicy supported)
+  # true: Uses host network namespace directly (NetworkPolicy NOT supported)
+  # @default -- `false`
+  hostNetwork: false
 
 # -- Node selector for pod assignment
 nodeSelector: {}
