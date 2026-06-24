@@ -75,7 +75,7 @@ securityContext:
   privileged: true
   allowPrivilegeEscalation: true
   capabilities:
-    drop: []
+    drop: ["ALL"]
     add:
       - SYS_NICE
       - IPC_LOCK
