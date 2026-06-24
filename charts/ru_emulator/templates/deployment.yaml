@@ -32,7 +32,7 @@ spec:
       {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      hostNetwork: {{ .Values.network.hostNetwork | default true }}
+      hostNetwork: {{ .Values.network.hostNetwork }}
       volumes:
         - name: config-volume
           configMap:

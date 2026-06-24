@@ -1,0 +1,17 @@
+{{- /*
+SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+*/ -}}
+OCUDU CU-CP deployed successfully.
+
+Release: {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+
+Pod:
+  kubectl get pod -l app.kubernetes.io/name={{ include "ocudu-cu-cp.name" . }} -n {{ .Release.Namespace }}
+
+Logs:
+  kubectl logs -l app.kubernetes.io/name={{ include "ocudu-cu-cp.name" . }} -n {{ .Release.Namespace }} -f
+
+Log files (hostPath):
+  {{ .Values.persistence.mountPath }}

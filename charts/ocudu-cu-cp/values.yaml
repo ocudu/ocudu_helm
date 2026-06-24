@@ -1,0 +1,145 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# -- Container image configuration
+image:
+  # -- Container image repository
+  repository: registry.gitlab.com/ocudu/ocudu/images/cu-cp
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+  # -- Image tag. Always quote in values files — tags like ubuntu-24.04-avx2-20260624_2b3cf68e are parsed as floats by YAML.
+  # @default -- Chart appVersion
+  tag: ""
+
+# -- Image pull secrets for private registries
+imagePullSecrets: []
+
+# -- Override the name of the chart
+nameOverride: ""
+
+# -- Override the full name of resources
+fullnameOverride: ""
+
+# -- ConfigMap name overrides
+configmap:
+  main: { nameOverride: "" }
+  entrypoint: { nameOverride: "" }
+
+# -- Service account configuration
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# -- RBAC configuration
+rbac:
+  create: true
+  extraRules: []
+
+# -- Pod Disruption Budget configuration
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 0
+  unhealthyPodEvictionPolicy: AlwaysAllow
+
+# -- Additional pod annotations
+podAnnotations: {}
+
+# -- Extra labels applied to the Deployment and Pod template
+extraLabels: {}
+
+# -- CU-CP liveness probe configuration
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 90
+  periodSeconds: 30
+  timeoutSeconds: 1
+  failureThreshold: 3
+  successThreshold: 1
+
+# -- CU-CP readiness probe configuration
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 15
+  periodSeconds: 5
+  timeoutSeconds: 1
+  failureThreshold: 30
+  successThreshold: 1
+
+# -- Pod-level security context
+podSecurityContext:
+  runAsNonRoot: false
+
+# -- Container-level security context
+securityContext:
+  privileged: true
+  allowPrivilegeEscalation: true
+  capabilities:
+    drop: []
+    add:
+      - SYS_NICE
+      - IPC_LOCK
+
+# -- Resource requests and limits
+resources: {}
+
+# -- Network configuration
+network:
+  # -- Enable host network mode
+  # true (default): Uses host network namespace directly
+  # false: Uses CNI network
+  hostNetwork: true
+
+# -- Node selector for pod assignment
+nodeSelector: {}
+
+# -- Tolerations for pod assignment
+tolerations: {}
+
+# -- Pod affinity configuration
+affinity: {}
+
+# -- Persistent storage configuration
+persistence:
+  enabled: true
+  # -- Storage type: "pvc" or "hostPath"
+  type: hostPath
+  pvc:
+    storageClassName: ""
+    accessMode: ReadWriteOnce
+    size: 10Gi
+  hostPath:
+    path: "/mnt/debugging-logs"
+    type: DirectoryOrCreate
+  mountPath: "/var/log/ocudu"
+  preserveOldLogs: false
+
+# -- CU-CP configuration file
+config:
+  cu-cp-config.yml: |-
+    cu_cp:
+      amf:
+        addrs: 127.0.1.100
+        bind_addrs: 127.0.0.1
+        supported_tracking_areas:
+          - tac: 7
+            plmn_list:
+              - plmn: "00101"
+                tai_slice_support_list:
+                  - sst: 1
+      e1ap:
+        bind_addrs: 127.0.20.1
+      f1ap:
+        bind_addrs: 127.0.10.1
+
+    log:
+      filename: /var/log/ocudu/cu_cp.log
+      all_level: warning
+
+    pcap:
+      ngap_enable: false
+      ngap_filename: /var/log/ocudu/cu_cp_ngap.pcap
+      f1ap_enable: false
+      f1ap_filename: /var/log/ocudu/cu_cp_f1ap.pcap
+      e1ap_enable: false
+      e1ap_filename: /var/log/ocudu/cu_cp_e1ap.pcap
