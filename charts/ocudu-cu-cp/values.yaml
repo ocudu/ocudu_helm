@@ -136,6 +136,51 @@ metricsService:
   # -- Target port (container port)
   targetPort: 8001
 
+# -- N2 service configuration (NGAP toward AMF, SCTP port 38412)
+n2Service:
+  # -- Enable N2 service
+  enabled: true
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+  loadBalancerIP: ""
+  loadBalancerClass: ""
+  externalTrafficPolicy: Cluster
+  sessionAffinity: None
+  nodePort: ""
+  # -- Service port
+  port: 38412
+
+# -- E1 service configuration (E1AP toward CU-UP, SCTP port 38462)
+e1Service:
+  # -- Enable E1 service
+  enabled: false
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+  loadBalancerIP: ""
+  loadBalancerClass: ""
+  externalTrafficPolicy: Cluster
+  sessionAffinity: None
+  nodePort: ""
+  # -- Service port
+  port: 38462
+
+# -- F1-C service configuration (F1AP toward DU, SCTP port 38472)
+f1cService:
+  # -- Enable F1-C service
+  enabled: true
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+  loadBalancerIP: ""
+  loadBalancerClass: ""
+  externalTrafficPolicy: Cluster
+  sessionAffinity: None
+  nodePort: ""
+  # -- Service port
+  port: 38472
+
 # -- Persistent storage configuration
 persistence:
   enabled: true

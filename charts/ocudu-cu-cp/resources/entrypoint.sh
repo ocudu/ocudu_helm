@@ -133,6 +133,46 @@ update_config_paths() {
     return 0
 }
 
+# Inject POD_IP into cu_cp.amf.bind_addr when HOSTNETWORK=false.
+inject_ip_overrides() {
+    local config_file="$1"
+
+    if [ "${HOSTNETWORK}" = "true" ]; then
+        log_info "HOSTNETWORK=true, skipping IP override injection"
+        return 0
+    fi
+
+    if [ -z "$POD_IP" ]; then
+        log_error "POD_IP not set, cannot inject IP overrides"
+        return 1
+    fi
+
+    log_info "Injecting IP overrides (POD_IP=${POD_IP})"
+
+    local tmpfile
+    tmpfile=$(mktemp) || {
+        log_error "Failed to create temporary file for IP injection"
+        return 1
+    }
+
+    {
+        echo "cu_cp:"
+        echo "  amf:"
+        echo "    bind_addr: ${POD_IP}"
+    } > "$tmpfile"
+
+    cat "$config_file" >> "$tmpfile"
+
+    if ! mv "$tmpfile" "$config_file"; then
+        log_error "Failed to inject IP overrides into config"
+        rm -f "$tmpfile"
+        return 1
+    fi
+
+    log_info "Successfully injected IP overrides"
+    return 0
+}
+
 #==============================================================================
 # Signal Handling
 #==============================================================================
@@ -157,6 +197,8 @@ process_and_run_cu_cp() {
 
     cp "$config_file" "$updated_config" || log_fatal "Failed to copy config"
 
+    inject_ip_overrides "$updated_config" || log_fatal "IP override injection failed"
+
     if [ "$PRESERVE_OLD_LOGS" = "true" ]; then
         update_config_paths "$updated_config" || log_fatal "Log path setup failed"
     fi
@@ -177,6 +219,7 @@ main() {
 
     log_info "=== OCUDU CU-CP Entrypoint ==="
     log_info "Config: $config_file"
+    log_info "HOSTNETWORK: ${HOSTNETWORK}"
     log_info "OCUDU_LOG_DIR: ${OCUDU_LOG_DIR}"
     log_info "PRESERVE_OLD_LOGS: ${PRESERVE_OLD_LOGS}"
 
@@ -203,5 +246,6 @@ main() {
 
 PRESERVE_OLD_LOGS="${PRESERVE_OLD_LOGS:-false}"
 OCUDU_LOG_DIR="${OCUDU_LOG_DIR:-/var/log/ocudu}"
+HOSTNETWORK="${HOSTNETWORK:-false}"
 
 main "$@"

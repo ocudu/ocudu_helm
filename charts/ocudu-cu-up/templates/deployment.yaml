@@ -99,6 +99,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: HOSTNETWORK
+              value: '{{ .Values.network.hostNetwork }}'
             - name: OCUDU_LOG_DIR
               value: {{ .Values.persistence.mountPath | quote }}
             - name: PRESERVE_OLD_LOGS

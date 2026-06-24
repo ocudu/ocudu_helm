@@ -136,6 +136,55 @@ metricsService:
   # -- Target port (container port)
   targetPort: 8001
 
+# -- E1 service configuration (E1AP toward CU-CP, SCTP port 38462)
+e1Service:
+  # -- Enable E1 service
+  enabled: false
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+  loadBalancerIP: ""
+  loadBalancerClass: ""
+  externalTrafficPolicy: Cluster
+  sessionAffinity: None
+  nodePort: ""
+  # -- Service port
+  port: 38462
+
+# -- N3 service configuration (GTP-U toward UPF, UDP port 2152)
+n3Service:
+  # -- Enable N3 service
+  enabled: true
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+  loadBalancerIP: ""
+  loadBalancerClass: ""
+  externalTrafficPolicy: Cluster
+  sessionAffinity: None
+  nodePort: ""
+  # -- Service port
+  port: 2152
+
+# -- F1-U service configuration (GTP-U toward DU, UDP port 2152 external → 2151 container)
+# Only rendered when network.hostNetwork is false (port clash avoidance).
+# Must match cu_up.f1u.bind_port in the config.
+f1uService:
+  # -- Enable F1-U service (only rendered when network.hostNetwork is false)
+  enabled: true
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+  loadBalancerIP: ""
+  loadBalancerClass: ""
+  externalTrafficPolicy: Cluster
+  sessionAffinity: None
+  nodePort: ""
+  # -- External service port
+  port: 2152
+  # -- Container target port (offset to avoid clash with NGU on the same IP)
+  targetPort: 2151
+
 # -- Persistent storage configuration
 persistence:
   enabled: true
@@ -162,6 +211,7 @@ config:
         socket:
           - bind_addr: 127.0.0.1
       f1u:
+        bind_port: 2151
         socket:
           - bind_addr: 127.0.10.1
 

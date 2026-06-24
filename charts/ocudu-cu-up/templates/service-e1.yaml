@@ -1,0 +1,39 @@
+{{- if .Values.e1Service.enabled }}
+
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ocudu-cu-up.fullname" . }}-e1
+  labels:
+    {{- include "ocudu-cu-up.labels" . | nindent 4 }}
+    app.kubernetes.io/component: e1
+spec:
+  type: {{ .Values.e1Service.type | default "ClusterIP" }}
+  {{- if eq (.Values.e1Service.type | default "ClusterIP") "LoadBalancer" }}
+  {{- if .Values.e1Service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.e1Service.loadBalancerIP }}
+  {{- end }}
+  {{- if .Values.e1Service.loadBalancerClass }}
+  loadBalancerClass: {{ .Values.e1Service.loadBalancerClass }}
+  {{- end }}
+  {{- with .Values.e1Service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ . }}
+  {{- end }}
+  {{- end }}
+  {{- with .Values.e1Service.sessionAffinity }}
+  sessionAffinity: {{ . }}
+  {{- end }}
+  ports:
+    - name: e1
+      port: {{ .Values.e1Service.port }}
+      targetPort: {{ .Values.e1Service.port }}
+      protocol: SCTP
+      {{- if .Values.e1Service.nodePort }}
+      nodePort: {{ .Values.e1Service.nodePort }}
+      {{- end }}
+  selector:
+    {{- include "ocudu-cu-up.selectorLabels" . | nindent 4 }}
+{{- end }}
