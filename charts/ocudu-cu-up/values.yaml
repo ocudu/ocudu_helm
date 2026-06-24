@@ -185,6 +185,90 @@ f1uService:
   # -- Container target port (offset to avoid clash with NGU on the same IP)
   targetPort: 2151
 
+# -- NetworkPolicy configuration
+# Restricts network traffic to/from the CU-UP pod for enhanced security.
+# IMPORTANT: NetworkPolicy only works when network.hostNetwork is false.
+networkPolicy:
+  # -- Enable NetworkPolicy (only effective when network.hostNetwork is false)
+  # @default -- `false`
+  enabled: false
+
+  ingress:
+    # -- Allow ingress from CU-CP (E1AP)
+    cuCp:
+      enabled: true
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ocudu-cu-cp
+        - ipBlock:
+            cidr: 10.0.0.0/8
+    # -- Allow ingress from 5G core (N3/GTP-U)
+    fiveGCore:
+      enabled: true
+      from:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+    # -- Allow ingress from DU (F1-U/GTP-U)
+    du:
+      enabled: true
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ocudu-du
+        - ipBlock:
+            cidr: 10.0.0.0/8
+    # -- Allow ingress from monitoring systems
+    monitoring:
+      enabled: true
+      from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+        - podSelector:
+            matchLabels:
+              app: telegraf
+    # -- Custom ingress rules
+    custom: []
+
+  egress:
+    # -- Allow egress to CU-CP (E1AP)
+    cuCp:
+      enabled: true
+      to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ocudu-cu-cp
+        - ipBlock:
+            cidr: 10.0.0.0/8
+    # -- Allow egress to 5G core (N3/GTP-U)
+    fiveGCore:
+      enabled: true
+      to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+    # -- Allow egress to DU (F1-U/GTP-U)
+    du:
+      enabled: true
+      to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ocudu-du
+        - ipBlock:
+            cidr: 10.0.0.0/8
+    # -- Allow egress to monitoring systems
+    monitoring:
+      enabled: true
+      to:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+        - podSelector:
+            matchLabels:
+              app: influxdb
+    # -- Custom egress rules
+    custom: []
+
 # -- Persistent storage configuration
 persistence:
   enabled: true
