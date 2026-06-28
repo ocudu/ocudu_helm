@@ -77,6 +77,8 @@ spec:
         - name: ocudu-logs
           emptyDir: {}
         {{- end }}
+        - name: ocudu-work
+          emptyDir: {}
           {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-1Gi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-1Gi")) }}
         - name: hugepage-1gi
           emptyDir:
@@ -159,6 +161,8 @@ spec:
           {{- end }}
             - name: OCUDU_LOG_DIR
               value: {{ .Values.persistence.mountPath | quote }}
+            - name: OCUDU_WORK_DIR
+              value: /run/ocudu
           {{- if .Values.persistence.enabled }}
             - name: PRESERVE_OLD_LOGS
               value: {{ .Values.persistence.preserveOldLogs | quote }}
@@ -179,6 +183,8 @@ spec:
             {{- end }}
             - name: ocudu-logs
               mountPath: {{ .Values.persistence.mountPath }}
+            - name: ocudu-work
+              mountPath: /run/ocudu
             {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-1Gi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-1Gi")) }}
             - name: hugepage-1gi
               mountPath: /hugepages-1Gi

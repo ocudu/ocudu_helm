@@ -497,7 +497,7 @@ terminate() {
 # Process config and run gNB
 process_and_run_gnb() {
     local config_file="$1"
-    local updated_config="${OCUDU_LOG_DIR}/gnb-config.yml"
+    local updated_config="${OCUDU_WORK_DIR:-${OCUDU_LOG_DIR}}/gnb-config.yml"
 
     # Copy config to working location
     if ! cp "$config_file" "$updated_config"; then
@@ -515,7 +515,7 @@ process_and_run_gnb() {
 
     log_info "Configuration processing complete: $updated_config"
 
-    cp "$updated_config" "${OCUDU_LOG_DIR}/gnb-config-rendered.yaml"
+    cp "$updated_config" "${OCUDU_WORK_DIR:-${OCUDU_LOG_DIR}}/gnb-config-rendered.yaml"
 
     log_info "Starting gNB"
     exec stdbuf -oL gnb -c "$updated_config"
