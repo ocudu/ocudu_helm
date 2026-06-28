@@ -95,6 +95,13 @@ podAnnotations: {}
 # @default -- `{}` (no extra labels)
 extraLabels: {}
 
+# -- Deployment update strategy
+# OCUDU gNB is stateful and normally should not run overlapping old/new pods.
+# Use RollingUpdate only when the runtime/config/storage behavior has been validated
+# for overlapping pods.
+deploymentStrategy:
+  type: Recreate
+
 # -- Pod-level security context
 # -- Pod-level security context. Runs the container as a non-root user by default.
 # @default -- see below
