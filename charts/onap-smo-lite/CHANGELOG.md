@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.2.1 (2026-06-29)
+- Updated image tag of `sdncWeb` image
+
 ## 1.2.0 (2026-06-01)
 
 ### Changed
