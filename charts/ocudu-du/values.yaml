@@ -50,6 +50,13 @@ podAnnotations: {}
 # -- Extra labels applied to the Deployment and Pod template
 extraLabels: {}
 
+# -- Deployment update strategy
+# OCUDU DU is stateful and normally should not run overlapping old/new pods.
+# Use RollingUpdate only when the runtime/config/storage behavior has been validated
+# for overlapping pods.
+deploymentStrategy:
+  type: Recreate
+
 # -- DU liveness probe configuration.
 livenessProbe:
   enabled: true
