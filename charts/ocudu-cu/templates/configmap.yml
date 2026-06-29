@@ -1,12 +1,21 @@
 # SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
 # SPDX-License-Identifier: BSD-3-Clause-Open-MPI
 
+{{- if (.Values.o1).enable_ocudu_o1 }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ocudu-cu.o1ConfigmapName" . }}
+data:
+  {{- .Values.o1Config | toYaml | nindent 2 }}
+{{- else }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ include "ocudu-cu.mainConfigmapName" . }}
 data:
   {{- .Values.config | toYaml | nindent 2 }}
+{{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap

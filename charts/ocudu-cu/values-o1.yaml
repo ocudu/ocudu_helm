@@ -1,0 +1,504 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# -- Container image configuration
+image:
+  # -- Container image repository
+  # See https://gitlab.com/ocudu/ocudu/container_registry for available images
+  repository: registry.gitlab.com/ocudu/ocudu/images/cu
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+  # -- Image tag. Always quote in values files — tags like 20260529_abc123e1 are parsed as floats by YAML.
+  # @default -- Chart appVersion
+  tag: ""
+
+# -- Image pull secrets for private registries
+imagePullSecrets: []
+
+# -- Override the name of the chart
+nameOverride: ""
+
+# -- Override the full name of resources
+fullnameOverride: ""
+
+# -- ConfigMap name overrides
+configmap:
+  main: { nameOverride: "" }
+  # -- O1 adapter configuration ConfigMap name override
+  o1: { nameOverride: "" }
+  # -- Entrypoint script ConfigMap name override
+  entrypoint: { nameOverride: "" }
+
+# -- Service account configuration
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# -- RBAC configuration
+rbac:
+  create: true
+  extraRules: []
+
+# -- Pod Disruption Budget configuration
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 0
+  unhealthyPodEvictionPolicy: AlwaysAllow
+
+# -- Additional pod annotations
+podAnnotations: {}
+
+# -- Extra labels applied to the Deployment and Pod template
+extraLabels: {}
+
+# -- DU liveness probe configuration.
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 90
+  periodSeconds: 30
+  timeoutSeconds: 1
+  failureThreshold: 3
+  successThreshold: 1
+
+# -- DU readiness probe configuration.
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 15
+  periodSeconds: 5
+  timeoutSeconds: 1
+  failureThreshold: 30
+  successThreshold: 1
+
+# -- Pod-level security context. Runs the container as a non-root user by default.
+# @default -- see below
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+# -- Container-level security context.
+securityContext:
+  allowPrivilegeEscalation: true
+  privileged: false
+  capabilities:
+    drop: ["ALL"]
+    add:
+      - SYS_NICE
+      - IPC_LOCK
+      - PERFMON
+
+# -- Resource requests and limits
+resources: {}
+
+# -- Network configuration
+network:
+  # -- Enable host network mode
+  # false (default): Uses CNI network (NetworkPolicy supported)
+  # true: Uses host network namespace directly (NetworkPolicy NOT supported)
+  # @default -- `false`
+  hostNetwork: false
+
+# -- Node selector for pod assignment
+nodeSelector: {}
+
+# -- Tolerations for pod assignment
+tolerations: {}
+
+# -- Pod affinity configuration
+affinity: {}
+
+# -- Metrics service configuration
+# Exposes CU metrics endpoint for Telegraf collection
+metricsService:
+  # -- Enable metrics service
+  enabled: false
+  # -- Enable power consumption metrics via RAPL
+  # When true, adds CAP_PERFMON to the container to allow perf_event_open() RAPL reads.
+  # The binary tries three methods in order:
+  #   1. sysfs powercap (/sys/class/powercap) — works if the host exposes it in the container
+  #   2. perf_event_open() — requires CAP_PERFMON and kernel >= 5.8 (no host mounts needed)
+  #   3. MSR (/dev/cpu/0/msr) — requires CAP_SYS_RAWIO (not added by this chart)
+  # If none succeed, energy metrics are silently unavailable (no crash).
+  # @default -- `false`
+  powercap:
+    enabled: false
+
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+
+  # -- LoadBalancer IP address (optional, when type is LoadBalancer)
+  # @default -- `""` (auto-assign)
+  loadBalancerIP: ""
+
+  # -- LoadBalancer class (optional, for clusters with multiple LB implementations)
+  # @default -- `""` (use default)
+  loadBalancerClass: ""
+
+  # -- External traffic policy (Cluster or Local)
+  # @default -- `Cluster`
+  externalTrafficPolicy: Cluster
+
+  # -- Session affinity (None or ClientIP)
+  # @default -- `None`
+  sessionAffinity: None
+
+  # -- NodePort (optional, only used when type is NodePort)
+  # @default -- `""` (auto-assign)
+  nodePort: ""
+
+  # -- Service port (must match the port in cu-config.yml)
+  port: 8001
+
+  # -- Target port (container port)
+  targetPort: 8001
+
+# -- Service for N2 interface (NGAP - SCTP:38412 to AMF)
+n2Service:
+  # -- Enable N2 service
+  enabled: true
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+  # -- LoadBalancer IP address (optional)
+  loadBalancerIP: ""
+  # -- LoadBalancer class (optional)
+  loadBalancerClass: ""
+  # -- External traffic policy (Cluster or Local)
+  externalTrafficPolicy: Cluster
+  # -- Session affinity (None or ClientIP)
+  sessionAffinity: None
+  # -- Service port
+  port: 38412
+  # -- NodePort (optional, only used when type is NodePort)
+  nodePort: ""
+
+# -- Service for N3 interface (NGU/GTP-U - UDP:2152 to UPF)
+n3Service:
+  # -- Enable N3 service
+  enabled: true
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+  # -- LoadBalancer IP address (optional)
+  loadBalancerIP: ""
+  # -- LoadBalancer class (optional)
+  loadBalancerClass: ""
+  # -- External traffic policy (Cluster or Local)
+  externalTrafficPolicy: Cluster
+  # -- Session affinity (None or ClientIP)
+  sessionAffinity: None
+  # -- Service port
+  port: 2152
+  # -- NodePort (optional, only used when type is NodePort)
+  nodePort: ""
+
+# -- Service for F1-C interface (F1AP - SCTP:38472 to DU)
+f1cService:
+  # -- Enable F1-C service
+  enabled: true
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+  # -- LoadBalancer IP address (optional)
+  loadBalancerIP: ""
+  # -- LoadBalancer class (optional)
+  loadBalancerClass: ""
+  # -- External traffic policy (Cluster or Local)
+  externalTrafficPolicy: Cluster
+  # -- Session affinity (None or ClientIP)
+  sessionAffinity: None
+  # -- Service port
+  port: 38472
+  # -- NodePort (optional, only used when type is NodePort)
+  nodePort: ""
+
+# -- Service for F1-U interface (GTP-U - UDP:2152→2151 to DU, hostNetwork=false only)
+# Maps external UDP:2152 to pod UDP:2151 so F1-U and NGU can coexist on the same pod IP.
+# Must match cu_up.f1u.bind_port in the config.
+f1uService:
+  # -- Enable F1-U service (only rendered when network.hostNetwork is false)
+  enabled: true
+  # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+  # @default -- `ClusterIP`
+  type: ClusterIP
+  # -- LoadBalancer IP address (optional)
+  loadBalancerIP: ""
+  # -- LoadBalancer class (optional)
+  loadBalancerClass: ""
+  # -- External traffic policy (Cluster or Local)
+  externalTrafficPolicy: Cluster
+  # -- Session affinity (None or ClientIP)
+  sessionAffinity: None
+  # -- External port (what the DU connects to)
+  port: 2152
+  # -- Container target port (must match cu_up.f1u.bind_port in the config)
+  targetPort: 2151
+  # -- NodePort (optional, only used when type is NodePort)
+  nodePort: ""
+
+# -- NetworkPolicy configuration
+# Restricts network traffic to/from the CU pod for enhanced security
+# IMPORTANT: NetworkPolicy only works when network.hostNetwork is false
+networkPolicy:
+  # -- Enable NetworkPolicy
+  # Only effective when network.hostNetwork is false
+  # @default -- `false`
+  enabled: false
+
+  # -- Ingress rules (incoming traffic to CU)
+  ingress:
+    # -- Allow traffic from 5G core (N2/N3 interfaces)
+    fiveGCore:
+      # -- Enable 5G core ingress
+      # @default -- `true`
+      enabled: true
+      # -- Source selectors for 5G core traffic
+      from:
+        - ipBlock:
+            cidr: 10.0.0.0/8  # Adjust for your network CIDR
+
+    # -- Allow traffic from DU (F1-C/F1-U interfaces)
+    du:
+      # -- Enable DU ingress
+      # @default -- `true`
+      enabled: true
+      # -- Source selectors for DU traffic
+      from:
+        - podSelector:
+            matchLabels:
+              app: ocudu-du
+        - ipBlock:
+            cidr: 10.0.0.0/8  # Adjust for your network CIDR
+
+    # -- Allow traffic from monitoring systems
+    monitoring:
+      # -- Enable monitoring ingress
+      # @default -- `true`
+      enabled: true
+      # -- Source selectors for monitoring traffic
+      from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+        - podSelector:
+            matchLabels:
+              app: telegraf
+
+    # -- Custom ingress rules
+    # @default -- `[]`
+    custom: []
+
+  # -- Egress rules (outgoing traffic from CU)
+  egress:
+    # -- Allow traffic to 5G core (N2/N3)
+    fiveGCore:
+      # -- Enable 5G core egress
+      # @default -- `true`
+      enabled: true
+      # -- Destination selectors for 5G core traffic
+      to:
+        - ipBlock:
+            cidr: 10.0.0.0/8  # Adjust for your network CIDR
+
+    # -- Allow traffic to DU (F1-C/F1-U)
+    du:
+      # -- Enable DU egress
+      # @default -- `true`
+      enabled: true
+      # -- Destination selectors for DU traffic
+      to:
+        - podSelector:
+            matchLabels:
+              app: ocudu-du
+        - ipBlock:
+            cidr: 10.0.0.0/8  # Adjust for your network CIDR
+
+    # -- Allow traffic to monitoring systems
+    monitoring:
+      # -- Enable monitoring egress
+      # @default -- `true`
+      enabled: true
+      # -- Destination selectors for monitoring traffic
+      to:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+        - podSelector:
+            matchLabels:
+              app: influxdb
+
+    # -- Custom egress rules
+    # @default -- `[]`
+    custom: []
+
+# -- Persistent storage configuration
+persistence:
+  enabled: false
+  # -- Storage type: "pvc" or "hostPath"
+  type: hostPath
+  pvc:
+    storageClassName: ""
+    accessMode: ReadWriteOnce
+    size: 10Gi
+  hostPath:
+    path: "/mnt/debugging-logs"
+    type: DirectoryOrCreate
+  mountPath: "/var/log/ocudu"
+  preserveOldLogs: false
+
+o1:
+  enable_ocudu_o1: true
+  netconfServerAddr: "localhost"
+  o1Port: 830
+  healthcheckPort: 5000
+  oamIpv4Address: "onap-smo-ves-collector.onap.svc"
+  log_level: "DEBUG"  # available log levels: CRITICAL, FATAL, ERROR, WARN, WARNING, INFO, DEBUG, NOTSET
+  ws:
+    host: "localhost"
+    port: 8001
+  ves:
+    host: "onap-smo-ves-collector.onap.svc"
+    port: 8443
+    username: "sample1"
+    password: "sample1"
+    scheme: "https"
+  o1Adapter:
+    image:
+      repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_o1_adapter/o1_adapter_nightly_amd64
+      pullPolicy: IfNotPresent
+      tag: "20260629_13315ae4"
+    resources: {}
+    securityContext: {}
+  netconfServer:
+    service:
+      # -- Service type (ClusterIP, NodePort, or LoadBalancer)
+      type: NodePort
+      # -- NodePort (when type is NodePort)
+      nodePort: 30830
+      # -- LoadBalancer IP address (optional, when type is LoadBalancer)
+      # loadBalancerIP: ""
+      # -- LoadBalancer class (optional, for clusters with multiple LB implementations)
+      # loadBalancerClass: ""
+      # -- External traffic policy (Cluster or Local)
+      # externalTrafficPolicy: Cluster
+      # -- Session affinity (None or ClientIP)
+      # sessionAffinity: None
+    image:
+      repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_netconf/netconf_nightly_amd64
+      pullPolicy: IfNotPresent
+      tag: "20260629_3b51a35c"
+    tls:
+      # -- Enable NETCONF-over-TLS endpoint on port 6513 (alongside the default SSH endpoint on o1Port)
+      enabled: false
+      # -- Name of a Secret containing ca.crt, server.crt, server.key
+      # If empty, the container auto-generates self-signed certs at startup (dev/test only)
+      # Create with: kubectl create secret generic <name> --from-file=ca.crt=./ca.crt --from-file=server.crt=./server.crt --from-file=server.key=./server.key
+      certSecret: ""
+    resources: {}
+    securityContext: {}
+
+o1Config:
+  o1-config.xml: |-
+    <ManagedElement xmlns="urn:3gpp:sa5:_3gpp-common-managed-element">
+      <id>ran1</id>
+      <attributes>
+        <priorityLabel>1</priorityLabel>
+      </attributes>
+
+      <GNBCUCPFunction xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-gnbcucpfunction">
+        <id>cucp1</id>
+        <attributes>
+          <gNBId>1</gNBId>
+          <gNBIdLength>24</gNBIdLength>
+          <gNBCUName>ocuducu1</gNBCUName>
+          <pLMNId>
+            <mcc>001</mcc>
+            <mnc>01</mnc>
+          </pLMNId>
+          <priorityLabel>1</priorityLabel>
+          <qceIdMappingInfoList>
+            <idx>0</idx>
+            <qoECollectionEntityAddress>0.0.0.0</qoECollectionEntityAddress>
+            <qoECollectionEntityIdentity>unused</qoECollectionEntityIdentity>
+            <pLMNTarget>
+              <mcc>001</mcc>
+              <mnc>01</mnc>
+            </pLMNTarget>
+          </qceIdMappingInfoList>
+        </attributes>
+
+        <EP_NgC xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-ep">
+          <id>ngc1</id>
+          <attributes>
+            <localAddress>
+              <ipAddress>127.0.0.1</ipAddress>
+              <vlanId>0</vlanId>
+            </localAddress>
+            <remoteAddress>127.0.1.100</remoteAddress>
+          </attributes>
+        </EP_NgC>
+
+        <EP_F1C xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-ep">
+          <id>f1c1</id>
+          <attributes>
+            <localAddress>
+              <ipAddress>127.0.10.1</ipAddress>
+              <vlanId>0</vlanId>
+            </localAddress>
+          </attributes>
+        </EP_F1C>
+
+        <ocudu_gnbcucpfunction_extensions xmlns="urn:ocudu-gnbcucpfunction-extension:1.0">
+          <ocudu_log_extensions>
+            <filename>/var/log/srs/cu.log</filename>
+            <all_level>warning</all_level>
+          </ocudu_log_extensions>
+          <ocudu_metrics_extensions>
+            <enable_json>false</enable_json>
+            <enable_log>false</enable_log>
+          </ocudu_metrics_extensions>
+          <ocudu_pcap_extensions>
+            <ngap>
+              <enable>false</enable>
+              <filename>/var/log/srs/cu_ngap.pcap</filename>
+            </ngap>
+          </ocudu_pcap_extensions>
+        </ocudu_gnbcucpfunction_extensions>
+      </GNBCUCPFunction>
+
+      <GNBCUUPFunction xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-gnbcuupfunction">
+        <id>cuup1</id>
+        <attributes>
+          <priorityLabel>1</priorityLabel>
+          <gNBCUUPId>1</gNBCUUPId>
+          <gNBId>1</gNBId>
+          <gNBIdLength>24</gNBIdLength>
+          <pLMNInfoList>
+            <mcc>001</mcc>
+            <mnc>01</mnc>
+            <sd>ff:ff:ff</sd>
+            <sst>1</sst>
+          </pLMNInfoList>
+        </attributes>
+
+        <EP_F1U xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-ep">
+          <id>f1u1</id>
+          <attributes>
+            <localAddress>
+              <ipAddress>127.0.10.1</ipAddress>
+              <vlanId>0</vlanId>
+            </localAddress>
+          </attributes>
+        </EP_F1U>
+
+        <ocudu_gnbcuupfunction_extensions xmlns="urn:ocudu-gnbcuupfunction-extension:1.0">
+          <ocudu_metrics_extensions>
+            <enable_json>false</enable_json>
+            <enable_log>false</enable_log>
+          </ocudu_metrics_extensions>
+        </ocudu_gnbcuupfunction_extensions>
+      </GNBCUUPFunction>
+    </ManagedElement>

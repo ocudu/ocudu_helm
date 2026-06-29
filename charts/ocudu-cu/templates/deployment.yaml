@@ -38,9 +38,27 @@ spec:
           configMap:
             name: {{ include "ocudu-cu.entrypointConfigmapName" . }}
             defaultMode: 0777
+        {{- if (.Values.o1).enable_ocudu_o1 }}
+        - name: o1-cu-config
+          emptyDir:
+            sizeLimit: 2Mi
+        - name: netconf-running-config-volume
+          emptyDir:
+            sizeLimit: 2Mi
+        - name: o1-config-volume
+          configMap:
+            name: {{ include "ocudu-cu.o1ConfigmapName" . }}
+            defaultMode: 0777
+        {{- if and (.Values.o1).netconfServer.tls.enabled (.Values.o1).netconfServer.tls.certSecret }}
+        - name: netconf-tls-certs
+          secret:
+            secretName: {{ (.Values.o1).netconfServer.tls.certSecret }}
+        {{- end }}
+        {{- else }}
         - name: config-volume
           configMap:
             name: {{ include "ocudu-cu.mainConfigmapName" . }}
+        {{- end }}
         {{- if .Values.persistence.enabled }}
           {{- if eq .Values.persistence.type "pvc" }}
         - name: ocudu-logs
@@ -61,14 +79,31 @@ spec:
           tty: true
           stdin: true
           securityContext:
+            {{- if and .Values.metricsService.enabled .Values.metricsService.powercap.enabled }}
+            {{- $ctx := deepCopy .Values.securityContext }}
+            {{- $_ := set $ctx.capabilities "add" (append $ctx.capabilities.add "PERFMON") }}
+            {{- toYaml $ctx | nindent 12 }}
+            {{- else }}
             {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- end }}
           image: "{{ template "ocudu-cu.image" .Values.image }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- if .Values.livenessProbe.enabled }}
+          {{- if and (.Values.o1).enable_ocudu_o1 .Values.livenessProbe.enabled }}
+          # O1 mode: liveness is tied to the O1 adapter's /config-healthy endpoint.
+          livenessProbe:
+            httpGet:
+              path: /config-healthy
+              port: {{ (.Values.o1).healthcheckPort }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          {{- else if and (not (.Values.o1).enable_ocudu_o1) .Values.livenessProbe.enabled }}
           livenessProbe:
             exec:
               command: ["pgrep", "ocu"]
@@ -99,15 +134,129 @@ spec:
               value: {{ .Values.persistence.mountPath | quote }}
             - name: PRESERVE_OLD_LOGS
               value: {{ .Values.persistence.preserveOldLogs | quote }}
+            - name: ENABLE_OCUDU_O1
+              value: '{{ default false (.Values.o1).enable_ocudu_o1 }}'
           command: [ "/usr/bin/tini", "--" ]
           args: [ "/bin/bash", "-c", "/etc/entrypoint/entrypoint-ocudu-cu.sh /etc/config/cu-config.yml" ]
           volumeMounts:
             - name: entrypoint-volume-ocudu-cu
               mountPath: /etc/entrypoint
+            {{- if (.Values.o1).enable_ocudu_o1 }}
+            - name: o1-cu-config
+              mountPath: /etc/config/
+            {{- else }}
             - name: config-volume
               mountPath: /etc/config/
+            {{- end }}
             - name: ocudu-logs
               mountPath: {{ .Values.persistence.mountPath }}
+          {{- if (.Values.o1).enable_ocudu_o1 }}
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/bash
+                  - -c
+                  - |
+                    timeout=30
+                    elapsed=0
+                    while [ $elapsed -lt $timeout ]; do
+                      response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:{{ (.Values.o1).healthcheckPort }}/config-healthy)
+                      echo "Health check response: $response"
+                      if [[ "$response" =~ 200 || "$response" =~ 400 ]]; then
+                        echo "API server is healthy."
+                        curl -H "Content-Type: application/json" -d "{restarted:true}" -X POST http://localhost:{{ (.Values.o1).healthcheckPort }}/restarted
+                        exit 0
+                      fi
+                      sleep 5
+                      elapsed=$((elapsed + 5))
+                    done
+                    echo "Netconf server not available, last response: $response. Exiting postStart hook."
+                    exit 1
+          {{- end }}
+        {{- if (.Values.o1).enable_ocudu_o1 }}
+        - name: ocudu-o1-adapter
+          securityContext:
+            {{- toYaml (.Values.o1).o1Adapter.securityContext | nindent 12 }}
+          image: "{{ template "ocudu-cu.o1.o1Adapter.image" (.Values.o1).o1Adapter.image }}"
+          imagePullPolicy: {{ (.Values.o1).o1Adapter.image.pullPolicy }}
+          resources:
+            {{- toYaml (.Values.o1).o1Adapter.resources | nindent 12 }}
+          command: [ "/usr/local/bin/python3" ]
+          args:
+            - "/usr/src/app/src/o1_adapter.py"
+            - "--netconf_host"
+            - {{ (.Values.o1).netconfServerAddr }}
+            - "--netconf_port"
+            - {{ (.Values.o1).o1Port | quote }}
+            - "--ves_host"
+            - {{ (.Values.o1).ves.host | quote }}
+            - "--ves_port"
+            - {{ (.Values.o1).ves.port | quote }}
+            - "--ves_username"
+            - {{ (.Values.o1).ves.username | quote }}
+            - "--ves_password"
+            - {{ (.Values.o1).ves.password | quote }}
+            - "--ves_scheme"
+            - {{ (.Values.o1).ves.scheme | quote }}
+            - "--ws_host"
+            - {{ (.Values.o1).ws.host | quote }}
+            - "--ws_port"
+            - {{ (.Values.o1).ws.port | quote }}
+            {{- if (.Values.o1).oamIpv4Address }}
+            - "--oam_ipv4_address"
+            - {{ (.Values.o1).oamIpv4Address | quote }}
+            {{- end }}
+            - "--loglevel"
+            - {{ (.Values.o1).log_level | quote }}
+            - "--profile"
+            - "cu"
+            - "--config"
+            - "/etc/config/cu-config.yml"
+            - "--template"
+            - "cu.yaml"
+          volumeMounts:
+            - name: o1-cu-config
+              mountPath: /etc/config
+        - name: netconf-server
+          securityContext:
+            {{- toYaml (.Values.o1).netconfServer.securityContext | nindent 12 }}
+          image: "{{ template "ocudu-cu.o1.netconfServer.image" (.Values.o1).netconfServer.image }}"
+          imagePullPolicy: {{ (.Values.o1).netconfServer.image.pullPolicy }}
+          resources:
+            {{- toYaml (.Values.o1).netconfServer.resources | nindent 12 }}
+          ports:
+            - name: netconf
+              containerPort: {{ (.Values.o1).o1Port }}
+              protocol: TCP
+            {{- if (.Values.o1).netconfServer.tls.enabled }}
+            - name: netconf-tls
+              containerPort: 6513
+              protocol: TCP
+            {{- end }}
+          command: [ "/usr/local/bin/entrypoint.sh" ]
+          args:
+            - "--config"
+            - "cu"
+            - "--custom-config"
+            - "/etc/netconf/o1-config.xml"
+            {{- if (.Values.o1).netconfServer.tls.enabled }}
+            - "--enable-tls"
+            - "--tls-cert-dir"
+            - "/etc/netconf-tls"
+            {{- end }}
+          volumeMounts:
+            - name: o1-config-volume
+              mountPath: /etc/netconf
+            - name: netconf-running-config-volume
+              mountPath: /etc/netconf-running
+            {{- if and (.Values.o1).netconfServer.tls.enabled (.Values.o1).netconfServer.tls.certSecret }}
+            - name: netconf-tls-certs
+              mountPath: /etc/netconf-tls
+              readOnly: true
+            {{- end }}
+        {{- end }}
+      dnsPolicy: ClusterFirstWithHostNet
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
