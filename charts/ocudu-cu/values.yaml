@@ -4,7 +4,8 @@
 # -- Container image configuration
 image:
   # -- Container image repository
-  repository: registry.gitlab.com/ocudu/ocudu/ocudu_nightly_avx512
+  # See https://gitlab.com/ocudu/ocudu/container_registry for available images
+  repository: registry.gitlab.com/ocudu/ocudu/images/cu
   # -- Image pull policy
   pullPolicy: IfNotPresent
   # -- Image tag. Always quote in values files — tags like 20260529_abc123e1 are parsed as floats by YAML.
@@ -110,6 +111,12 @@ metricsService:
   # -- Enable metrics service
   enabled: false
   # -- Enable power consumption metrics via RAPL
+  # When true, adds CAP_PERFMON to the container to allow perf_event_open() RAPL reads.
+  # The binary tries three methods in order:
+  #   1. sysfs powercap (/sys/class/powercap) — works if the host exposes it in the container
+  #   2. perf_event_open() — requires CAP_PERFMON and kernel >= 5.8 (no host mounts needed)
+  #   3. MSR (/dev/cpu/0/msr) — requires CAP_SYS_RAWIO (not added by this chart)
+  # If none succeed, energy metrics are silently unavailable (no crash).
   # @default -- `false`
   powercap:
     enabled: false
