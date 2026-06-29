@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.3.0 (2026-06-29)
+
+### Added
+
+- O1/NETCONF support gated on `o1.enable_ocudu_o1`: adds `ocudu-o1-adapter` and `netconf-server` sidecars, a NETCONF service (`service-o1.yaml`, NodePort/LoadBalancer with optional TLS on 6513), the `o1Config` ConfigMap, an O1-mode liveness probe, and the `o1.*` configuration values
+- entrypoint.sh: wait for the O1-generated config before launching `ocu` (`ENABLE_OCUDU_O1`/`CONFIG_CREATE_TIMEOUT`)
+- `values-o1.yaml`: example values preset with O1 enabled
+- deployment.yaml: `PERFMON` capability on the CU container for powercap RAPL energy reads (`metricsService.powercap.enabled`)
+
+### Changed
+
+- values.yaml: default image repository changed from `ocudu_nightly_avx512` to `images/cu`
+- deployment.yaml: set `dnsPolicy: ClusterFirstWithHostNet` on the pod spec
+
 ## 1.2.1 (2026-06-02)
 
 ### Added
