@@ -106,12 +106,31 @@ spec:
             {{- end }}
           image: "{{ template "ocudu-gnb.image" .Values.image }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- if or .Values.resources .Values.sriovConfig.enabled }}
+          {{- $hasLimits := and .Values.resources .Values.resources.limits (gt (len .Values.resources.limits) 0) }}
+          {{- $hasRequests := and .Values.resources .Values.resources.requests (gt (len .Values.resources.requests) 0) }}
+          {{- if or $hasLimits $hasRequests .Values.sriovConfig.enabled }}
           resources:
-            {{- if .Values.resources }}
-            {{- $res := .Values.resources }}
-            {{- $cleanRes := omit $res "enable_hugepages_1gi" "enable_hugepages_2mi" }}
-            {{- toYaml $cleanRes | nindent 12 }}
+            {{- if or $hasLimits .Values.sriovConfig.enabled }}
+            limits:
+              {{- if $hasLimits }}
+              {{- $res := .Values.resources }}
+              {{- $cleanRes := omit $res "enable_hugepages_1gi" "enable_hugepages_2mi" }}
+              {{- toYaml $cleanRes.limits | nindent 14 }}
+              {{- end }}
+              {{- if .Values.sriovConfig.enabled }}
+              {{ .Values.sriovConfig.extendedResourceName }}: 1
+              {{- end }}
+            {{- end }}
+            {{- if or $hasRequests .Values.sriovConfig.enabled }}
+            requests:
+              {{- if $hasRequests }}
+              {{- $res := .Values.resources }}
+              {{- $cleanRes := omit $res "enable_hugepages_1gi" "enable_hugepages_2mi" }}
+              {{- toYaml $cleanRes.requests | nindent 14 }}
+              {{- end }}
+              {{- if .Values.sriovConfig.enabled }}
+              {{ .Values.sriovConfig.extendedResourceName }}: 1
+              {{- end }}
             {{- end }}
           {{- end }}
           {{- if and .Values.o1.enable_ocudu_o1 .Values.livenessProbe.enabled }}
