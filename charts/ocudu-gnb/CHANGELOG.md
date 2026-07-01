@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.7.5 (2026-07-01)
+
+### Added
+
+- `deploymentStrategy` value (defaults to `Recreate`) to control the Deployment update strategy
+- `emptyDir` volume mounted at `/run/ocudu` (`OCUDU_WORK_DIR`) for the rendered runtime config, decoupled from `persistence.mountPath`
+- `checksum/config` pod annotation (when O1 is disabled) to trigger a rollout when the ConfigMap changes
+
+### Fixed
+
+- deployment.yaml: inject the SR-IOV extended resource into both `resources.limits` and `resources.requests` instead of only the top-level `resources` block
+
 ## 3.7.4 (2026-06-10)
 
 ### Added
