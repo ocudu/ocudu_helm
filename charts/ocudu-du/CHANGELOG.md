@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.1 (2026-07-01)
+
+### Added
+
+- `deploymentStrategy` value (defaults to `Recreate`) to control the Deployment update strategy
+
 ## 1.3.0 (2026-06-22)
 
 ### Added
