@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.3.0 (2026-06-29)
+## 1.3.1 (2026-06-29)
 
 ### Added
 
@@ -13,6 +13,11 @@
 
 - values.yaml: default image repository changed from `ocudu_nightly_avx512` to `images/cu`
 - deployment.yaml: set `dnsPolicy: ClusterFirstWithHostNet` on the pod spec
+## 1.2.2 (2026-07-01)
+
+### Added
+
+- `deploymentStrategy` value (defaults to `Recreate`) to control the Deployment update strategy
 
 ## 1.2.1 (2026-06-02)
 
