@@ -186,7 +186,10 @@ ptp4l:
   grandmasterAllowList:
     # -- Drop L2 PTP packets from non-allowed source MAC addresses before ptp4l sees them
     enabled: false
-    # -- Operator-provided legitimate grandmaster source MAC addresses
+    # -- Source MAC addresses of the directly connected PTP node(s).
+    # In topologies with boundary clocks (e.g. G.8275.1) PTP frames carry the
+    # source MAC of the nearest boundary clock, not the grandmaster's MAC —
+    # allow-list the MAC observed on the wire (see README)
     allowedSourceMacs: []
     # -- Interface to protect. Empty means use the first interface from interfaceNameList
     interface: ""

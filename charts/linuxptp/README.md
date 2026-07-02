@@ -198,6 +198,38 @@ GM allow-listing drops L2 PTP packets from unknown source MAC addresses before
 `ptp4l` sees them. It is not cryptographic authentication and can be bypassed by
 MAC spoofing.
 
+**Which MAC to allow-list**: the filters match the source MAC of the frames
+arriving on the interface. In topologies with boundary clocks (e.g. G.8275.1)
+that is the MAC of the *nearest* PTP node, not the grandmaster's own MAC.
+Capture the address actually seen on the wire before enabling:
+
+```bash
+tcpdump -i <interface> -c 3 -e ether proto 0x88f7
+```
+
+Allow-listing the wrong MAC drops *all* PTP traffic and the pod will fail its
+startup probe.
+
+**Limitations**:
+- Requires `config.network_transport: L2` (enforced at render time); UDP
+  transports are not matched by the filters.
+- VLAN-tagged PTP frames are not matched either — the pass and drop rules
+  only apply to untagged `0x88f7` traffic.
+
+**Filter lifecycle**: the chart owns `tc` filter preferences 38000-38099 on
+the interface's `clsact` ingress (do not place other filters in this range).
+Filters are removed on graceful shutdown (SIGTERM) and re-applied
+idempotently on container start. After a non-graceful termination
+(SIGKILL/OOM/forced pod deletion) the filters — including the drop rule —
+remain on the host interface. Remove them manually if no replacement pod
+takes over:
+
+```bash
+for p in $(seq 38000 38099); do
+  tc filter del dev <interface> ingress pref $p 2>/dev/null
+done
+```
+
 ## Architecture & Design
 
 ### Why hostNetwork and privileged are Required
