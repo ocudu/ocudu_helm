@@ -7,6 +7,12 @@
 {{- if and .Values.ptp4l.grandmasterAllowList.enabled (empty .Values.ptp4l.grandmasterAllowList.allowedSourceMacs) }}
 {{- fail "ptp4l.grandmasterAllowList.allowedSourceMacs must contain at least one MAC address when enabled" }}
 {{- end }}
+{{- if and .Values.ptp4l.grandmasterAllowList.enabled (ne (.Values.config.network_transport | default "UDPv4") "L2") }}
+{{- fail "ptp4l.grandmasterAllowList requires config.network_transport=L2: the tc filters match the L2 PTP ethertype and provide no protection for UDP transports" }}
+{{- end }}
+{{- if and .Values.ptp4l.grandmasterAllowList.enabled (gt (len .Values.ptp4l.grandmasterAllowList.allowedSourceMacs) 99) }}
+{{- fail "ptp4l.grandmasterAllowList.allowedSourceMacs supports at most 99 entries (tc filter preferences 38000-38098; 38099 is reserved for the drop rule)" }}
+{{- end }}
 {{- $gmAllowListInterface := default ((split ";" .Values.interfaceNameList)._0) .Values.ptp4l.grandmasterAllowList.interface }}
 
 apiVersion: apps/v1
