@@ -248,7 +248,7 @@ config:
   logMinDelayReqInterval: "-4"
   serverOnly: "0"
   G.8275.portDS.localPriority: "128"
-  ptp_dst_mac: "01:80:C2:00:00:0E"
+  ptp_dst_mac: "01:1B:19:00:00:00"
   network_transport: "L2"
   domainNumber: "24"
   ts2phc:
