@@ -164,15 +164,18 @@ ptp4l:
   authentication:
     # -- Enable LinuxPTP Authentication TLV configuration for ptp4l
     enabled: false
-    # -- Lowest PTP minor version target for Authentication TLV support
+    # -- PTP minor version used in ptp4l messages (0 or 1).
+    # Authentication TLV requires PTPv2.1, i.e. minor version 1
     ptpMinorVersion: 1
     # -- Existing Kubernetes Secret containing the LinuxPTP security association file
     existingSecret: ""
     # -- Secret key containing the LinuxPTP security association file
     secretKey: "sa.cfg"
-    # -- Mount destination inside the ptp4l container
+    # -- Mount destination for the SA Secret inside the ptp4l and phc2sys containers
     mountPath: "/etc/linuxptp/security"
-    # -- LinuxPTP sa_file path rendered into linuxptp.cfg
+    # -- LinuxPTP sa_file path rendered into linuxptp.cfg.
+    # Must point inside mountPath: the Secret key is mounted at
+    # <mountPath>/<basename of saFile>
     saFile: "/etc/linuxptp/security/sa.cfg"
     # -- LinuxPTP Authentication TLV security parameter pointer
     spp: 0

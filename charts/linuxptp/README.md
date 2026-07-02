@@ -168,6 +168,23 @@ The chart mounts an existing SA file and renders LinuxPTP Authentication TLV
 settings. It does not create keys or configure the grandmaster. Configure
 matching Authentication TLV settings on all participating PTP peers.
 
+The SA file uses the LinuxPTP `sa_file` syntax (see `ptp4l(8)`):
+
+```
+[security_association]
+spp 0
+seqid_window 20
+1 SHA256 HEX:<64-hex-char-key>
+```
+
+Key lines use the format `key_id key_type [key_len] key` with key types
+`SHA256-128`, `SHA256`, `AES128` and `AES256`. Keys are parsed as raw ASCII
+by default; use an `ASCII:` or `HEX:` prefix to be explicit.
+
+If you override `ptp4l.authentication.saFile` or `mountPath`, note that they
+are coupled: the Secret key is mounted at `<mountPath>/<basename of saFile>`,
+so `saFile` must point to a path inside `mountPath`.
+
 ### With GM Source MAC Allow-Listing
 ```yaml
 ptp4l:
