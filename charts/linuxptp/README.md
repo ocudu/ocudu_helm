@@ -26,13 +26,12 @@ Before installing, ensure your environment meets these requirements:
 2. **Kernel**: Linux kernel with PTP support enabled
 3. **Privileges**: Chart requires `hostNetwork: true` and `privileged: true` for PTP clock access
 4. **Node Selection**: Use `nodeSelector` to target nodes with PTP-capable NICs
-```
 
 ## Installing the Chart
 
 **Basic installation** (single interface):
 ```bash
-helm install linuxptp-ocudu oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/linuxptp --version 2.0.0 \
+helm install linuxptp-ocudu oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/linuxptp --version 2.4.0 \
   --set interfaceNameList="ens3f0np0"
 ```
 
@@ -85,8 +84,8 @@ The command removes all Kubernetes components associated with the chart.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `interfaceNameList` | string | `"ens3f1np1"` | **REQUIRED**: Semicolon-separated list of PTP-capable network interfaces |
-| `image.repository` | string | `"softwareradiosystems/linuxptp"` | Container image repository |
-| `image.tag` | string | `"v4.4_1.2.0"` | Image tag (default: chart appVersion) |
+| `image.repository` | string | `"registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/linuxptp"` | Container image repository |
+| `image.tag` | string | `"v4.4_2.2.0"` | Image tag (default: chart appVersion) |
 | `nodeSelector` | object | `{}` | **RECOMMENDED**: Target nodes with PTP-capable NICs |
 | `tolerations` | list | See values.yaml | Tolerations for scheduling (allows master nodes) |
 | `resources` | object | `{}` | CPU/memory limits and requests |
