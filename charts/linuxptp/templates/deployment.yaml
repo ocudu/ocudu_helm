@@ -158,6 +158,13 @@ spec:
             - name: ptp4l-run-volume
               mountPath: "/var/run"
               readOnly: false
+            {{- if .Values.ptp4l.authentication.enabled }}
+            # phc2sys parses the same linuxptp.cfg and calls sad_create(), which
+            # fails hard when the configured sa_file is missing
+            - name: linuxptp-sa
+              mountPath: {{ .Values.ptp4l.authentication.mountPath }}
+              readOnly: true
+            {{- end }}
           {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
             exec:
