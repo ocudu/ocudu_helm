@@ -273,7 +273,7 @@ kubectl logs <pod> -c linuxptp-chart-ptp4l | grep "selected best master"
 # Common issues:
 # - No PTP grandmaster on network
 # - Wrong PTP domain number
-# - Network filters blocking PTP multicast (01:80:C2:00:00:0E)
+# - Network filters blocking PTP multicast (01:1B:19:00:00:00 for the default E2E delay mechanism; 01:80:C2:00:00:0E only applies to P2P)
 ```
 
 ### Poor synchronization accuracy

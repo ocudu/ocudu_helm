@@ -9,6 +9,10 @@
 ### Changed
 - LinuxPTP image includes auth crypto support checks and `tc` availability checks
 
+### Fixed
+- `config.ptp_dst_mac` default: corrected from `01:80:C2:00:00:0E` (P2P-only) to `01:1B:19:00:00:00` (required for the chart's default E2E delay mechanism)
+- Pods not restarting on `helm upgrade` when only the rendered `linuxptp.cfg` ConfigMap changed: added a `checksum/config` pod annotation to trigger a rolling restart
+
 ## 2.3.0 (2026-06-01)
 
 ### Changed
