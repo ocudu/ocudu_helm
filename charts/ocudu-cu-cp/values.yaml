@@ -75,6 +75,9 @@ podSecurityContext:
   fsGroup: 1000
 
 # -- Container-level security context
+# Requires the image to have file capabilities baked into /usr/local/bin/ocucp
+# (setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+ep) — PERFMON must be granted
+# unconditionally or the kernel refuses to exec the binary at all.
 securityContext:
   allowPrivilegeEscalation: true
   privileged: false
@@ -83,6 +86,7 @@ securityContext:
     add:
       - SYS_NICE
       - IPC_LOCK
+      - PERFMON
 
 # -- Resource requests and limits
 resources: {}

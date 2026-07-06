@@ -61,13 +61,7 @@ spec:
           tty: true
           stdin: true
           securityContext:
-            {{- if and .Values.metricsService.enabled .Values.metricsService.powercap.enabled }}
-            {{- $ctx := deepCopy .Values.securityContext }}
-            {{- $_ := set $ctx.capabilities "add" (append $ctx.capabilities.add "PERFMON") }}
-            {{- toYaml $ctx | nindent 12 }}
-            {{- else }}
             {{- toYaml .Values.securityContext | nindent 12 }}
-            {{- end }}
           image: "{{ template "ocudu-cu-up.image" .Values.image }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with .Values.resources }}
@@ -77,7 +71,7 @@ spec:
           {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
             exec:
-              command: ["pgrep", "ocu"]
+              command: ["pgrep", "ocuup"]
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
             timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
@@ -87,7 +81,7 @@ spec:
           {{- if .Values.readinessProbe.enabled }}
           readinessProbe:
             exec:
-              command: ["pgrep", "ocu"]
+              command: ["pgrep", "ocuup"]
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
             timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
