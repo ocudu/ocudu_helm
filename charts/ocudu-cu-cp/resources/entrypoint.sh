@@ -3,12 +3,12 @@
 # SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
 # SPDX-License-Identifier: BSD-3-Clause-Open-MPI
 
-# This script runs the OCUDU CU-CP (ocu) binary with the provided configuration file.
+# This script runs the OCUDU CU-CP (ocucp) binary with the provided configuration file.
 # - If PRESERVE_OLD_LOGS=true, log file paths are updated with a timestamp and a
 #   'current' symlink is created for easy navigation.
 # - The rendered config is snapshotted to ${OCUDU_LOG_DIR}/cu-cp-config-rendered.yml.
 # - The binary is restarted automatically on clean exit.
-# - SIGTERM/SIGINT are forwarded gracefully to the ocu process.
+# - SIGTERM/SIGINT are forwarded gracefully to the ocucp process.
 #
 # Usage: ./entrypoint.sh /etc/config/cu-cp-config.yml
 
@@ -180,7 +180,7 @@ inject_ip_overrides() {
 CU_CP_PID=""
 terminate() {
     if [ -n "$CU_CP_PID" ]; then
-        log_info "Forwarding SIGTERM to ocu (PID $CU_CP_PID)"
+        log_info "Forwarding SIGTERM to ocucp (PID $CU_CP_PID)"
         kill -TERM "$CU_CP_PID" 2>/dev/null
         wait "$CU_CP_PID"
     fi
@@ -206,7 +206,7 @@ process_and_run_cu_cp() {
     cp "$updated_config" "${OCUDU_LOG_DIR}/cu-cp-config-rendered.yml"
 
     log_info "Starting CU-CP"
-    exec stdbuf -oL ocu -c "$updated_config"
+    exec stdbuf -oL ocucp -c "$updated_config"
 }
 
 #==============================================================================
