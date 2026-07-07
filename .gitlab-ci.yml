@@ -199,6 +199,30 @@ ocudu-du chart:
     include: charts/ocudu-du/.gitlab-ci.yml
   needs: []
 
+ocudu-cu-cp chart:
+  stage: child
+  rules:
+    - changes:
+        paths:
+          - .gitlab/ci/helm_utils.yml
+          - charts/ocudu-cu-cp/**/*
+  trigger:
+    strategy: mirror
+    include: charts/ocudu-cu-cp/.gitlab-ci.yml
+  needs: []
+
+ocudu-cu-up chart:
+  stage: child
+  rules:
+    - changes:
+        paths:
+          - .gitlab/ci/helm_utils.yml
+          - charts/ocudu-cu-up/**/*
+  trigger:
+    strategy: mirror
+    include: charts/ocudu-cu-up/.gitlab-ci.yml
+  needs: []
+
 influxdb3 chart:
   stage: child
   rules:
