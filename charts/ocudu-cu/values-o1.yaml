@@ -369,7 +369,7 @@ o1:
     image:
       repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_o1_adapter/o1_adapter_nightly_amd64
       pullPolicy: IfNotPresent
-      tag: "20260629_13315ae4"
+      tag: "20260706_bd8b634b"
     resources: {}
     securityContext: {}
   netconfServer:
@@ -389,14 +389,20 @@ o1:
     image:
       repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_netconf/netconf_nightly_amd64
       pullPolicy: IfNotPresent
-      tag: "20260629_3b51a35c"
+      tag: "20260702_ddf3a238"
     tls:
       # -- Enable NETCONF-over-TLS endpoint on port 6513 (alongside the default SSH endpoint on o1Port)
       enabled: false
-      # -- Name of a Secret containing ca.crt, server.crt, server.key
-      # If empty, the container auto-generates self-signed certs at startup (dev/test only)
+      # -- Secret with the netconf-server's TLS identity (ca.crt, server.crt, server.key),
+      # mounted read-only at /etc/netconf-tls. If empty (together with clientCertSecret),
+      # self-signed certs are auto-generated at startup and shared via emptyDir (dev/test only).
       # Create with: kubectl create secret generic <name> --from-file=ca.crt=./ca.crt --from-file=server.crt=./server.crt --from-file=server.key=./server.key
       certSecret: ""
+      # -- Secret with the o1 adapter's TLS client identity (ca.crt, client.crt, client.key),
+      # mounted read-only at /etc/netconf-tls-client. Required when certSecret is set (adapter
+      # connects over mutual TLS). Keep separate from certSecret; client.key is privileged.
+      # Create with: kubectl create secret generic <name> --from-file=ca.crt=./ca.crt --from-file=client.crt=./client.crt --from-file=client.key=./client.key
+      clientCertSecret: ""
     resources: {}
     securityContext: {}
 
