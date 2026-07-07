@@ -1,12 +1,21 @@
 # Changelog
 
+## 1.5.0 (2026-07-07)
+
+### Added
+
+- `o1.netconfServer.tls.clientCertSecret`: separate TLS client identity for the o1 adapter, which now connects to the netconf-server over mutual TLS (auto-generated via `emptyDir` in dev/test)
+
+### Changed
+
+- **Breaking:** `certSecret` now requires a companion `clientCertSecret` (rendering fails otherwise)
+- bump `o1.o1Adapter.image.tag` to `20260706_bd8b634b` for NETCONF-over-TLS client support
+
 ## 1.4.0 (2026-07-07)
 
 ### Changed
 
 - `sriovConfig.enabled` now defaults to `true` (was `false`)
-
-## 1.3.1 (2026-07-01)
 
 ### Added
 
