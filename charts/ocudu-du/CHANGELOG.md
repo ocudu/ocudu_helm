@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.0 (2026-07-07)
+
+### Changed
+
+- `sriovConfig.enabled` now defaults to `true` (was `false`)
+
 ## 1.3.1 (2026-07-01)
 
 ### Added

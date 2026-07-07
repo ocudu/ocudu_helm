@@ -326,9 +326,9 @@ networkPolicy:
 # -- SR-IOV configuration
 sriovConfig:
   # -- Enable SR-IOV device plugin resource allocation
-  # When enabled, requests one SR-IOV VF from the device plugin
-  # @default -- `false`
-  enabled: false
+  # When enabled, requests one SR-IOV VF from the device plugin.
+  # @default -- `true`
+  enabled: true
   # -- Extended resource name advertised by the SR-IOV device plugin
   # Common values:
   #   intel.com/intel_sriov_dpdk     (DPDK / vfio-pci, for use with hal section)
