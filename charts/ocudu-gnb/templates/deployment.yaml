@@ -56,9 +56,20 @@ spec:
             name: {{ include "ocudu-gnb.o1ConfigmapName" . }}
             defaultMode: 0777
         {{- if and .Values.o1.netconfServer.tls.enabled .Values.o1.netconfServer.tls.certSecret }}
+        # Production: separate server and client identities, each mounted only where needed
+        # so neither container holds the other's private key.
         - name: netconf-tls-certs
           secret:
             secretName: {{ .Values.o1.netconfServer.tls.certSecret }}
+        - name: netconf-tls-client-certs
+          secret:
+            secretName: {{ required "o1.netconfServer.tls.clientCertSecret is required when certSecret is set (the o1 adapter needs client.crt/client.key/ca.crt for mutual TLS)" .Values.o1.netconfServer.tls.clientCertSecret }}
+        {{- else if .Values.o1.netconfServer.tls.enabled }}
+        # Dev/test: one shared volume. The netconf-server bootstraps a self-signed CA + server
+        # + client cert into it and the o1 adapter reads client.crt/client.key/ca.crt back out.
+        - name: netconf-tls-certs
+          emptyDir:
+            sizeLimit: 2Mi
         {{- end }}
         {{- else }}
         - name: config-volume
@@ -278,9 +289,21 @@ spec:
             - "/etc/config/gnb-config.yml"
             - "--template"
             - "gnb.yaml"
+            {{- if .Values.o1.netconfServer.tls.enabled }}
+            - "--netconf_tls"
+            - "--netconf_tls_port"
+            - "6513"
+            - "--netconf_tls_cert_dir"
+            - "/etc/netconf-tls-client"
+            {{- end }}
           volumeMounts:
             - name: o1-gnb-config
               mountPath: /etc/config
+            {{- if .Values.o1.netconfServer.tls.enabled }}
+            - name: {{ if .Values.o1.netconfServer.tls.certSecret }}netconf-tls-client-certs{{ else }}netconf-tls-certs{{ end }}
+              mountPath: /etc/netconf-tls-client
+              readOnly: true
+            {{- end }}
         - name: netconf-server
           securityContext:
             {{- toYaml .Values.o1.netconfServer.securityContext | nindent 12 }}
@@ -313,10 +336,12 @@ spec:
               mountPath: /etc/netconf
             - name: netconf-running-config-volume
               mountPath: /etc/netconf-running
-            {{- if and .Values.o1.netconfServer.tls.enabled .Values.o1.netconfServer.tls.certSecret }}
+            {{- if .Values.o1.netconfServer.tls.enabled }}
             - name: netconf-tls-certs
               mountPath: /etc/netconf-tls
+              {{- if .Values.o1.netconfServer.tls.certSecret }}
               readOnly: true
+              {{- end }}
             {{- end }}
         {{- end }}
       dnsPolicy: ClusterFirstWithHostNet

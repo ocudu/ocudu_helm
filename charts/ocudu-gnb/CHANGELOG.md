@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.8.0 (2026-07-06)
+
+### Added
+
+- `o1.netconfServer.tls.clientCertSecret`: separate TLS client identity for the o1 adapter, which now connects to the netconf-server over mutual TLS (auto-generated via `emptyDir` in dev/test)
+
+### Changed
+
+- **Breaking:** `certSecret` now requires a companion `clientCertSecret` (rendering fails otherwise)
+- bump `o1.o1Adapter.image.tag` to `20260706_bd8b634b` for NETCONF-over-TLS client support
+
 ## 3.7.5 (2026-07-01)
 
 ### Added
