@@ -405,6 +405,19 @@ o1:
       clientCertSecret: ""
     resources: {}
     securityContext: {}
+    # -- Persist the netconf-server container's stdout/stderr to a timestamped log file.
+    # The server emits no timestamps of its own, so when enabled the container command is
+    # wrapped in a shell that prefixes every line with a "[YYYY-MM-DD HH:MM:SS]" timestamp
+    # and tees it to <persistence.mountPath>/<filename> (the same volume as the ocu logs),
+    # while still forwarding output to the pod stdout so `kubectl logs` keeps working.
+    # The file only survives pod restarts when persistence.enabled is true.
+    fileLog:
+      # -- Enable writing the netconf-server output to a persistent, timestamped file.
+      # @default -- `false`
+      enabled: false
+      # -- Log file name, created under persistence.mountPath.
+      # @default -- `netconf.log`
+      filename: netconf.log
 
 o1Config:
   o1-config.xml: |-
