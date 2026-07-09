@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.0 (2026-07-09)
+
+### Added
+
+- `o1.netconfServer.fileLog.{enabled,filename}`: optionally persist the netconf-server container's stdout/stderr to a timestamped log file under `persistence.mountPath`. When enabled, the container command is wrapped in a shell that prefixes each line with a `[YYYY-MM-DD HH:MM:SS]` timestamp and tees it to the file (mounting the shared `ocudu-logs` volume) while still forwarding output to pod stdout so `kubectl logs` keeps working
+
 ## 1.5.0 (2026-07-07)
 
 ### Added

@@ -302,6 +302,19 @@ spec:
               containerPort: 6513
               protocol: TCP
             {{- end }}
+          {{- if (((.Values.o1).netconfServer).fileLog).enabled }}
+          {{- $tlsFlags := "" }}
+          {{- if (.Values.o1).netconfServer.tls.enabled }}
+          {{- $tlsFlags = "--enable-tls --tls-cert-dir /etc/netconf-tls" }}
+          {{- end }}
+          {{- $ncLogFile := printf "%s/%s" .Values.persistence.mountPath ((.Values.o1).netconfServer.fileLog.filename | default "netconf.log") }}
+          command: [ "/bin/sh", "-c" ]
+          args:
+            - >-
+              /usr/local/bin/entrypoint.sh --config du --custom-config /etc/netconf/o1-config.xml {{ $tlsFlags }} 2>&1
+              | while IFS= read -r line || [ -n "$line" ]; do printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$line"; done
+              | tee -a {{ $ncLogFile | quote }}
+          {{- else }}
           command: [ "/usr/local/bin/entrypoint.sh" ]
           args:
             - "--config"
@@ -313,6 +326,7 @@ spec:
             - "--tls-cert-dir"
             - "/etc/netconf-tls"
             {{- end }}
+          {{- end }}
           volumeMounts:
             - name: o1-config-volume
               mountPath: /etc/netconf
@@ -324,6 +338,12 @@ spec:
               {{- if (.Values.o1).netconfServer.tls.certSecret }}
               readOnly: true
               {{- end }}
+            {{- end }}
+            {{- if (((.Values.o1).netconfServer).fileLog).enabled }}
+            # Shared log volume (same as the ocu binary logs) so the timestamped
+            # netconf-server output persists alongside them.
+            - name: ocudu-logs
+              mountPath: {{ .Values.persistence.mountPath }}
             {{- end }}
         {{- end }}
       dnsPolicy: ClusterFirstWithHostNet
