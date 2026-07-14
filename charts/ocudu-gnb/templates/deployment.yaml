@@ -202,7 +202,7 @@ spec:
           {{- end }}
             - name: ENABLE_OCUDU_O1
               value: '{{ default false .Values.o1.enable_ocudu_o1 }}'
-          command: [ "/usr/bin/tini", "--" ]
+          command: [ "/usr/bin/tini", "-s", "-g", "--" ]
           args: [ "/bin/bash", "-c", "/etc/entrypoint/entrypoint-ocudu-gnb.sh /etc/config/gnb-config.yml" ]
           volumeMounts:
             - name: entrypoint-volume-ocudu-gnb

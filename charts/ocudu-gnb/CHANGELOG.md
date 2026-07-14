@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.9.1 (2026-07-14)
+
+### Fixed
+
+- Run `tini` as a child subreaper and process-group signal forwarder (`-s -g`) so runtime-exec'd child processes are reaped for CNTI zombie handling checks
+
 ## 3.9.0 (2026-07-09)
 
 ### Added
@@ -119,7 +125,7 @@
 
 ### Added
 - Liveness and readiness probes
-- **`tini` as PID 1** (container `command: ["/usr/bin/tini", "--"]`): reaps zombies, forwards signals, and satisfies CNTi requirements 
+- **`tini` as PID 1 subreaper** (container `command: ["/usr/bin/tini", "-s", "-g", "--"]`): reaps orphaned children, forwards signals to the process group, and satisfies CNTi requirements
 
 ## 3.5.3 (2026-04-09)
 
