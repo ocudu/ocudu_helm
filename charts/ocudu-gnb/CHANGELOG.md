@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.9.2 (2026-07-15)
+
+### Fixed
+
+- Restore timestamped log folder creation when `PRESERVE_OLD_LOGS=true`
+
 ## 3.9.1 (2026-07-14)
 
 ### Fixed

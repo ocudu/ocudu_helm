@@ -513,6 +513,10 @@ process_and_run_gnb() {
             log_fatal "Network interface update failed"
     fi
 
+    if [ "$PRESERVE_OLD_LOGS" = "true" ]; then
+        update_config_paths "$updated_config" || log_fatal "Log path setup failed"
+    fi
+
     log_info "Configuration processing complete: $updated_config"
 
     cp "$updated_config" "${OCUDU_WORK_DIR:-${OCUDU_LOG_DIR}}/gnb-config-rendered.yaml"
