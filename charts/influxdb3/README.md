@@ -155,9 +155,10 @@ tls:
   minimumVersion: tls-1.2
 ```
 
-The TLS Secret must contain `tls.crt` and `tls.key`. Disabling authentication
-with `auth.enabled=false` is intended only for disposable development
-environments.
+The TLS Secret must contain `tls.crt`, `tls.key`, and `ca.crt`. The CA is also
+mounted so authenticated administrative CLI operations can verify the server.
+Disabling authentication with `auth.enabled=false` is intended only for
+disposable development environments.
 
 ### Data Retention
 

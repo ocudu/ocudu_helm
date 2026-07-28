@@ -130,6 +130,8 @@ spec:
                 path: tls.crt
               - key: {{ .Values.tls.privateKeyKey }}
                 path: tls.key
+              - key: {{ .Values.tls.caKey }}
+                path: ca.crt
         {{- end }}
         - name: data
 {{- if .Values.persistence.enabled }}

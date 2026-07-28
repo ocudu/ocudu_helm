@@ -136,6 +136,7 @@ tls:
   existingSecret: ""
   certKey: tls.crt
   privateKeyKey: tls.key
+  caKey: ca.crt
   mountPath: /etc/influxdb3-tls
   minimumVersion: tls-1.2
 
