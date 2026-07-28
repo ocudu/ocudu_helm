@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.3.0 (2026-07-28)
+
+### Added
+- Existing Secret support for preconfigured InfluxDB3 admin tokens.
+- Existing TLS Secret support with a configurable minimum TLS version.
+- TCP readiness and liveness probes that work with authenticated HTTPS.
+- Configurable PVC annotations and explicit extra server arguments.
+
+### Changed
+- Authentication, file-backed PVC storage, and 30-day retention are the secure defaults.
+- PVCs are retained when the Helm release is removed.
+
 ## 2.2.3 (2026-04-09)
 
 ### Changed

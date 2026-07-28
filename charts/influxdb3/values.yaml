@@ -97,6 +97,9 @@ persistence:
     size: 50Gi
     # -- Size of the plugins persistent volume
     pluginsSize: 1Gi
+    # -- PVC annotations. Set helm.sh/resource-policy: keep to retain data when
+    # the Helm release is removed.
+    annotations: {}
   
   # hostPath configuration (when type: hostPath)
   hostPath:
@@ -112,6 +115,33 @@ env:
   # -- Unique node identifier for distributed deployments
   INFLUXDB_NODE_ID: node0
 
+# -- Authentication configuration
+auth:
+  # -- Enable InfluxDB3 authorization. Off by default to preserve this chart's
+  # demo behaviour; set true together with adminToken.existingSecret for a
+  # production deployment.
+  enabled: false
+  adminToken:
+    # -- Existing Secret containing the preconfigured admin-token JSON file
+    existingSecret: ""
+    # -- Secret key containing the JSON document accepted by --admin-token-file
+    key: admin-token.json
+    # -- Writable in-container path used after copying the Secret with mode 0600
+    mountPath: /etc/influxdb3-auth
+
+# -- TLS configuration for the InfluxDB3 API
+tls:
+  enabled: false
+  # -- Existing kubernetes.io/tls-compatible Secret
+  existingSecret: ""
+  certKey: tls.crt
+  privateKeyKey: tls.key
+  mountPath: /etc/influxdb3-tls
+  minimumVersion: tls-1.2
+
+# -- Default retention applied by the server
+retentionPeriod: ""
+
 # -- Command-line arguments for InfluxDB3 server
 # These configure core database behavior
 # @default -- See values.yaml
@@ -126,12 +156,7 @@ args:
   - --node-id=node0
   # HTTP API bind address and port
   - --http-bind=0.0.0.0:8081
-  # Disable authentication (⚠️ suitable for demos/PoC only)
-  # For production, remove --without-auth and configure token-based authentication
-  - --without-auth
-  # Retention policy (optional, uncomment to enable)
-  # Controls how long data is retained before automatic deletion
-  # Examples:
-  #   - --retention-period=30d  # Keep data for 30 days
-  #   - --retention-period=90d  # Keep data for 90 days
-  #   - --retention-period=1y   # Keep data for 1 year
+
+# -- Additional server arguments appended after the chart-managed auth, TLS,
+# persistence, and retention arguments
+extraArgs: []

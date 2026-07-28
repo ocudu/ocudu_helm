@@ -21,6 +21,27 @@ spec:
     spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if and .Values.auth.enabled .Values.auth.adminToken.existingSecret }}
+      initContainers:
+        - name: prepare-admin-token
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              cp "/bootstrap-source/{{ .Values.auth.adminToken.key }}" \
+                "{{ .Values.auth.adminToken.mountPath }}/admin-token.json"
+              chmod 0600 "{{ .Values.auth.adminToken.mountPath }}/admin-token.json"
+          volumeMounts:
+            - name: admin-token-source
+              mountPath: /bootstrap-source
+              readOnly: true
+            - name: admin-token
+              mountPath: {{ .Values.auth.adminToken.mountPath }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+      {{- end }}
       containers:
         - name: influxdb3
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -31,14 +52,53 @@ spec:
             - name: INFLUXDB_NODE_ID
               value: "{{ .Values.env.INFLUXDB_NODE_ID }}"
           command: ["influxdb3", "serve"]
-          args: {{ toJson .Values.args }}
+          args:
+            {{- toYaml .Values.args | nindent 12 }}
+            {{- if not .Values.auth.enabled }}
+            - --without-auth
+            {{- else if .Values.auth.adminToken.existingSecret }}
+            - --admin-token-file={{ .Values.auth.adminToken.mountPath }}/admin-token.json
+            {{- end }}
+            {{- if .Values.tls.enabled }}
+            - --tls-cert={{ .Values.tls.mountPath }}/tls.crt
+            - --tls-key={{ .Values.tls.mountPath }}/tls.key
+            - --tls-minimum-version={{ .Values.tls.minimumVersion }}
+            {{- end }}
+            {{- with .Values.retentionPeriod }}
+            - --retention-period={{ . }}
+            {{- end }}
+            {{- with .Values.extraArgs }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           ports:
             - containerPort: {{ .Values.service.port }}
+              name: api
+          readinessProbe:
+            tcpSocket:
+              port: api
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            tcpSocket:
+              port: api
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 3
           volumeMounts:
             - name: data
               mountPath: {{ .Values.persistence.mountPath }}
             - name: plugins
               mountPath: {{ .Values.persistence.pluginMountPath }}
+            {{- if and .Values.auth.enabled .Values.auth.adminToken.existingSecret }}
+            - name: admin-token
+              mountPath: {{ .Values.auth.adminToken.mountPath }}
+              readOnly: true
+            {{- end }}
+            {{- if .Values.tls.enabled }}
+            - name: tls
+              mountPath: {{ .Values.tls.mountPath }}
+              readOnly: true
+            {{- end }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           resources:
@@ -50,6 +110,27 @@ spec:
       affinity:
         {{- toYaml .Values.affinity | nindent 8 }}
       volumes:
+        {{- if and .Values.auth.enabled .Values.auth.adminToken.existingSecret }}
+        - name: admin-token-source
+          secret:
+            secretName: {{ required "auth.adminToken.existingSecret is required when admin-token bootstrap is configured" .Values.auth.adminToken.existingSecret }}
+            items:
+              - key: {{ .Values.auth.adminToken.key }}
+                path: {{ .Values.auth.adminToken.key }}
+        - name: admin-token
+          emptyDir: {}
+        {{- end }}
+        {{- if .Values.tls.enabled }}
+        - name: tls
+          secret:
+            secretName: {{ required "tls.existingSecret is required when tls.enabled=true" .Values.tls.existingSecret }}
+            defaultMode: 0440
+            items:
+              - key: {{ .Values.tls.certKey }}
+                path: tls.crt
+              - key: {{ .Values.tls.privateKeyKey }}
+                path: tls.key
+        {{- end }}
         - name: data
 {{- if .Values.persistence.enabled }}
   {{- if eq .Values.persistence.type "pvc" }}

@@ -1,17 +1,15 @@
 # InfluxDB 3
 
-> **⚠️ PoC/Demo - Not for Production Use**
-> 
-> This chart is intended for **development, testing, and demonstration purposes only**.
-> It has not been hardened for production use. Use in production environments at your own risk.
-
 A Helm chart for InfluxDB 3 Core time-series database
 
-This Helm chart deploys a simple, single-node InfluxDB 3 instance in Kubernetes for metrics storage.
+This Helm chart deploys a single-node InfluxDB 3 instance in Kubernetes for
+metrics storage. Authentication and file-backed PVC persistence are enabled by
+default. TLS is optional because certificate issuance remains the
+administrator's responsibility.
 
 ## Prerequisites
 
-**For hostPath storage** (default), create the directory on your nodes:
+**For hostPath storage**, create the directory on your nodes:
 
 ```bash
 sudo mkdir -p /mnt/influxdb3 /mnt/influxdb3-plugins
@@ -29,7 +27,23 @@ podSecurityContext:
 
 ## Installing the Chart
 
-**Basic installation** (hostPath storage):
+Create a Secret containing a preconfigured admin-token JSON document:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: influxdb3-auth
+type: Opaque
+stringData:
+  admin-token.json: |
+    {"token":"apiv3_replace_with_a_real_token"}
+```
+
+The file is used only to initialize an empty data directory. Keep the raw
+token separately for clients and use an external Secret manager in production.
+
+**Basic installation**:
 
 **From OCI registry**:
 ```bash
@@ -38,7 +52,8 @@ helm install influxdb3 oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm
 
 **From local chart**:
 ```bash
-helm install influxdb3 ./charts/influxdb3
+helm install influxdb3 ./charts/influxdb3 \
+  --set auth.adminToken.existingSecret=influxdb3-auth
 ```
 
 **With PVC storage**:
@@ -61,6 +76,13 @@ persistence:
     accessMode: ReadWriteOnce
     size: 50Gi
     pluginsSize: 1Gi
+    annotations:
+      helm.sh/resource-policy: keep
+
+auth:
+  enabled: true
+  adminToken:
+    existingSecret: influxdb3-auth
 
 podSecurityContext:
   runAsUser: 1000
@@ -80,7 +102,13 @@ To uninstall/delete the influxdb3 deployment:
 helm delete influxdb3
 ```
 
-The command removes all the Kubernetes components associated with the chart and deletes the release.
+The command removes the workload and release. PVCs carry
+`helm.sh/resource-policy: keep` by default and therefore remain. Delete them
+explicitly only when their data is no longer needed:
+
+```console
+kubectl delete pvc <release>-influxdb3-data <release>-influxdb3-plugins
+```
 
 ## Configuration
 
@@ -109,28 +137,32 @@ persistence:
     pathType: DirectoryOrCreate
 ```
 
-### Authentication
+### Authentication and TLS
 
-⚠️ **Default**: Authentication is **disabled** (`--without-auth`) for PoC/Demo.
+Authentication is enabled by default. Supply a preconfigured admin token to
+bootstrap an empty database:
 
-**For Production**, remove `--without-auth` from `args` and configure authentication:
 ```yaml
-args:
-  - --object-store=memory
-  - --data-dir=/var/lib/influxdb3
-  - --plugin-dir=/var/lib/influxdb3-plugins
-  - --node-id=node0
-  - --http-bind=0.0.0.0:8081
-  # --without-auth removed - configure via env vars or secrets
+auth:
+  enabled: true
+  adminToken:
+    existingSecret: influxdb3-auth
+    key: admin-token.json
+tls:
+  enabled: true
+  existingSecret: influxdb3-tls
+  minimumVersion: tls-1.2
 ```
+
+The TLS Secret must contain `tls.crt` and `tls.key`. Disabling authentication
+with `auth.enabled=false` is intended only for disposable development
+environments.
 
 ### Data Retention
 
 Configure automatic data deletion with retention policies:
 ```yaml
-args:
-  # ... other args ...
-  - --retention-period=30d  # 7d, 30d, 90d, 1y
+retentionPeriod: 30d
 ```
 
 ### Key Parameters
@@ -140,9 +172,13 @@ args:
 | `image.repository` | `influxdb` | Container image |
 | `image.tag` | `3.1.0-core` | Image tag |
 | `service.port` | `8081` | HTTP API port |
-| `persistence.type` | `hostPath` | Storage type (pvc or hostPath) |
+| `persistence.type` | `pvc` | Storage type (pvc or hostPath) |
 | `persistence.pvc.size` | `50Gi` | PVC data size |
 | `persistence.hostPath.path` | `/mnt/influxdb3` | Host path |
+| `auth.enabled` | `true` | Require API authorization |
+| `auth.adminToken.existingSecret` | `""` | Optional bootstrap-token Secret |
+| `tls.enabled` | `false` | Serve the API over TLS |
+| `retentionPeriod` | `30d` | Default data retention |
 
 See [values.yaml](values.yaml) for complete configuration options.
 

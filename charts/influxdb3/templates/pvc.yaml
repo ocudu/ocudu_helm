@@ -11,6 +11,10 @@ metadata:
   labels:
     app: influxdb3
     component: storage
+  {{- with .Values.persistence.pvc.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   accessModes:
     - {{ .Values.persistence.pvc.accessMode }}
@@ -29,6 +33,10 @@ metadata:
   labels:
     app: influxdb3
     component: storage
+  {{- with .Values.persistence.pvc.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   accessModes:
     - {{ .Values.persistence.pvc.accessMode }}

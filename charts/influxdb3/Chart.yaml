@@ -3,7 +3,7 @@
 
 apiVersion: v2
 name: influxdb3
-description: InfluxDB 3.0 Core time-series database for OCUDU metrics (PoC/Demo)
+description: InfluxDB 3 Core time-series database for OCUDU metrics
 kubeVersion: ">= 1.24.0-0"
 icon: https://influxdata.github.io/branding/img/downloads/influxdata-logo--full--castle.svg
 home: https://gitlab.com/ocudu/ocudu_elements/ocudu_helm
@@ -25,5 +25,5 @@ annotations:
   artifacthub.io/operator: "false"
   artifacthub.io/prerelease: "true"
 type: application
-version: 2.2.3
+version: 2.3.0
 appVersion: "3.1.0-core"
