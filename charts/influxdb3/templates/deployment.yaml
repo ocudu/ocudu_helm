@@ -64,9 +64,6 @@ spec:
             - --tls-key={{ .Values.tls.mountPath }}/tls.key
             - --tls-minimum-version={{ .Values.tls.minimumVersion }}
             {{- end }}
-            {{- with .Values.retentionPeriod }}
-            - --retention-period={{ . }}
-            {{- end }}
             {{- with .Values.extraArgs }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

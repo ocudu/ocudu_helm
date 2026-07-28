@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.4.0 (2026-07-29)
+
+### Added
+- A post-install/post-upgrade hook that creates the configured `database` with
+  `retentionPeriod`, since InfluxDB3 Core accepts a retention period only at
+  database-creation time. The hook warns instead of failing when the database
+  already exists, because retention cannot be changed afterwards.
+- `auth.tokenKey` for the raw administrator token used by clients.
+
+### Changed
+- Default image is InfluxDB3 Core `3.10.3-core`. `3.1.0-core` rejects
+  `--admin-token-file`, so preconfigured admin tokens require this version.
+- Dropped the invalid `--retention-period` server argument: `influxdb3 serve`
+  has no retention flag in any 3.x Core release.
+
 ## 2.3.0 (2026-07-28)
 
 ### Added

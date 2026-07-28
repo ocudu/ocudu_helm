@@ -1,0 +1,90 @@
+{{- if and .Values.retentionPeriod .Values.database .Values.auth.enabled .Values.auth.adminToken.existingSecret }}
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+# InfluxDB3 Core accepts a retention period only when a database is created
+# (`influxdb3 create database --retention-period`): `serve` has no retention
+# flag, and re-creating an existing database returns 409 Conflict. This hook
+# therefore creates the database with its retention period as soon as the
+# server is reachable, ahead of writers that would otherwise auto-create it
+# without one.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "influxdb3.fullname" . }}-retention
+  labels:
+    app: influxdb3
+    component: retention
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app: influxdb3
+        component: retention
+    spec:
+      restartPolicy: Never
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: retention
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: INFLUXDB3_HOST_URL
+              # The Service carries the fixed name "influxdb3", which is also
+              # what the server certificate's SANs cover.
+              value: "{{ if .Values.tls.enabled }}https{{ else }}http{{ end }}://influxdb3:{{ .Values.service.port }}"
+            - name: INFLUXDB3_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.auth.adminToken.existingSecret }}
+                  key: {{ .Values.auth.tokenKey }}
+            {{- if .Values.tls.enabled }}
+            - name: INFLUXDB3_TLS_CA
+              value: {{ .Values.tls.mountPath }}/ca.crt
+            {{- end }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              for i in $(seq 1 60); do
+                influxdb3 show databases >/dev/null 2>&1 && break
+                sleep 2
+              done
+              if influxdb3 create database --retention-period '{{ .Values.retentionPeriod }}' '{{ .Values.database }}'; then
+                echo "created database {{ .Values.database }} with retention {{ .Values.retentionPeriod }}"
+              elif influxdb3 show databases | grep -qw '{{ .Values.database }}'; then
+                echo "WARNING: database {{ .Values.database }} already exists. InfluxDB3 cannot change retention after creation, so its retention remains whatever it was created with. Recreate the database to apply {{ .Values.retentionPeriod }}."
+              else
+                echo "failed to create database {{ .Values.database }}"
+                exit 1
+              fi
+          {{- if .Values.tls.enabled }}
+          volumeMounts:
+            - name: tls
+              mountPath: {{ .Values.tls.mountPath }}
+              readOnly: true
+      volumes:
+        - name: tls
+          secret:
+            secretName: {{ .Values.tls.existingSecret }}
+            items:
+              - key: {{ .Values.tls.caKey }}
+                path: ca.crt
+          {{- end }}
+{{- end }}

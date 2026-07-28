@@ -121,6 +121,9 @@ auth:
   # demo behaviour; set true together with adminToken.existingSecret for a
   # production deployment.
   enabled: false
+  # -- Secret key holding the raw administrator token used by clients, including
+  # the retention hook. Must be the same credential as the bootstrap JSON.
+  tokenKey: token
   adminToken:
     # -- Existing Secret containing the preconfigured admin-token JSON file
     existingSecret: ""
@@ -140,7 +143,13 @@ tls:
   mountPath: /etc/influxdb3-tls
   minimumVersion: tls-1.2
 
-# -- Default retention applied by the server
+# -- Database created by the retention hook. InfluxDB3 Core only accepts a
+# retention period at database-creation time, so this is the database the
+# retention period below is applied to. Set to "" to skip creating one.
+database: ""
+
+# -- Retention period applied to the database above when it is created.
+# InfluxDB3 Core cannot change retention on an existing database.
 retentionPeriod: ""
 
 # -- Command-line arguments for InfluxDB3 server
