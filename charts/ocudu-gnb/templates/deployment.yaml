@@ -34,6 +34,9 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ include "ocudu-gnb.serviceAccountName" . }}
+      {{- with .Values.runtimeClassName }}
+      runtimeClassName: {{ . | quote }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       {{- if .Values.network.hostNetwork }}
@@ -103,6 +106,7 @@ spec:
           emptyDir:
             medium: HugePages-2Mi
         {{- end }}
+      {{- $resourceRequests := default dict .Values.resources.requests }}
       containers:
         - name: {{ .Chart.Name }}
           tty: true
@@ -184,6 +188,10 @@ spec:
               value: {{ include "useExtCore" . }}
             - name: HOSTNETWORK
               value: '{{ .Values.network.hostNetwork }}'
+          {{- with (index $resourceRequests "cpu") }}
+            - name: EXPECTED_CPUS
+              value: {{ . | quote }}
+          {{- end }}
           {{- if and .Values.service .Values.service.type (eq .Values.service.type "LoadBalancer") }}
             - name: LB_IP
               value: {{ .Values.service.loadBalancerIP | quote }}

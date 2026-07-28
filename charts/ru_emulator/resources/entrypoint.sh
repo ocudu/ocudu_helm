@@ -71,7 +71,9 @@ get_container_cpus() {
     fi
 
     if [ -n "$cgroup_path" ] && [ "$cgroup_path" != "/" ]; then
-        if [ -f "/sys/fs/cgroup/cpuset${cgroup_path}/cpuset.cpus" ]; then
+        if [ -f "/sys/fs/cgroup${cgroup_path}/cpuset.cpus.effective" ]; then
+            cpuset=$(cat "/sys/fs/cgroup${cgroup_path}/cpuset.cpus.effective")
+        elif [ -f "/sys/fs/cgroup/cpuset${cgroup_path}/cpuset.cpus" ]; then
             cpuset=$(cat "/sys/fs/cgroup/cpuset${cgroup_path}/cpuset.cpus")
         elif [ -f "/sys/fs/cgroup${cgroup_path}/cpuset.cpus" ]; then
             cpuset=$(cat "/sys/fs/cgroup${cgroup_path}/cpuset.cpus")
@@ -79,7 +81,9 @@ get_container_cpus() {
     fi
 
     if [ -z "$cpuset" ]; then
-        if [ -f /sys/fs/cgroup/cpuset/cpuset.cpus ]; then
+        if [ -f /sys/fs/cgroup/cpuset.cpus.effective ]; then
+            cpuset=$(cat /sys/fs/cgroup/cpuset.cpus.effective)
+        elif [ -f /sys/fs/cgroup/cpuset/cpuset.cpus ]; then
             cpuset=$(cat /sys/fs/cgroup/cpuset/cpuset.cpus)
         elif [ -f /sys/fs/cgroup/cpuset.cpus ]; then
             cpuset=$(cat /sys/fs/cgroup/cpuset.cpus)
@@ -87,24 +91,35 @@ get_container_cpus() {
     fi
 
     if [ -z "$cpuset" ]; then
-        log_warn "Could not determine CPU set from cgroup, using fallback"
-        if command -v nproc >/dev/null 2>&1; then
-            local n
-            n=$(nproc)
-            if [ "$n" -gt 0 ]; then
-                cpuset="0-$((n-1))"
-            else
-                cpuset="0-1"
-            fi
-        else
-            cpuset="0-1"
-        fi
-    else
-        echo "[$(date +'%Y-%m-%d %H:%M:%S')] [INFO] Detected CPU set from cgroup: $cpuset" >&2
+        log_error "Could not determine CPU set from cgroup; refusing unsafe DPDK CPU fallback"
+        return 1
     fi
 
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] [INFO] Detected CPU set from cgroup: $cpuset" >&2
     echo "$cpuset" | xargs
     return 0
+}
+
+count_cpuset_cpus() {
+    local cpuset="$1"
+    local item start end total=0
+    local -a items
+
+    IFS=',' read -r -a items <<< "$cpuset"
+    for item in "${items[@]}"; do
+        if [[ "$item" =~ ^([0-9]+)-([0-9]+)$ ]]; then
+            start="${BASH_REMATCH[1]}"
+            end="${BASH_REMATCH[2]}"
+            [ "$end" -ge "$start" ] || return 1
+            total=$((total + end - start + 1))
+        elif [[ "$item" =~ ^[0-9]+$ ]]; then
+            total=$((total + 1))
+        else
+            return 1
+        fi
+    done
+
+    echo "$total"
 }
 
 # Update dpdk.eal_args CPU list (inside @(...)) only if dpdk section exists
@@ -121,17 +136,37 @@ update_dpdk_eal_args() {
         return 0
     fi
 
-    local cpus
-    cpus=$(get_container_cpus)
-    if [ -z "$cpus" ]; then
-        log_warn "No CPUs detected, skipping dpdk.eal_args update"
-        return 0
+    if ! grep -Eq '^[[:space:]]*eal_args:.*(\([-0-9,]+\))?@\([-0-9,]+\)' "$config_file"; then
+        log_error "dpdk.eal_args must contain a runtime-rewritable @(...) CPU mapping"
+        return 1
+    fi
+
+    if ! [[ "${EXPECTED_CPUS:-}" =~ ^[1-9][0-9]*$ ]]; then
+        log_error "DPDK requires an integer CPU request exposed as EXPECTED_CPUS"
+        return 1
+    fi
+
+    local cpus actual_cpus
+    if ! cpus=$(get_container_cpus); then
+        return 1
+    fi
+    if ! actual_cpus=$(count_cpuset_cpus "$cpus"); then
+        log_error "Invalid cgroup CPU set: $cpus"
+        return 1
+    fi
+    if [ "$actual_cpus" -ne "$EXPECTED_CPUS" ]; then
+        log_error "Cgroup CPU set '$cpus' has ${actual_cpus} CPUs; expected ${EXPECTED_CPUS} exclusive CPUs"
+        return 1
     fi
 
     # Replace only the CPU list after @(...), preserving the lcore mapping before it.
     # Supports both formats: @(cpus) and (lcores)@(cpus)
     if ! sed -i -E "s/(\\([-0-9,]+\\))?@\\([-0-9,]+\\)/\\1@(${cpus})/" "$config_file"; then
         log_error "Failed to update dpdk.eal_args"
+        return 1
+    fi
+    if ! grep -qF "@(${cpus})" "$config_file"; then
+        log_error "dpdk.eal_args CPU mapping was not updated"
         return 1
     fi
 

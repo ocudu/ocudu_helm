@@ -26,6 +26,9 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
+      {{- with .Values.runtimeClassName }}
+      runtimeClassName: {{ . | quote }}
+      {{- end }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -57,6 +60,7 @@ spec:
           emptyDir:
             medium: HugePages-1Gi
         {{- end }}
+      {{- $resourceRequests := default dict .Values.resources.requests }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -91,12 +95,20 @@ spec:
               value: {{ .Values.config.log.filename | default (printf "%s/ru_em.log" .Values.persistence.mountPath) | quote }}
             - name: RU_PRESERVE_LOGS
               value: {{ .Values.persistence.preserveOldLogs | quote }}
+            {{- with (index $resourceRequests "cpu") }}
+            - name: EXPECTED_CPUS
+              value: {{ . | quote }}
+            {{- end }}
           {{- else }}
           env:
             - name: RU_LOG_FILE
               value: {{ .Values.config.log.filename | default (printf "%s/ru_em.log" .Values.persistence.mountPath) | quote }}
             - name: RU_PRESERVE_LOGS
               value: {{ .Values.persistence.preserveOldLogs | quote }}
+            {{- with (index $resourceRequests "cpu") }}
+            - name: EXPECTED_CPUS
+              value: {{ . | quote }}
+            {{- end }}
           {{- end }}
           volumeMounts:
             - name: config-volume

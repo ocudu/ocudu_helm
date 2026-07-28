@@ -63,6 +63,9 @@ podDisruptionBudget:
 # -- Additional pod annotations
 podAnnotations: {}
 
+# -- RuntimeClass used for the DU pod (for example, an OpenShift PerformanceProfile RuntimeClass)
+runtimeClassName: ""
+
 # -- Extra labels applied to the Deployment and Pod template
 extraLabels: {}
 

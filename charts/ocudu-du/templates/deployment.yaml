@@ -38,6 +38,9 @@ spec:
     spec:
       serviceAccountName: {{ include "ocudu-du.serviceAccountName" . }}
       automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      {{- with .Values.runtimeClassName }}
+      runtimeClassName: {{ . | quote }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       {{- if .Values.network.hostNetwork }}
@@ -108,6 +111,7 @@ spec:
           emptyDir:
             medium: HugePages-2Mi
         {{- end }}
+      {{- $resourceRequests := default dict .Values.resources.requests }}
       containers:
         - name: {{ .Chart.Name }}
           tty: true
@@ -198,6 +202,10 @@ spec:
               value: /run/ocudu
             - name: PRESERVE_OLD_LOGS
               value: {{ .Values.persistence.preserveOldLogs | quote }}
+          {{- with (index $resourceRequests "cpu") }}
+            - name: EXPECTED_CPUS
+              value: {{ . | quote }}
+          {{- end }}
           {{- if and .Values.sriovConfig .Values.sriovConfig.enabled }}
             - name: RESOURCE_EXTENDED
               value: {{ .Values.sriovConfig.extendedResourceName | quote }}

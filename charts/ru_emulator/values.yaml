@@ -45,6 +45,9 @@ configmap: {}
 # @default -- `{}` (no additional annotations)
 podAnnotations: {}
 
+# -- RuntimeClass used for the RU emulator pod (for example, an OpenShift PerformanceProfile RuntimeClass)
+runtimeClassName: ""
+
 # -- Extra labels applied to the Deployment and Pod template
 # @default -- `{}` (no extra labels)
 extraLabels: {}
