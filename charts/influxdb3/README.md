@@ -36,12 +36,13 @@ metadata:
   name: influxdb3-auth
 type: Opaque
 stringData:
+  token: apiv3_replace_with_a_real_token
   admin-token.json: |
-    {"token":"apiv3_replace_with_a_real_token"}
+    {"token":"apiv3_replace_with_a_real_token","name":"_admin"}
 ```
 
-The file is used only to initialize an empty data directory. Keep the raw
-token separately for clients and use an external Secret manager in production.
+The file is used only to initialize an empty data directory. The raw `token`
+key is for clients; use an external Secret manager in production.
 
 **Basic installation**:
 
