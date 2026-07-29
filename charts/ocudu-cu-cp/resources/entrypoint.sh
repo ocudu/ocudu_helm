@@ -219,6 +219,7 @@ main() {
 
     log_info "=== OCUDU CU-CP Entrypoint ==="
     log_info "Config: $config_file"
+    log_info "ENABLE_OCUDU_O1: ${ENABLE_OCUDU_O1}"
     log_info "HOSTNETWORK: ${HOSTNETWORK}"
     log_info "OCUDU_LOG_DIR: ${OCUDU_LOG_DIR}"
     log_info "PRESERVE_OLD_LOGS: ${PRESERVE_OLD_LOGS}"
@@ -226,6 +227,25 @@ main() {
     trap terminate SIGTERM SIGINT
 
     while true; do
+        # Wait for O1 config if enabled
+        if [ "$ENABLE_OCUDU_O1" = "true" ]; then
+            log_info "O1 enabled, waiting for config file creation"
+            local elapsed=0
+            local timeout="${CONFIG_CREATE_TIMEOUT}"
+
+            while [ ! -f "$config_file" ] && [ $elapsed -lt "$timeout" ]; do
+                log_info "Waiting for O1 to create config... (${elapsed}/${timeout}s)"
+                sleep 1
+                elapsed=$((elapsed + 1))
+            done
+
+            if [ ! -f "$config_file" ]; then
+                log_fatal "Timeout after ${timeout}s waiting for config: $config_file"
+            fi
+
+            log_info "Config file created by O1"
+        fi
+
         validate_config_file "$config_file" || log_fatal "Config validation failed"
 
         process_and_run_cu_cp "$config_file"
@@ -234,6 +254,12 @@ main() {
         if [ $exit_code -ne 0 ]; then
             log_error "CU-CP exited with code $exit_code"
             exit $exit_code
+        fi
+
+        # Clean up O1 config for next iteration
+        if [ "$ENABLE_OCUDU_O1" = "true" ] && [ -f "$config_file" ]; then
+            log_info "Removing O1 config for next iteration"
+            rm -f "$config_file"
         fi
 
         log_info "CU-CP exited cleanly, restarting..."
@@ -245,7 +271,9 @@ main() {
 #==============================================================================
 
 PRESERVE_OLD_LOGS="${PRESERVE_OLD_LOGS:-false}"
-OCUDU_LOG_DIR="${OCUDU_LOG_DIR:-/var/log/ocudu}"
+CONFIG_CREATE_TIMEOUT="${CONFIG_CREATE_TIMEOUT:-30}"
+ENABLE_OCUDU_O1="${ENABLE_OCUDU_O1:-false}"
 HOSTNETWORK="${HOSTNETWORK:-false}"
+OCUDU_LOG_DIR="${OCUDU_LOG_DIR:-/var/log/ocudu}"
 
 main "$@"
