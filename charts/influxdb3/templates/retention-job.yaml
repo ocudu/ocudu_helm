@@ -62,16 +62,27 @@ spec:
             - /bin/sh
             - -ec
             - |
-              for i in $(seq 1 60); do
-                influxdb3 show databases >/dev/null 2>&1 && break
+              # Wait for the server to answer before drawing any conclusion: an
+              # unreachable server and a rejected request are different failures
+              # and must not be reported as the same thing.
+              reachable=no
+              for i in $(seq 1 150); do
+                if influxdb3 show databases >/dev/null 2>&1; then
+                  reachable=yes
+                  break
+                fi
                 sleep 2
               done
+              if [ "$reachable" != yes ]; then
+                echo "InfluxDB3 did not become reachable at $INFLUXDB3_HOST_URL; retention for {{ .Values.database }} was not applied"
+                exit 1
+              fi
               if influxdb3 create database --retention-period '{{ .Values.retentionPeriod }}' '{{ .Values.database }}'; then
                 echo "created database {{ .Values.database }} with retention {{ .Values.retentionPeriod }}"
               elif influxdb3 show databases | grep -qw '{{ .Values.database }}'; then
                 echo "WARNING: database {{ .Values.database }} already exists. InfluxDB3 cannot change retention after creation, so its retention remains whatever it was created with. Recreate the database to apply {{ .Values.retentionPeriod }}."
               else
-                echo "failed to create database {{ .Values.database }}"
+                echo "creating database {{ .Values.database }} failed while the server was reachable"
                 exit 1
               fi
           {{- if .Values.tls.enabled }}
