@@ -1,14 +1,15 @@
 {{- if and .Values.retentionPeriod .Values.database .Values.auth.enabled .Values.auth.adminToken.existingSecret }}
+
 # SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
 # SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+apiVersion: batch/v1
+kind: Job
 # InfluxDB3 Core accepts a retention period only when a database is created
 # (`influxdb3 create database --retention-period`): `serve` has no retention
 # flag, and re-creating an existing database returns 409 Conflict. This hook
 # therefore creates the database with its retention period as soon as the
 # server is reachable, ahead of writers that would otherwise auto-create it
 # without one.
-apiVersion: batch/v1
-kind: Job
 metadata:
   name: {{ include "influxdb3.fullname" . }}-retention
   labels:
