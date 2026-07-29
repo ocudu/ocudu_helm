@@ -21,8 +21,31 @@ spec:
     spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      {{- if and .Values.auth.enabled .Values.auth.adminToken.existingSecret }}
+      {{- if or (and .Values.auth.enabled .Values.auth.adminToken.existingSecret) .Values.tls.enabled }}
       initContainers:
+        {{- if .Values.tls.enabled }}
+        - name: prepare-tls
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              cp /tls-source/tls.crt /tls-source/tls.key /tls-source/ca.crt \
+                "{{ .Values.tls.mountPath }}/"
+              chmod 0600 "{{ .Values.tls.mountPath }}"/tls.crt \
+                "{{ .Values.tls.mountPath }}"/tls.key \
+                "{{ .Values.tls.mountPath }}"/ca.crt
+          volumeMounts:
+            - name: tls-source
+              mountPath: /tls-source
+              readOnly: true
+            - name: tls
+              mountPath: {{ .Values.tls.mountPath }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+        {{- end }}
+        {{- if and .Values.auth.enabled .Values.auth.adminToken.existingSecret }}
         - name: prepare-admin-token
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -41,6 +64,7 @@ spec:
               mountPath: {{ .Values.auth.adminToken.mountPath }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
+        {{- end }}
       {{- end }}
       containers:
         - name: influxdb3
@@ -118,10 +142,15 @@ spec:
           emptyDir: {}
         {{- end }}
         {{- if .Values.tls.enabled }}
-        - name: tls
+        # Mounted secrets are owned by root, so a group-restricted mode is
+        # unreadable to this image's unprivileged influxdb3 user unless the
+        # platform happens to inject a matching fsGroup. The source is mounted
+        # world-readable and copied to an emptyDir at 0600 by an init container,
+        # the same approach the admin token uses.
+        - name: tls-source
           secret:
             secretName: {{ required "tls.existingSecret is required when tls.enabled=true" .Values.tls.existingSecret }}
-            defaultMode: 0440
+            defaultMode: 0444
             items:
               - key: {{ .Values.tls.certKey }}
                 path: tls.crt
@@ -129,6 +158,8 @@ spec:
                 path: tls.key
               - key: {{ .Values.tls.caKey }}
                 path: ca.crt
+        - name: tls
+          emptyDir: {}
         {{- end }}
         - name: data
 {{- if .Values.persistence.enabled }}

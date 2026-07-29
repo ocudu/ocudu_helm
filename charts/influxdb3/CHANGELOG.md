@@ -9,6 +9,13 @@
   already exists, because retention cannot be changed afterwards.
 - `auth.tokenKey` for the raw administrator token used by clients.
 
+### Fixed
+- TLS material is copied to an emptyDir at mode 0600 by an init container
+  instead of being mounted group-readable. Mounted Secrets are root-owned, so
+  the previous 0440 mount was unreadable to the image's unprivileged
+  `influxdb3` user unless the platform injected a matching fsGroup, and the
+  server failed to start with `tls config error: Permission denied`.
+
 ### Changed
 - Default image is InfluxDB3 Core `3.10.3-core`. `3.1.0-core` rejects
   `--admin-token-file`, so preconfigured admin tokens require this version.
