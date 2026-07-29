@@ -57,7 +57,7 @@ spec:
             {{- range $.Values.telegraf.env }}
             {{- if and (ne .name "WS_URL") (ne .name "GNB_ID") }}
             - name: {{ .name }}
-              value: {{ .value | quote }}
+              value: {{ tpl (print .value) $ | quote }}
             {{- end }}
             {{- end }}
           {{- with $.Values.telegraf.livenessProbe }}

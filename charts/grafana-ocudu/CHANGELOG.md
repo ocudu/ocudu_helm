@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.5.0 (2026-07-29)
+
+### Changed
+- Resolve the InfluxDB3 service namespace from the release instead of hardcoding `ocudu`, so the chart installs into any namespace without an override. Affects `grafana.env.INFLUXDB3_EXTERNAL_URL`, the Grafana datasource `url`, and `telegraf.env.INFLUXDB3_EXTERNAL_URL`
+- Template `telegraf.env` values so they can reference release metadata
+
+### Migration
+- The namespace override described in 2.2.0 is no longer needed for `INFLUXDB3_EXTERNAL_URL` and the datasource `url`. Values files that still override them keep working; `WS_URL` remains deployment-specific
+- Installing into a namespace whose InfluxDB3 hostPath directories do not yet exist requires them to be writable by uid 1500 — see the `influxdb3` chart notes on the plugin directory
+
 ## 2.4.0 (2026-06-01)
 
 ### Changed
