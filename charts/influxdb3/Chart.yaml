@@ -26,4 +26,4 @@ annotations:
   artifacthub.io/prerelease: "true"
 type: application
 version: 2.4.0
-appVersion: "3.10.3-core"
+appVersion: "3.1.0-core"

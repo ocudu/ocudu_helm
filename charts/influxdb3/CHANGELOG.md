@@ -20,10 +20,30 @@
 - Dropped the invalid `--retention-period` server argument: `influxdb3 serve`
   has no retention flag in any 3.x Core release.
 
+### Documentation
+- Corrected the README, which described authorization, PVC storage, retained
+  claims, and retention as defaults. They are opt-in; the documented defaults now
+  match `values.yaml`, including the `Key Parameters` table
+- Documented that the storage directories must be owned by uid/gid **1500** (the
+  `influxdb3` user in the image), not 1000, and that `fsGroup` cannot fix this
+  for hostPath volumes because kubelet does not manage their ownership
+- Documented the `--plugin-dir` prerequisite: the Processing Engine creates a
+  Python virtualenv in the plugin directory on first start, so an unwritable
+  plugin volume makes the server crash-loop with
+  `VenvError(InitError("Activation script not found at .../.venv/bin/activate"))`.
+  Added a troubleshooting entry and noted that removing `--plugin-dir` avoids it
+- Documented that `auth.enabled=true` without `auth.adminToken.existingSecret`
+  passes neither `--without-auth` nor `--admin-token-file` and must be avoided
+- Documented that retention needs `database`, `retentionPeriod`, `auth.enabled`,
+  and `auth.adminToken.existingSecret` together, and that applying retention to
+  an existing database means recreating it and discarding its data
+
 ### Notes
 - Preconfigured admin tokens require InfluxDB3 Core `3.10.3-core` or newer;
   `3.1.0-core` rejects `--admin-token-file`. The chart default image tag is
   unchanged, so set `image.tag` when enabling authentication.
+- `appVersion` tracks the default `image.tag` (`3.1.0-core`) as `values.yaml`
+  documents. It is metadata only — no template renders it.
 - Every default in this chart is unchanged from 2.2.3. Authentication, TLS,
   PVC storage, retained claims, and retention are all opt-in.
 

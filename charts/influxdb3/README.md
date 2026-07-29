@@ -3,29 +3,48 @@
 A Helm chart for InfluxDB 3 Core time-series database
 
 This Helm chart deploys a single-node InfluxDB 3 instance in Kubernetes for
-metrics storage. Authentication and file-backed PVC persistence are enabled by
-default. TLS is optional because certificate issuance remains the
-administrator's responsibility.
+metrics storage. The defaults are the demo configuration: authorization off,
+in-memory object store, and hostPath persistence. Authorization, TLS, a
+file-backed object store on a PVC, and a retention period are all supported but
+**opt-in** — see [Authentication and TLS](#authentication-and-tls) and
+[Data Retention](#data-retention) — because enabling them requires credentials
+and certificates that remain the administrator's responsibility.
 
 ## Prerequisites
 
-**For hostPath storage**, create the directory on your nodes:
+**For hostPath storage**, create the directories on your nodes and give them to
+the user the server runs as:
 
 ```bash
 sudo mkdir -p /mnt/influxdb3 /mnt/influxdb3-plugins
-sudo chown -R 1000:1000 /mnt/influxdb3*
+sudo chown -R 1500:1500 /mnt/influxdb3*
 sudo chmod -R 0775 /mnt/influxdb3*
 ```
 
-Configure security context to write to these directories:
-```yaml
-podSecurityContext:
-  runAsUser: 1000
-  runAsGroup: 1000
-  fsGroup: 1000
-```
+`1500` is the `influxdb3` uid/gid inside the upstream image. Two things make this
+a hard requirement rather than a nicety:
+
+- The default `args` pass `--plugin-dir`, which enables the Processing Engine.
+  The server **creates a Python virtualenv inside that directory on first
+  start** (roughly 13 MB); it is not part of the image. If the directory is not
+  writable, the server panics during startup with
+  `VenvError(InitError("Activation script not found at .../.venv/bin/activate"))`
+  and crash-loops. Remove `--plugin-dir` from `args` if you do not use plugins.
+- `fsGroup` does **not** apply to hostPath volumes — kubelet only manages
+  ownership for volume types that support it. A `podSecurityContext` alone
+  therefore cannot fix the permissions; the directories must already be owned
+  correctly on the node. kubelet creates a missing `DirectoryOrCreate` hostPath
+  as `root:root 0755`, which is not writable by uid 1500.
+
+PVC persistence (`persistence.type: pvc`) has no such prerequisite when the
+provisioner creates group- or world-writable volume directories, as the
+`local-path` provisioner does.
 
 ## Installing the Chart
+
+The chart installs with no prerequisites beyond the storage above. Everything in
+this section from the Secret onwards applies only when you opt in to
+authorization.
 
 Create a Secret containing a preconfigured admin-token JSON document:
 
@@ -103,9 +122,18 @@ To uninstall/delete the influxdb3 deployment:
 helm delete influxdb3
 ```
 
-The command removes the workload and release. PVCs carry
-`helm.sh/resource-policy: keep` by default and therefore remain. Delete them
-explicitly only when their data is no longer needed:
+The command removes the workload and release, and with it the PVCs. To keep the
+data across an uninstall, set the retain annotation before installing:
+
+```yaml
+persistence:
+  pvc:
+    annotations:
+      helm.sh/resource-policy: keep
+```
+
+Retained claims survive `helm delete` and are reused by a reinstall of the same
+release name. Delete them explicitly only when their data is no longer needed:
 
 ```console
 kubectl delete pvc <release>-influxdb3-data <release>-influxdb3-plugins
@@ -140,8 +168,8 @@ persistence:
 
 ### Authentication and TLS
 
-Authentication is enabled by default. Supply a preconfigured admin token to
-bootstrap an empty database:
+Authorization is disabled by default. Enable it and supply a preconfigured admin
+token to bootstrap an empty database:
 
 ```yaml
 auth:
@@ -157,15 +185,32 @@ tls:
 
 The TLS Secret must contain `tls.crt`, `tls.key`, and `ca.crt`. The CA is also
 mounted so authenticated administrative CLI operations can verify the server.
-Disabling authentication with `auth.enabled=false` is intended only for
-disposable development environments.
+Leaving `auth.enabled=false` is intended only for disposable development
+environments; it renders `--without-auth`, so the API is unauthenticated.
+
+Setting `auth.enabled=true` without `auth.adminToken.existingSecret` is a
+misconfiguration: neither `--without-auth` nor `--admin-token-file` is passed and
+the server comes up with no usable credential. Always set both together.
 
 ### Data Retention
 
-Configure automatic data deletion with retention policies:
+InfluxDB 3 Core accepts a retention period **only when a database is created**
+and cannot change it afterwards. The chart therefore applies retention through a
+post-install hook Job that creates the database for you, which requires a
+database name and the admin token:
+
 ```yaml
+database: ocudu
 retentionPeriod: 30d
+auth:
+  enabled: true
+  adminToken:
+    existingSecret: influxdb3-auth
 ```
+
+All four settings are required; with any of them unset the hook does not render
+and no retention is applied. Applying retention to a database that already exists
+means recreating it, which discards its data.
 
 ### Key Parameters
 
@@ -174,19 +219,30 @@ retentionPeriod: 30d
 | `image.repository` | `influxdb` | Container image |
 | `image.tag` | `3.1.0-core` | Image tag |
 | `service.port` | `8081` | HTTP API port |
-| `persistence.type` | `pvc` | Storage type (pvc or hostPath) |
+| `persistence.type` | `hostPath` | Storage type (pvc or hostPath) |
 | `persistence.pvc.size` | `50Gi` | PVC data size |
 | `persistence.hostPath.path` | `/mnt/influxdb3` | Host path |
-| `auth.enabled` | `true` | Require API authorization |
-| `auth.adminToken.existingSecret` | `""` | Optional bootstrap-token Secret |
+| `auth.enabled` | `false` | Require API authorization |
+| `auth.adminToken.existingSecret` | `""` | Bootstrap-token Secret, required when `auth.enabled` |
 | `tls.enabled` | `false` | Serve the API over TLS |
-| `retentionPeriod` | `30d` | Default data retention |
+| `database` | `""` | Database created by the retention hook |
+| `retentionPeriod` | `""` | Retention applied when that database is created |
 
 See [values.yaml](values.yaml) for complete configuration options.
 
 ## Troubleshooting
 
-**Permissions Issues**: Ensure directories are owned by UID/GID 1000 or set `podSecurityContext.fsGroup: 1000`.
+**Permissions Issues**: Ensure the storage directories are owned by UID/GID
+**1500**, the `influxdb3` user in the image. For PVCs, `podSecurityContext.fsGroup: 1500`
+works; for hostPath it does not, because kubelet does not manage ownership of
+hostPath volumes — fix the ownership on the node instead.
+
+**Crash loop with `VenvError` / `Activation script not found at
+"/var/lib/influxdb3-plugins/.venv/bin/activate"`**: the Processing Engine
+(enabled by `--plugin-dir` in the default `args`) creates a Python virtualenv in
+the plugin directory on first start and cannot write there. Either make the
+plugin volume writable by uid 1500 — see [Prerequisites](#prerequisites) — or
+remove `--plugin-dir` from `args` if you do not use plugins.
 
 **PVC Not Binding**: Check StorageClass availability with `kubectl get storageclass`.
 
