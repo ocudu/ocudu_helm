@@ -17,10 +17,15 @@
   server failed to start with `tls config error: Permission denied`.
 
 ### Changed
-- Default image is InfluxDB3 Core `3.10.3-core`. `3.1.0-core` rejects
-  `--admin-token-file`, so preconfigured admin tokens require this version.
 - Dropped the invalid `--retention-period` server argument: `influxdb3 serve`
   has no retention flag in any 3.x Core release.
+
+### Notes
+- Preconfigured admin tokens require InfluxDB3 Core `3.10.3-core` or newer;
+  `3.1.0-core` rejects `--admin-token-file`. The chart default image tag is
+  unchanged, so set `image.tag` when enabling authentication.
+- Every default in this chart is unchanged from 2.2.3. Authentication, TLS,
+  PVC storage, retained claims, and retention are all opt-in.
 
 ## 2.3.0 (2026-07-28)
 
@@ -31,8 +36,11 @@
 - Configurable PVC annotations and explicit extra server arguments.
 
 ### Changed
-- Authentication, file-backed PVC storage, and 30-day retention are the secure defaults.
-- PVCs are retained when the Helm release is removed.
+- No defaults changed. Authentication, TLS, file-backed PVC storage, retained
+  claims, and retention are opt-in: enable them with `auth.enabled` plus
+  `auth.adminToken.existingSecret`, `tls.enabled` plus `tls.existingSecret`,
+  `persistence.type: pvc`, `persistence.pvc.annotations`, and
+  `database` plus `retentionPeriod`.
 
 ## 2.2.3 (2026-04-09)
 
