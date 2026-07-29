@@ -1,31 +1,5 @@
 # Changelog
 
-## 2.6.0 (2026-07-29)
-
-### Fixed
-- Dropped `--plugin-dir` from this chart's `influxdb3.args` override, so a default
-  install no longer crash-loops. The flag enables the InfluxDB3 Processing Engine,
-  which creates a Python virtualenv inside the plugin directory on first start and
-  panics with
-  `VenvError(InitError("Activation script not found at .../.venv/bin/activate"))`
-  when that directory is not writable by the image's `influxdb3` user (uid 1500).
-  With the default `hostPath` persistence, kubelet creates a missing
-  `DirectoryOrCreate` path as `root:root 0755` and does not apply `fsGroup` to
-  hostPath volumes, so the default combination could not start unless the
-  directory had been chowned on the node beforehand. This stack uses no plugins or
-  triggers — Telegraf writes line protocol and Grafana reads SQL — so the engine
-  was providing nothing
-
-### Notes
-- Only this chart's own `influxdb3.args` override changed; the `influxdb3`
-  subchart and its defaults are untouched
-- Deployments that do use the Processing Engine through this chart must add
-  `--plugin-dir` back to `influxdb3.args` and ensure the plugin directory is
-  writable by uid 1500
-- With `hostPath` persistence the **data** directory must still be writable by
-  uid 1500; this change removes the plugin directory requirement only. See the
-  `influxdb3` chart README prerequisites
-
 ## 2.5.0 (2026-07-29)
 
 ### Changed
