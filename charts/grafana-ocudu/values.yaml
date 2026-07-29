@@ -132,8 +132,12 @@ influxdb3:
     - --object-store=memory
     # Data directory
     - --data-dir=/var/lib/influxdb3
-    # Plugin directory
-    - --plugin-dir=/var/lib/influxdb3-plugins
+    # --plugin-dir is deliberately omitted. It enables the Processing Engine,
+    # which creates a Python virtualenv inside the plugin directory on first
+    # start and panics with VenvError, crash-looping, when that directory is not
+    # writable by the image's influxdb3 user (uid 1500) — the case with a freshly
+    # created hostPath. This stack uses no plugins or triggers: Telegraf writes
+    # line protocol and Grafana reads SQL. Add it back here to use the engine.
     # Node identifier
     - --node-id=node0
     # HTTP bind address
