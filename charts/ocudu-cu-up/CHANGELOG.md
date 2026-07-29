@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.2.0 (2026-07-29)
+
+### Added
+
+- O1/NETCONF support gated on `o1.enable_ocudu_o1`: adds `ocudu-o1-adapter` and `netconf-server` sidecar containers to the CU-UP pod
+- `service-o1.yaml`: NETCONF service (NodePort by default, optional LoadBalancer) exposing `o1.o1Port`, plus the optional TLS port 6513
+- `o1Config` ConfigMap (`o1-config.xml` ManagedElement template with `GNBCUUPFunction`) rendered to the netconf-server when O1 is enabled, selected in place of the main `config` ConfigMap
+- O1-mode liveness probe via the adapter's `/config-healthy` endpoint on `o1.healthcheckPort`, plus a `postStart` hook that notifies the adapter (`/restarted`) once it is healthy
+- `o1.netconfServer.tls.{enabled,certSecret,clientCertSecret,tlsNodePort}` for the NETCONF-over-TLS endpoint on port 6513; `certSecret` requires a companion `clientCertSecret` (rendering fails otherwise), otherwise self-signed certs are auto-generated via `emptyDir` in dev/test
+- `o1.netconfServer.fileLog.{enabled,filename}`: optionally persist the netconf-server container's stdout/stderr to a timestamped log file under `persistence.mountPath`
+- `o1.*` values: `netconfServerAddr`, `o1Port`, `healthcheckPort`, `oamIpv4Address`, `log_level`, `ws.*`, `ves.*`, `o1Adapter.{image,resources,securityContext}`, `netconfServer.{image,service,resources,securityContext}`
+- entrypoint.sh: `ENABLE_OCUDU_O1`/`CONFIG_CREATE_TIMEOUT` handling — wait for the O1-generated config before launching `ocuup`, and remove it between restart iterations
+- `configmap.o1.nameOverride` value and `ocudu-cu-up.o1ConfigmapName` template helper
+- `values-o1.yaml`: example values preset with O1 enabled
+
+### Changed
+
+- deployment.yaml: set `dnsPolicy: ClusterFirstWithHostNet` on the pod spec unconditionally (previously only when `network.hostNetwork` was enabled) so the O1 sidecars can resolve the SMO in either network mode
+
 ## 1.1.0 (2026-07-06)
 
 ### Added

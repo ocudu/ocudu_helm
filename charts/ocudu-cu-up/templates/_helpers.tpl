@@ -46,7 +46,26 @@ Main configmap name
 {{- end }}
 
 {{/*
-Entrypoint script configmap name
+O1 mode configmap (values.o1Config)
+*/}}
+{{- define "ocudu-cu-up.o1ConfigmapName" -}}
+{{- with .Values.configmap }}
+  {{- with .o1 }}
+    {{- if .nameOverride }}
+      {{- .nameOverride | trunc 63 | trimSuffix "-" -}}
+    {{- else }}
+      {{- printf "%s-o1-config" (include "ocudu-cu-up.fullname" $) | trunc 63 | trimSuffix "-" -}}
+    {{- end }}
+  {{- else }}
+    {{- printf "%s-o1-config" (include "ocudu-cu-up.fullname" $) | trunc 63 | trimSuffix "-" -}}
+  {{- end }}
+{{- else }}
+  {{- printf "%s-o1-config" (include "ocudu-cu-up.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end }}
+{{- end }}
+
+{{/*
+Entrypoint script configmap
 */}}
 {{- define "ocudu-cu-up.entrypointConfigmapName" -}}
 {{- with .Values.configmap }}
@@ -103,7 +122,8 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Create the image path
+Create the image path for the passed in image field (tag or sha256: digest).
+Call with any image dict, e.g. .Values.image or (.Values.o1).o1Adapter.image
 */}}
 {{- define "ocudu-cu-up.image" -}}
 {{- if eq (substr 0 7 (.tag | toString)) "sha256:" -}}
@@ -112,3 +132,10 @@ Create the image path
 {{- printf "%s:%s" .repository (.tag | toString) -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+NETCONF-over-TLS port. Fixed by the netconf-server image, which is passed no port
+flag — this is a single source of truth for the templates, not a tunable.
+See the o1Port note in values-o1.yaml.
+*/}}
+{{- define "ocudu-cu-up.o1.tlsPort" -}}6513{{- end -}}
