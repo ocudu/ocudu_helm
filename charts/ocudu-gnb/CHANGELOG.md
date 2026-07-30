@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.10.0 (2026-07-30)
+
+### Added
+
+- `o1.o1Adapter.fileLog.{enabled,filename}`: optionally persist the o1 adapter container's stdout/stderr to a log file under `persistence.mountPath`. When enabled the container command is wrapped in a shell that tees the stream to the file (mounting the shared `ocudu-logs` volume, alongside the gnb and netconf-server logs) while still forwarding it to pod stdout so `kubectl logs` keeps working. The adapter timestamps its own lines, so they are copied verbatim
+
 ## 3.9.2 (2026-07-15)
 
 ### Fixed

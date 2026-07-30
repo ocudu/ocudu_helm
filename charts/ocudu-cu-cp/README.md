@@ -80,6 +80,7 @@ workload that should not run overlapping old/new pods.
 | `o1.netconfServer.tls.enabled` | bool | `false` | Enable the NETCONF-over-TLS endpoint on port 6513 |
 | `o1.netconfServer.tls.certSecret` | string | `""` | Secret with the server identity (`ca.crt`, `server.crt`, `server.key`); omit for auto-generated self-signed certs |
 | `o1.netconfServer.tls.clientCertSecret` | string | `""` | Secret with the adapter's client identity (`ca.crt`, `client.crt`, `client.key`); required when `certSecret` is set |
+| `o1.o1Adapter.fileLog.enabled` | bool | `false` | Persist the o1 adapter output to a log file |
 | `o1.netconfServer.fileLog.enabled` | bool | `false` | Persist the netconf-server output to a timestamped log file |
 | `config.cu-cp-config.yml` | string | See `values.yaml` | CU-CP application configuration file |
 | `o1Config.o1-config.xml` | string | See `values-o1.yaml` | ManagedElement template served by the netconf-server (replaces `config` in O1 mode) |
@@ -280,21 +281,30 @@ o1:
 with a clear message otherwise. The server uses its secret as-is without
 generating new certs.
 
-### Persistent netconf-server logs
+### Persistent sidecar logs
 
-The netconf-server emits no timestamps of its own. When `fileLog` is enabled its
-output is prefixed with `[YYYY-MM-DD HH:MM:SS]` and tee'd to a file under
-`persistence.mountPath` (the same volume as the `ocucp` logs), while still
-reaching pod stdout so `kubectl logs` keeps working. The file only survives pod
+Both sidecars can tee their output to a file under `persistence.mountPath` (the
+same volume as the `ocucp` logs) while still reaching pod stdout, so
+`kubectl logs` keeps working. All three containers mount the shared `ocudu-logs`
+volume. The files are appended to, are not rotated, and only survive pod
 restarts when `persistence.enabled` is true.
 
 ```yaml
 o1:
+  o1Adapter:
+    fileLog:
+      enabled: true
+      filename: o1-adapter.log
   netconfServer:
     fileLog:
       enabled: true
       filename: netconf.log
 ```
+
+The adapter timestamps its own lines, so they are copied verbatim — including
+the ANSI colour codes around the log level, so read that file with `less -R`.
+The netconf-server emits no timestamps, so its lines are prefixed with
+`[YYYY-MM-DD HH:MM:SS]` on the way to the file.
 
 ## Support
 

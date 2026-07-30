@@ -371,6 +371,20 @@ o1:
       tag: "20260706_bd8b634b"
     resources: {}
     securityContext: {}
+    # -- Persist the o1 adapter container's stdout/stderr to a log file.
+    # When enabled the container command is wrapped in a shell that tees the stream to
+    # <persistence.mountPath>/<filename> (the same volume as the ocu logs), while still
+    # forwarding it to the pod stdout so `kubectl logs` keeps working. The adapter
+    # timestamps its own lines, so they land in the file verbatim - including the ANSI
+    # colour codes around the log level, so read the file with `less -R`.
+    # The file only survives pod restarts when persistence.enabled is true.
+    fileLog:
+      # -- Enable writing the o1 adapter output to a persistent file.
+      # @default -- `false`
+      enabled: false
+      # -- Log file name, created under persistence.mountPath.
+      # @default -- `o1-adapter.log`
+      filename: o1-adapter.log
   netconfServer:
     service:
       # -- Service type (ClusterIP, NodePort, or LoadBalancer)

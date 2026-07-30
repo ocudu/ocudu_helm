@@ -208,6 +208,8 @@ spec:
                     exit 1
           {{- end }}
         {{- if (.Values.o1).enable_ocudu_o1 }}
+        {{- $adapterFileLog := ((.Values.o1).o1Adapter.fileLog).enabled }}
+        {{- $adapterLogFile := printf "%s/%s" .Values.persistence.mountPath (((.Values.o1).o1Adapter.fileLog).filename | default "o1-adapter.log") }}
         - name: ocudu-o1-adapter
           securityContext:
             {{- toYaml (.Values.o1).o1Adapter.securityContext | nindent 12 }}
@@ -215,8 +217,20 @@ spec:
           imagePullPolicy: {{ (.Values.o1).o1Adapter.image.pullPolicy }}
           resources:
             {{- toYaml (.Values.o1).o1Adapter.resources | nindent 12 }}
+          {{- if $adapterFileLog }}
+          # Tee the adapter's output onto the shared log volume. The adapter timestamps
+          # its own lines, so they are copied verbatim. Handing the flags to the shell as
+          # positional parameters ("$0" is the script, "$@" the flags) keeps the list
+          # below identical for both invocations.
+          command: [ "/bin/sh", "-c" ]
+          {{- else }}
           command: [ "/usr/local/bin/python3" ]
+          {{- end }}
           args:
+            {{- if $adapterFileLog }}
+            # -u line-flushes the stream now that stdout is a pipe and not the pod log.
+            - exec /usr/local/bin/python3 -u "$0" "$@" 2>&1 | tee -a {{ $adapterLogFile | quote }}
+            {{- end }}
             - "/usr/src/app/src/o1_adapter.py"
             - "--netconf_host"
             - {{ (.Values.o1).netconfServerAddr }}
@@ -258,6 +272,12 @@ spec:
           volumeMounts:
             - name: o1-cu-up-config
               mountPath: /etc/config
+            {{- if $adapterFileLog }}
+            # Shared log volume (same as the ocu binary logs) so the adapter's
+            # output persists alongside them.
+            - name: ocudu-logs
+              mountPath: {{ .Values.persistence.mountPath }}
+            {{- end }}
             {{- if (.Values.o1).netconfServer.tls.enabled }}
             - name: {{ if (.Values.o1).netconfServer.tls.certSecret }}netconf-tls-client-certs{{ else }}netconf-tls-certs{{ end }}
               mountPath: /etc/netconf-tls-client

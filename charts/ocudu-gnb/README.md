@@ -12,7 +12,7 @@ A Helm chart for deploying the OCUDU 5G CU/DU (gNB)
 - **[NetworkPolicy](docs/networkpolicy.md)** - Network security and traffic control
 - **[Hugepages](docs/hugepages.md)** - Hugepages configuration for DPDK performance
 - **[Storage](docs/storage.md)** - PVC and hostPath storage configuration
-- **[O1 / NETCONF](docs/o1.md)** - O1 interface and optional TLS configuration
+- **[O1 / NETCONF](docs/o1.md)** - O1 interface, optional TLS, and persistent sidecar logs
 
 ## Quick Start
 
@@ -183,6 +183,8 @@ Find images at: [Docker Hub - softwareradiosystems](https://hub.docker.com/u/sof
 | `o1.netconfServer.service.loadBalancerClass` | string | `""` | LoadBalancer class (optional) |
 | `o1.netconfServer.tls.enabled` | bool | `false` | Enable NETCONF-over-TLS endpoint on port 6513 |
 | `o1.netconfServer.tls.certSecret` | string | `""` | Secret name with `ca.crt`, `server.crt`, `server.key`; omit for auto-generated self-signed certs |
+| `o1.o1Adapter.fileLog.enabled` | bool | `false` | Persist the o1 adapter output to a file under `persistence.mountPath` |
+| `o1.netconfServer.fileLog.enabled` | bool | `false` | Persist the netconf-server output to a timestamped file under `persistence.mountPath` |
 | `persistence.enabled` | bool | `true` | Enable persistent storage for logs |
 | `persistence.type` | string | `"hostPath"` | Storage type: `pvc` or `hostPath` |
 | `persistence.pvc.storageClassName` | string | `""` | StorageClass for PVC (empty = default) |
