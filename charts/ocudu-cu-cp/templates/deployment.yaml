@@ -20,11 +20,15 @@ spec:
       {{- include "ocudu-cu-cp.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      {{- if or (not (.Values.o1).enable_ocudu_o1) .Values.podAnnotations }}
       annotations:
+        {{- if not (.Values.o1).enable_ocudu_o1 }}
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yml") . | sha256sum }}
+        {{- end }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+      {{- end }}
       labels:
         {{- include "ocudu-cu-cp.selectorLabels" . | nindent 8 }}
         {{- with .Values.extraLabels }}
@@ -92,6 +96,8 @@ spec:
         - name: ocudu-logs
           emptyDir: {}
         {{- end }}
+        - name: ocudu-work
+          emptyDir: {}
       containers:
         - name: {{ .Chart.Name }}
           tty: true
@@ -144,6 +150,8 @@ spec:
               value: '{{ .Values.network.hostNetwork }}'
             - name: OCUDU_LOG_DIR
               value: {{ .Values.persistence.mountPath | quote }}
+            - name: OCUDU_WORK_DIR
+              value: /run/ocudu
             - name: PRESERVE_OLD_LOGS
               value: {{ .Values.persistence.preserveOldLogs | quote }}
             - name: ENABLE_OCUDU_O1
@@ -162,6 +170,8 @@ spec:
             {{- end }}
             - name: ocudu-logs
               mountPath: {{ .Values.persistence.mountPath }}
+            - name: ocudu-work
+              mountPath: /run/ocudu
           {{- if (.Values.o1).enable_ocudu_o1 }}
           lifecycle:
             postStart:

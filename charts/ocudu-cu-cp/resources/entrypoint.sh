@@ -6,6 +6,8 @@
 # This script runs the OCUDU CU-CP (ocucp) binary with the provided configuration file.
 # - If PRESERVE_OLD_LOGS=true, log file paths are updated with a timestamp and a
 #   'current' symlink is created for easy navigation.
+# - The runtime config is written to ${OCUDU_WORK_DIR} (falling back to ${OCUDU_LOG_DIR}),
+#   keeping the log volume free of mutable runtime state.
 # - The rendered config is snapshotted to ${OCUDU_LOG_DIR}/cu-cp-config-rendered.yml.
 # - The binary is restarted automatically on clean exit.
 # - SIGTERM/SIGINT are forwarded gracefully to the ocucp process.
@@ -193,7 +195,7 @@ terminate() {
 
 process_and_run_cu_cp() {
     local config_file="$1"
-    local updated_config="${OCUDU_LOG_DIR}/cu-cp-config.yml"
+    local updated_config="${OCUDU_WORK_DIR:-${OCUDU_LOG_DIR}}/cu-cp-config.yml"
 
     cp "$config_file" "$updated_config" || log_fatal "Failed to copy config"
 
