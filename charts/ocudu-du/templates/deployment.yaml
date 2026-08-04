@@ -20,9 +20,14 @@ spec:
       {{- include "ocudu-du.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- if or (not (.Values.o1).enable_ocudu_o1) .Values.podAnnotations }}
       annotations:
+        {{- if not (.Values.o1).enable_ocudu_o1 }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yml") . | sha256sum }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- end }}
       labels:
         {{- include "ocudu-du.selectorLabels" . | nindent 8 }}
@@ -89,6 +94,8 @@ spec:
         - name: ocudu-logs
           emptyDir: {}
         {{- end }}
+        - name: ocudu-work
+          emptyDir: {}
           {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-1Gi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-1Gi")) }}
         - name: hugepage-1gi
           emptyDir:
@@ -176,6 +183,8 @@ spec:
               value: '{{ .Values.network.hostNetwork }}'
             - name: OCUDU_LOG_DIR
               value: {{ .Values.persistence.mountPath | quote }}
+            - name: OCUDU_WORK_DIR
+              value: /run/ocudu
             - name: PRESERVE_OLD_LOGS
               value: {{ .Values.persistence.preserveOldLogs | quote }}
           {{- if and .Values.sriovConfig .Values.sriovConfig.enabled }}
@@ -198,6 +207,8 @@ spec:
             {{- end }}
             - name: ocudu-logs
               mountPath: {{ .Values.persistence.mountPath }}
+            - name: ocudu-work
+              mountPath: /run/ocudu
             {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-1Gi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-1Gi")) }}
             - name: hugepage-1gi
               mountPath: /hugepages-1Gi

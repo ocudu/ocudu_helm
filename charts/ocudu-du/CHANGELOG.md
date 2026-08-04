@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.7.0 (2026-07-30)
+
+### Added
+
+- `emptyDir` volume mounted at `/run/ocudu` (`OCUDU_WORK_DIR`) for the runtime config, decoupled from `persistence.mountPath`. The `*-config-rendered.yml` snapshot stays under `OCUDU_LOG_DIR` so it survives pod restarts
+- `checksum/config` pod annotation (when O1 is disabled) to trigger a rollout when the ConfigMap changes
+
 ## 1.6.0 (2026-07-09)
 
 ### Added

@@ -13,6 +13,8 @@
 #   When HOSTNETWORK=true, network_interface is set by the user in the config directly.
 # - If PRESERVE_OLD_LOGS=true, log file paths are updated with a timestamp and a
 #   'current' symlink is created for easy navigation.
+# - The runtime config is written to ${OCUDU_WORK_DIR} (falling back to ${OCUDU_LOG_DIR}),
+#   keeping the log volume free of mutable runtime state.
 # - The rendered config is snapshotted to ${OCUDU_LOG_DIR}/du-config-rendered.yml.
 # - The binary is restarted automatically on clean exit.
 # - SIGTERM/SIGINT are forwarded gracefully to the odu process.
@@ -369,7 +371,7 @@ terminate() {
 
 process_and_run_du() {
     local config_file="$1"
-    local updated_config="${OCUDU_LOG_DIR}/du-config.yml"
+    local updated_config="${OCUDU_WORK_DIR:-${OCUDU_LOG_DIR}}/du-config.yml"
 
     cp "$config_file" "$updated_config" || log_fatal "Failed to copy config"
 
