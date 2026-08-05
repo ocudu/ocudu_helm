@@ -134,6 +134,16 @@ Call with any image dict, e.g. .Values.image or (.Values.o1).o1Adapter.image
 {{- end -}}
 
 {{/*
+Main container image reference, with the tag defaulting to the chart appVersion.
+Without the fallback an unset image.tag renders "<repository>:", which is not a
+valid image reference and leaves the chart with no usable default version.
+*/}}
+{{- define "ocudu-cu-up.mainImage" -}}
+{{- $image := dict "repository" .Values.image.repository "tag" (default .Chart.AppVersion .Values.image.tag) -}}
+{{- include "ocudu-cu-up.image" $image -}}
+{{- end -}}
+
+{{/*
 NETCONF-over-TLS port. Fixed by the netconf-server image, which is passed no port
 flag — this is a single source of truth for the templates, not a tunable.
 See the o1Port note in values-o1.yaml.
