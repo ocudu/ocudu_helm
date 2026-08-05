@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.4.0 (2026-08-05)
+
+### Added
+
+- `replicaCount` (default `1`): the Deployment previously had no `replicas` field at all
+- `topologySpreadConstraints` and `priorityClassName` values, for keeping the CU-CP schedulable across a node drain
+- `startupProbe` (`enabled`, `periodSeconds`, `timeoutSeconds`, `failureThreshold`; `pgrep ocucp`, 180s budget by default) which gates the liveness and readiness probes in both plain and O1 mode
+- `serviceAccount.automountServiceAccountToken` (default `false`), applied to both the ServiceAccount and the pod spec — nothing in the pod uses the Kubernetes API (CNTI `service_account_mapping`, kubescape C-0034)
+- `ocudu-cu-cp.mainImage` template helper
+
+### Changed
+
+- **`persistence.enabled` now defaults to `false`** — logs go to an `emptyDir`, leaving the pod reschedulable onto any node. `hostPath` mounts fail the CNTI `hostpath_mounts` essential check and pin the pod to one node, blocking `node_drain`
+- **`persistence.type` now defaults to `pvc`** — `hostPath` is opt-in for local debugging. Note that a node-bound StorageClass (e.g. `local-path`) pins the pod just as hostPath does
+- **`rbac.create` now defaults to `false`** — the Role granted `configmaps get/list/watch` and `pods get`, which no container in the pod ever used
+- `readinessProbe.initialDelaySeconds` 15 → `0`, with the new `startupProbe` taking over slow-start tolerance — removes ~15s of dead time from every start (CNTI `reasonable_startup_time`). `livenessProbe.initialDelaySeconds` is intentionally left at 90: the startup probe already gates it, and keeping it preserves the original tolerance if the startup probe is ever disabled
+- `readinessProbe.failureThreshold` 30 → `6` and `timeoutSeconds` 1 → `3`, so a dead process leaves the Services in ~30s rather than ~150s, without a slow `exec` probe under node pressure flapping the endpoints of a single-replica Deployment
+
+### Fixed
+
+- `image.tag: ""` (the shipped default) rendered the invalid reference `registry.gitlab.com/ocudu/ocudu/images/cu-cp:` — the tag now falls back to the chart `appVersion`, as `values.yaml` already documented with `@default -- Chart appVersion`
+
 ## 1.3.0 (2026-07-30)
 
 ### Added

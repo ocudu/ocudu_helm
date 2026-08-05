@@ -14,6 +14,12 @@ image:
 # -- Image pull secrets for private registries
 imagePullSecrets: []
 
+# -- Number of CU-CP replicas
+# The CU-CP is stateful and instances do not coordinate with each other — keep
+# this at 1 unless running several CU-CPs behind the same Services has been
+# validated.
+replicaCount: 1
+
 # -- Override the name of the chart
 nameOverride: ""
 
@@ -30,10 +36,20 @@ serviceAccount:
   create: true
   annotations: {}
   name: ""
+  # -- Mount the service account token into the pod
+  # Neither entrypoint.sh nor the ocucp binary talks to the Kubernetes API, so
+  # the token is not mounted by default. Applied to both the ServiceAccount and
+  # the pod spec (the pod-level setting takes precedence).
+  # @default -- `false`
+  automountServiceAccountToken: false
 
 # -- RBAC configuration
+# Nothing in the CU-CP pod uses the Kubernetes API, so no Role/RoleBinding is
+# created by default. Set `create: true` if extraRules or a sidecar genuinely
+# need API access — and then also allow the token to be mounted via
+# `serviceAccount.automountServiceAccountToken`.
 rbac:
-  create: true
+  create: false
   extraRules: []
 
 # -- Pod Disruption Budget configuration
@@ -55,7 +71,24 @@ extraLabels: {}
 deploymentStrategy:
   type: Recreate
 
+# -- CU-CP startup probe configuration
+# Holds off the liveness and readiness probes until ocucp is running, so neither
+# of them needs padding on initialDelaySeconds and the pod reports Ready within
+# one probe period of the process appearing. Startup budget is
+# periodSeconds * failureThreshold (180s by default), which also covers O1 mode
+# where the entrypoint waits for the adapter-generated config first.
+startupProbe:
+  enabled: true
+  periodSeconds: 2
+  timeoutSeconds: 1
+  failureThreshold: 90
+
 # -- CU-CP liveness probe configuration
+# initialDelaySeconds stays at 90 even though startupProbe already gates this
+# probe. It costs nothing while the startup probe is enabled, and it preserves
+# the original tolerance if someone disables it — at 0 the thresholds below would
+# kill a still-starting container ~60s after start (probes at 0s/30s/60s), which
+# is tighter than the pre-startupProbe behaviour rather than looser.
 livenessProbe:
   enabled: true
   initialDelaySeconds: 90
@@ -65,12 +98,18 @@ livenessProbe:
   successThreshold: 1
 
 # -- CU-CP readiness probe configuration
+# startupProbe gates this probe, so initialDelaySeconds is not needed. The
+# timeout and failureThreshold are deliberately not minimal: this is an exec
+# probe, and under node pressure spawning pgrep can exceed a 1s timeout. With a
+# single replica there is no second endpoint, so flapping readiness is a real
+# N2/E1/F1-C outage rather than a cosmetic blip. 6 * 5s gives ~30s of tolerance
+# while still detecting a dead process far sooner than the old 150s.
 readinessProbe:
   enabled: true
-  initialDelaySeconds: 15
+  initialDelaySeconds: 0
   periodSeconds: 5
-  timeoutSeconds: 1
-  failureThreshold: 30
+  timeoutSeconds: 3
+  failureThreshold: 6
   successThreshold: 1
 
 # -- Pod-level security context. Runs the container as a non-root user by default.
@@ -82,9 +121,20 @@ podSecurityContext:
   fsGroup: 1000
 
 # -- Container-level security context
-# Requires the image to have file capabilities baked into /usr/local/bin/ocucp
-# (setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+ep) — PERFMON must be granted
-# unconditionally or the kernel refuses to exec the binary at all.
+# The three added capabilities are functional requirements of the ocucp binary,
+# not an artifact of how they are granted: SYS_NICE for real-time thread
+# priorities, IPC_LOCK for locked memory, PERFMON for the performance and RAPL
+# counters. Dropping them does not harden the workload, it breaks it.
+#
+# They are additionally baked into /usr/local/bin/ocucp as file capabilities
+# (setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+ep), which makes both settings
+# below load-bearing: with the `+ep` bits set the kernel fails the exec with
+# EPERM unless every one of those capabilities is in the container's bounding
+# set, and NO_NEW_PRIVS (allowPrivilegeEscalation: false) makes the kernel
+# ignore file capabilities altogether.
+#
+# PERFMON is on kubescape's insecure-capability list, so the CNTI
+# privilege_escalation and insecure_capabilities checks fail here by design.
 securityContext:
   allowPrivilegeEscalation: true
   privileged: false
@@ -107,6 +157,9 @@ network:
   hostNetwork: false
 
 # -- Node selector for pod assignment
+# Prefer a capability label (e.g. a node labelled for real-time workloads) over
+# `kubernetes.io/hostname`: pinning to a single host means the pod cannot be
+# rescheduled when that node is drained.
 nodeSelector: {}
 
 # -- Tolerations for pod assignment
@@ -114,6 +167,14 @@ tolerations: {}
 
 # -- Pod affinity configuration
 affinity: {}
+
+# -- Topology spread constraints for pod assignment
+topologySpreadConstraints: []
+
+# -- Priority class assigned to the pod
+# A high-priority class helps the CU-CP get rescheduled ahead of best-effort
+# workloads after a node drain or under node pressure.
+priorityClassName: ""
 
 # -- Metrics service configuration
 # Exposes CU-CP metrics endpoint for Telegraf collection
@@ -277,10 +338,16 @@ networkPolicy:
     custom: []
 
 # -- Persistent storage configuration
+# Disabled by default: logs go to an `emptyDir`, which keeps the pod reschedulable
+# onto any node. Enable it to keep logs across pod restarts.
 persistence:
-  enabled: true
+  enabled: false
   # -- Storage type: "pvc" or "hostPath"
-  type: hostPath
+  # `hostPath` ties the pod's logs to one node — the pod can then only be
+  # rescheduled there, and a node-bound StorageClass (e.g. local-path) has the
+  # same effect. Prefer a network-backed StorageClass for a drainable pod, and
+  # treat hostPath as a local-debugging option.
+  type: pvc
   pvc:
     storageClassName: ""
     accessMode: ReadWriteOnce

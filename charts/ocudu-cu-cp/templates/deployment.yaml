@@ -11,6 +11,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
+  replicas: {{ .Values.replicaCount }}
   {{- with .Values.deploymentStrategy }}
   strategy:
     {{- toYaml . | nindent 4 }}
@@ -36,6 +37,7 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ include "ocudu-cu-cp.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       {{- if .Values.network.hostNetwork }}
@@ -104,11 +106,20 @@ spec:
           stdin: true
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ template "ocudu-cu-cp.image" .Values.image }}"
+          image: "{{ include "ocudu-cu-cp.mainImage" . }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.startupProbe.enabled }}
+          # Gates liveness/readiness until ocucp is up, in both plain and O1 mode.
+          startupProbe:
+            exec:
+              command: ["pgrep", "ocucp"]
+            periodSeconds: {{ .Values.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.startupProbe.failureThreshold }}
           {{- end }}
           {{- if and (.Values.o1).enable_ocudu_o1 .Values.livenessProbe.enabled }}
           # O1 mode: liveness is tied to the O1 adapter's /config-healthy endpoint.
@@ -319,6 +330,13 @@ spec:
       {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
       {{- end }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:

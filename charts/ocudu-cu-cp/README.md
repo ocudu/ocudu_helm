@@ -11,7 +11,7 @@ CU-CP terminates N2 (NGAP, toward the AMF), E1AP (toward CU-UP), and F1-C (F1AP,
 ## Installing the Chart
 
 ```bash
-helm install ocudu-cu-cp oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-cu-cp --version 1.2.0
+helm install ocudu-cu-cp oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-cu-cp --version 1.4.0
 ```
 
 **Local installation**:
@@ -44,7 +44,7 @@ This removes all Kubernetes resources associated with the chart.
 ## Upgrading
 
 ```bash
-helm upgrade ocudu-cu-cp oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-cu-cp --version 1.2.0 -f my-values.yaml
+helm upgrade ocudu-cu-cp oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-cu-cp --version 1.4.0 -f my-values.yaml
 ```
 
 The chart sets `deploymentStrategy.type: Recreate` by default — the old pod
@@ -64,9 +64,14 @@ workload that should not run overlapping old/new pods.
 | `networkPolicy.enabled` | bool | `false` | Enable NetworkPolicy (only effective when `hostNetwork: false`) |
 | `metricsService.enabled` | bool | `false` | Enable the metrics/remote-control WebSocket endpoint |
 | `metricsService.powercap.enabled` | bool | `false` | No effect on capabilities — `PERFMON` is always granted |
-| `persistence.enabled` | bool | `true` | Enable persistent storage for logs |
-| `persistence.type` | string | `"hostPath"` | Storage type: `pvc` or `hostPath` |
-| `rbac.create` | bool | `true` | Create RBAC Role and RoleBinding |
+| `persistence.enabled` | bool | `false` | Enable persistent storage for logs (otherwise `emptyDir`) |
+| `persistence.type` | string | `"pvc"` | Storage type: `pvc` or `hostPath` |
+| `replicaCount` | int | `1` | Number of CU-CP replicas |
+| `serviceAccount.automountServiceAccountToken` | bool | `false` | Mount the service account token into the pod |
+| `startupProbe.enabled` | bool | `true` | Gate liveness/readiness until `ocucp` is running |
+| `priorityClassName` | string | `""` | Priority class assigned to the pod |
+| `topologySpreadConstraints` | list | `[]` | Topology spread constraints for pod assignment |
+| `rbac.create` | bool | `false` | Create RBAC Role and RoleBinding |
 | `podDisruptionBudget.enabled` | bool | `true` | Enable PodDisruptionBudget |
 | `deploymentStrategy.type` | string | `"Recreate"` | Deployment update strategy |
 | `o1.enable_ocudu_o1` | bool | `false` | Enable the O1 interface (NETCONF management) |
@@ -127,6 +132,60 @@ persistence:
 
 The target directory must exist and be owned by uid 1000 on the node before
 deploying — `fsGroup` does not apply to hostPath volumes.
+
+A hostPath volume ties the pod to whichever node holds that directory, so it can
+only ever be rescheduled there. Treat this as a local-debugging configuration,
+not a production one. Logs default to an `emptyDir` for that reason.
+
+## Security Context and Capabilities
+
+The chart defaults are otherwise restrictive — non-root pod, every capability
+dropped except the three below, no service account token, no RBAC, no hostPath,
+no privileged container — but two settings are deliberately not at their most
+restrictive value:
+
+```yaml
+securityContext:
+  allowPrivilegeEscalation: true
+  capabilities:
+    add: [SYS_NICE, IPC_LOCK, PERFMON]
+```
+
+**These capabilities are functional requirements of `ocucp`**, not an artifact of
+how the image is packaged: `SYS_NICE` for real-time thread priorities,
+`IPC_LOCK` for locked memory, `PERFMON` for the performance and RAPL counters.
+Removing them does not harden the workload, it breaks it.
+
+They are additionally baked into the binary as *file* capabilities
+(`setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+ep`), which is what forces
+`allowPrivilegeEscalation: true`. Two kernel rules apply:
+
+- with the `+ep` bits set, every capability in the file's permitted set must also
+  be in the container's bounding set, or `execve()` fails with `EPERM` — dropping
+  any of the three from `capabilities.add` means the container never starts;
+- `allowPrivilegeEscalation: false` sets `NO_NEW_PRIVS`, under which the kernel
+  ignores file capabilities entirely, so the process would start without the
+  privileges it needs.
+
+`PERFMON` is on kubescape's insecure-capability list (C-0046), so the CNTI
+`privilege_escalation` and `insecure_capabilities` checks fail against this chart
+**by design**. Treat that as a known, accepted result for this workload rather
+than something to configure away; use the test suite's exception mechanism if the
+notifications need silencing.
+
+The O1 sidecars carry their own `securityContext` values under
+`o1.o1Adapter` / `o1.netconfServer` and are unaffected by the above.
+
+## Surviving a Node Drain
+
+Nothing in the chart defaults pins the pod to a node. Keep it that way if
+`kubectl drain` has to work:
+
+- leave `persistence.enabled: false`, or use a StorageClass that is not
+  node-bound — both `hostPath` and a local-path style provisioner pin the pod;
+- select nodes by capability label rather than `kubernetes.io/hostname`;
+- `podDisruptionBudget.minAvailable: 0` (the default) permits the eviction, but
+  it does not make the pod come back — rescheduling does.
 
 ## O1 / NETCONF Interface
 
