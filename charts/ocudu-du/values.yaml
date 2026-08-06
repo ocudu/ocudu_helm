@@ -16,6 +16,12 @@ image:
 # -- Image pull secrets for private registries
 imagePullSecrets: []
 
+# -- Number of DU replicas
+# The DU is stateful and instances do not coordinate with each other — keep this
+# at 1. A DU driving real radio hardware cannot be replicated at all, since the
+# fronthaul device is bound to one pod.
+replicaCount: 1
+
 # -- Override the name of the chart
 nameOverride: ""
 
@@ -32,10 +38,20 @@ serviceAccount:
   create: true
   annotations: {}
   name: ""
+  # -- Mount the service account token into the pod
+  # Neither entrypoint.sh nor the odu binary talks to the Kubernetes API, so the
+  # token is not mounted by default. Applied to both the ServiceAccount and the
+  # pod spec (the pod-level setting takes precedence).
+  # @default -- `false`
+  automountServiceAccountToken: false
 
 # -- RBAC configuration
+# Nothing in the DU pod uses the Kubernetes API, so no Role/RoleBinding is
+# created by default. Set `create: true` if extraRules or a sidecar genuinely
+# need API access — and then also allow the token to be mounted via
+# `serviceAccount.automountServiceAccountToken`.
 rbac:
-  create: true
+  create: false
   extraRules: []
 
 # -- Pod Disruption Budget configuration
@@ -57,7 +73,23 @@ extraLabels: {}
 deploymentStrategy:
   type: Recreate
 
-# -- DU liveness probe configuration.
+# -- DU startup probe configuration
+# Holds off the liveness and readiness probes until odu is running, so neither
+# needs padding on initialDelaySeconds and the pod reports Ready within one probe
+# period of the process appearing. Startup budget is
+# periodSeconds * failureThreshold (180s by default), which also covers O1 mode
+# where the entrypoint waits for the adapter-generated config first, and DPDK
+# builds where EAL initialization adds to startup.
+startupProbe:
+  enabled: true
+  periodSeconds: 2
+  timeoutSeconds: 1
+  failureThreshold: 90
+
+# -- DU liveness probe configuration
+# initialDelaySeconds stays at 90 even though startupProbe already gates this
+# probe. It costs nothing while the startup probe is enabled, and it preserves
+# the original tolerance if someone disables it.
 livenessProbe:
   enabled: true
   initialDelaySeconds: 90
@@ -66,13 +98,18 @@ livenessProbe:
   failureThreshold: 3
   successThreshold: 1
 
-# -- DU readiness probe configuration.
+# -- DU readiness probe configuration
+# startupProbe gates this probe, so initialDelaySeconds is not needed. The
+# timeout and failureThreshold are deliberately not minimal: this is an exec
+# probe, and under node pressure spawning pgrep can exceed a 1s timeout. With a
+# single replica there is no second endpoint, so flapping readiness is a real
+# F1-C/F1-U outage rather than a cosmetic blip.
 readinessProbe:
   enabled: true
-  initialDelaySeconds: 15
+  initialDelaySeconds: 0
   periodSeconds: 5
-  timeoutSeconds: 1
-  failureThreshold: 30
+  timeoutSeconds: 3
+  failureThreshold: 6
   successThreshold: 1
 
 # -- Pod-level security context. Runs the container as a non-root user by default.
@@ -154,6 +191,11 @@ network:
   hostNetwork: false
 
 # -- Node selector for pod assignment
+# A DU driving real radio hardware legitimately has to be pinned to the node
+# holding the fronthaul NIC, and then `node_drain` cannot pass by definition.
+# With `ru_dummy` there is no hardware to be near, so leave this empty and let
+# the pod be rescheduled. Prefer a capability label over `kubernetes.io/hostname`
+# where a pin is genuinely needed.
 nodeSelector: {}
 
 # -- Tolerations for pod assignment
@@ -161,6 +203,14 @@ tolerations: {}
 
 # -- Pod affinity configuration
 affinity: {}
+
+# -- Topology spread constraints for pod assignment
+topologySpreadConstraints: []
+
+# -- Priority class assigned to the pod
+# A high-priority class helps the DU get rescheduled ahead of best-effort
+# workloads after a node drain or under node pressure.
+priorityClassName: ""
 
 # -- Metrics service configuration
 # Exposes DU metrics endpoint for Telegraf collection
@@ -337,10 +387,17 @@ sriovConfig:
   extendedResourceName: "intel.com/intel_sriov_dpdk"
 
 # -- Persistent storage configuration
+# Disabled by default: logs go to an `emptyDir`, which keeps the pod reschedulable
+# onto any node. Enable it to keep logs across pod restarts — worth doing on a
+# DU that is pinned to radio hardware anyway.
 persistence:
-  enabled: true
+  enabled: false
   # -- Storage type: "pvc" or "hostPath"
-  type: hostPath
+  # `hostPath` ties the pod's logs to one node — the pod can then only be
+  # rescheduled there, and a node-bound StorageClass (e.g. local-path) has the
+  # same effect. Prefer a network-backed StorageClass for a drainable pod, and
+  # treat hostPath as a local-debugging option.
+  type: pvc
   pvc:
     storageClassName: ""
     accessMode: ReadWriteOnce
