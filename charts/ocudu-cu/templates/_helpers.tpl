@@ -133,6 +133,16 @@ Create the image path
 {{- end -}}
 
 {{/*
+Main container image reference, with the tag defaulting to the chart appVersion.
+Without the fallback an unset image.tag renders "<repository>:", which is not a
+valid image reference and leaves the chart with no usable default version.
+*/}}
+{{- define "ocudu-cu.mainImage" -}}
+{{- $image := dict "repository" .Values.image.repository "tag" (default .Chart.AppVersion .Values.image.tag) -}}
+{{- include "ocudu-cu.image" $image -}}
+{{- end -}}
+
+{{/*
 Create the image path for the passed in image field of netconf-server image
 */}}
 {{- define "ocudu-cu.o1.netconfServer.image" -}}

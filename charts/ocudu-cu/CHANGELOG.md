@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.7.0 (2026-08-05)
+
+### Added
+
+- `replicaCount` (default `1`): the Deployment previously had no `replicas` field at all
+- `topologySpreadConstraints` and `priorityClassName` values, for keeping the CU schedulable across a node drain
+- `startupProbe` (`enabled`, `periodSeconds`, `timeoutSeconds`, `failureThreshold`; `pgrep ocu`, 180s budget by default) which gates the liveness and readiness probes in both plain and O1 mode
+- `serviceAccount.automountServiceAccountToken` (default `false`), applied to both the ServiceAccount and the pod spec — nothing in the pod uses the Kubernetes API (CNTI `service_account_mapping`, kubescape C-0034)
+- `ocudu-cu.mainImage` template helper
+
+### Changed
+
+- **`rbac.create` now defaults to `false`** — the Role granted `configmaps get/list/watch` and `pods get`, which no container in the pod ever used
+- **`persistence.type` now defaults to `pvc`** — `hostPath` is opt-in for local debugging, since it fails the CNTI `hostpath_mounts` essential check and pins the pod to one node, blocking `node_drain`. Note that a node-bound StorageClass (e.g. `local-path`) pins the pod just as hostPath does. `persistence.enabled` was already `false`
+- `readinessProbe.initialDelaySeconds` 15 → `0`, with the new `startupProbe` taking over slow-start tolerance — removes ~15s of dead time from every start (CNTI `reasonable_startup_time`). `livenessProbe` is unchanged: the startup probe already gates it, and leaving `initialDelaySeconds` at 90 preserves the original tolerance if the startup probe is ever disabled
+- `readinessProbe.failureThreshold` 30 → `6` and `timeoutSeconds` 1 → `3`, so a dead process leaves the Services in ~30s rather than ~150s, without a slow `exec` probe under node pressure flapping the endpoints of a single-replica Deployment
+
+### Fixed
+
+- `image.tag: ""` (the shipped default) rendered the invalid reference `registry.gitlab.com/ocudu/ocudu/images/cu:` — the tag now falls back to the chart `appVersion`, as `values.yaml` already documented with `@default -- Chart appVersion`
+- `values.yaml`: the liveness and readiness probe comments described them as "DU" probes in the CU chart
+
 ## 1.6.0 (2026-07-30)
 
 ### Added
