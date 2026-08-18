@@ -116,10 +116,10 @@ podSecurityContext:
 
 # -- Init process command used as container PID 1.
 # Reaps zombie processes and forwards signals to the gNB process.
-# @default -- `["/usr/bin/catatonit", "-d", "--"]`
+# @default -- `["/usr/bin/catatonit", "-g", "--"]`
 initCommand:
   - /usr/bin/catatonit
-  - -d
+  - -g
   - --
 
 # -- Container-level security context.

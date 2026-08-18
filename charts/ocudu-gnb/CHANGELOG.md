@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.10.3 (2026-08-28)
+
+## Fixed
+
+- values.yaml passed -d to catatonic. Corrected to use -g. 
+
 ## 3.10.2 (2026-08-18)
 
 ### Added
