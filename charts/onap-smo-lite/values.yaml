@@ -32,8 +32,9 @@ sdncWeb:
   image:
     # -- Container image repository
     repository: nexus3.onap.org:10001/onap/sdnc-web-image
-    # -- Image tag
-    tag: 3.3.0-STAGING-latest
+    # -- Image tag. Keep on 3.1.x to match `sdnr`: 3.2.x+ ODLUX hangs the
+    # Configuration tab against ODL netconf 6.0.6. Bump with `sdnr.image.tag`.
+    tag: 3.1.0
     # -- Image pull policy
     pullPolicy: IfNotPresent
   

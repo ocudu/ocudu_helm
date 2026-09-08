@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.2 (2026-09-07)
+
+### Fixed
+- Pin `sdncWeb` image tag to `3.1.0`, reverting the 1.2.1 bump: sdnc-web 3.2.x+ ODLUX hangs the Configuration tab against the ODL netconf 6.0.6 in `sdnr` 3.1.x (`3.1.1-STAGING-latest` is no longer published)
+
 ## 1.2.1 (2026-06-29)
 - Updated image tag of `sdncWeb` image
 
