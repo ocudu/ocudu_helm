@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.2 (2026-09-08)
+
+### Added
+
+- `initCommand` configures the init process used as container PID 1 and defaults to `catatonit`, matching the gNB chart
+
 ## 1.9.1 (2026-08-10)
 
 ### Added
