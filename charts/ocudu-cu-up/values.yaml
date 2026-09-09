@@ -120,6 +120,14 @@ podSecurityContext:
   runAsGroup: 1000
   fsGroup: 1000
 
+# -- Init process command used as container PID 1.
+# Reaps zombie processes and forwards signals to the CU-UP process.
+# @default -- `["/usr/bin/catatonit", "-g", "--"]`
+initCommand:
+  - /usr/bin/catatonit
+  - -g
+  - --
+
 # -- Container-level security context
 # The three added capabilities are functional requirements of the ocuup binary,
 # not an artifact of how they are granted: SYS_NICE for real-time thread
