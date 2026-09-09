@@ -74,6 +74,18 @@ spec:
           emptyDir:
             sizeLimit: 2Mi
         {{- end }}
+        {{- if (.Values.o1.netconfServer.ssh).hostKeySecret }}
+        - name: netconf-ssh-hostkey
+          secret:
+            secretName: {{ (.Values.o1.netconfServer.ssh).hostKeySecret }}
+            defaultMode: 0400
+        - name: netconf-ssh-known-hosts
+          secret:
+            secretName: {{ (.Values.o1.netconfServer.ssh).hostKeySecret }}
+            items:
+              - key: known_hosts
+                path: known_hosts
+        {{- end }}
         {{- else }}
         - name: config-volume
           configMap:
@@ -319,6 +331,11 @@ spec:
             - "--netconf_tls_cert_dir"
             - "/etc/netconf-tls-client"
             {{- end }}
+            {{- if (.Values.o1.netconfServer.ssh).hostKeySecret }}
+            - "--netconf_hostkey_verify"
+            - "--netconf_known_hosts"
+            - "/etc/netconf-ssh/known_hosts"
+            {{- end }}
           volumeMounts:
             - name: o1-gnb-config
               mountPath: /etc/config
@@ -331,6 +348,11 @@ spec:
             {{- if .Values.o1.netconfServer.tls.enabled }}
             - name: {{ if .Values.o1.netconfServer.tls.certSecret }}netconf-tls-client-certs{{ else }}netconf-tls-certs{{ end }}
               mountPath: /etc/netconf-tls-client
+              readOnly: true
+            {{- end }}
+            {{- if (.Values.o1.netconfServer.ssh).hostKeySecret }}
+            - name: netconf-ssh-known-hosts
+              mountPath: /etc/netconf-ssh
               readOnly: true
             {{- end }}
         - name: netconf-server
@@ -350,15 +372,18 @@ spec:
               protocol: TCP
             {{- end }}
           {{- if (.Values.o1.netconfServer.fileLog).enabled }}
-          {{- $tlsFlags := "" }}
+          {{- $entrypointFlags := "" }}
           {{- if .Values.o1.netconfServer.tls.enabled }}
-          {{- $tlsFlags = "--enable-tls --tls-cert-dir /etc/netconf-tls" }}
+          {{- $entrypointFlags = "--enable-tls --tls-cert-dir /etc/netconf-tls" }}
+          {{- end }}
+          {{- if (.Values.o1.netconfServer.ssh).hostKeySecret }}
+          {{- $entrypointFlags = printf "%s --ssh-hostkey-dir /etc/netconf-ssh" $entrypointFlags }}
           {{- end }}
           {{- $ncLogFile := printf "%s/%s" .Values.persistence.mountPath (.Values.o1.netconfServer.fileLog.filename | default "netconf.log") }}
           command: [ "/bin/sh", "-c" ]
           args:
             - >-
-              /usr/local/bin/entrypoint.sh --config gnb --custom-config /etc/netconf/o1-config.xml {{ $tlsFlags }} 2>&1
+              /usr/local/bin/entrypoint.sh --config gnb --custom-config /etc/netconf/o1-config.xml {{ $entrypointFlags }} 2>&1
               | while IFS= read -r line || [ -n "$line" ]; do printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$line"; done
               | tee -a {{ $ncLogFile | quote }}
           {{- else }}
@@ -373,6 +398,10 @@ spec:
             - "--tls-cert-dir"
             - "/etc/netconf-tls"
             {{- end }}
+            {{- if (.Values.o1.netconfServer.ssh).hostKeySecret }}
+            - "--ssh-hostkey-dir"
+            - "/etc/netconf-ssh"
+            {{- end }}
           {{- end }}
           volumeMounts:
             - name: o1-config-volume
@@ -385,6 +414,11 @@ spec:
               {{- if .Values.o1.netconfServer.tls.certSecret }}
               readOnly: true
               {{- end }}
+            {{- end }}
+            {{- if (.Values.o1.netconfServer.ssh).hostKeySecret }}
+            - name: netconf-ssh-hostkey
+              mountPath: /etc/netconf-ssh
+              readOnly: true
             {{- end }}
             {{- if (.Values.o1.netconfServer.fileLog).enabled }}
             # Shared log volume (same as the ocu binary logs) so the timestamped

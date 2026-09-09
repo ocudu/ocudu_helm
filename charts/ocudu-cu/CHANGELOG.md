@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.0 (2026-09-09)
+
+### Added
+
+- `o1.netconfServer.ssh.hostKeySecret`: pin the netconf-server's SSH host key from a secret (`ssh_host_{ed25519,ecdsa,rsa}_key` plus the matching `known_hosts`, which the o1 adapter verifies against) instead of the key generated in its image. Empty by default
+
 ## 1.8.1 (2026-09-08)
 
 ### Added

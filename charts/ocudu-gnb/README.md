@@ -204,6 +204,7 @@ Find images at: [Docker Hub - softwareradiosystems](https://hub.docker.com/u/sof
 | `o1.netconfServer.service.loadBalancerClass` | string | `""` | LoadBalancer class (optional) |
 | `o1.netconfServer.tls.enabled` | bool | `false` | Enable NETCONF-over-TLS endpoint on port 6513 |
 | `o1.netconfServer.tls.certSecret` | string | `""` | Secret name with `ca.crt`, `server.crt`, `server.key`; omit for auto-generated self-signed certs |
+| `o1.netconfServer.ssh.hostKeySecret` | string | `""` | Secret with `ssh_host_{ed25519,ecdsa}_key` + `known_hosts`; omit to use the host key generated in the netconf image and skip host key verification |
 | `o1.o1Adapter.fileLog.enabled` | bool | `false` | Persist the o1 adapter output to a file under `persistence.mountPath` |
 | `o1.netconfServer.fileLog.enabled` | bool | `false` | Persist the netconf-server output to a timestamped file under `persistence.mountPath` |
 | `persistence.enabled` | bool | `true` | Enable persistent storage for logs |

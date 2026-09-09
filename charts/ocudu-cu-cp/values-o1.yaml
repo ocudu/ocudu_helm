@@ -416,6 +416,14 @@ o1:
       # connects over mutual TLS). Keep separate from certSecret; client.key is privileged.
       # Create with: kubectl create secret generic <name> --from-file=ca.crt=./ca.crt --from-file=client.crt=./client.crt --from-file=client.key=./client.key
       clientCertSecret: ""
+    ssh:
+      # -- Secret with the netconf-server's SSH host key (name it ssh_host_ed25519_key or
+      # ssh_host_ecdsa_key - RSA cannot be verified by the o1 adapter), mounted
+      # read-only at /etc/netconf-ssh, plus the known_hosts the o1 adapter verifies it against.
+      # If empty, the server keeps the key generated in its image - stable per image tag but
+      # different after every rebuild - and the adapter does not verify the host key.
+      # Create with: see "Provisioning the SSH host key" in docs/o1.md
+      hostKeySecret: ""
     resources: {}
     securityContext: {}
     # -- Persist the netconf-server container's stdout/stderr to a timestamped log file.
