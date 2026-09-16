@@ -149,7 +149,7 @@ grafana:
 |-----------|------|---------|-------------|
 | grafana.image.registry | string | `"registry.gitlab.com"` | Grafana image registry |
 | grafana.image.repository | string | `"ocudu/ocudu/grafana"` | Grafana image repository |
-| grafana.image.tag | string | `"1.7.2"` | Grafana image tag |
+| grafana.image.tag | string | `"1.7.6"` | Grafana image tag |
 | grafana.env.GF_PORT | string | `"3000"` | Grafana port |
 | grafana.env.GF_AUTH_ANONYMOUS_ENABLED | string | `"true"` | Enable anonymous access |
 | grafana.env.GF_AUTH_ANONYMOUS_ORG_ROLE | string | `"Viewer"` | Anonymous user role |

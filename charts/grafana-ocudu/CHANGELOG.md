@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.5.1 (2026-09-16)
+
+### Changed
+- Bump the default Grafana image tag to `1.7.6`, based on Grafana 13.2.1's
+  distroless-slim image. The image retains the bundled OCUDU dashboards and
+  InfluxDB SQL datasource while substantially reducing vulnerability findings.
+
 ## 2.5.0 (2026-07-29)
 
 ### Changed
@@ -110,4 +117,3 @@
 ## 0.1.0 (June 04, 2024)
 ### Added
 - Initial version of the OCUDU Grafana Helm chart
-
