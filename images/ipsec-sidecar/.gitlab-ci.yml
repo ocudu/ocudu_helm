@@ -1,0 +1,72 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+spec:
+  inputs:
+    ocudu_path:
+      type: string
+      default: ocudu/ocudu
+      description: "OCUDU repository path."
+    ocudu_ref:
+      type: string
+      default: dev
+      description: "OCUDU reference branch or tag."
+---
+include:
+  - project: $[[ inputs.ocudu_path ]]
+    ref: $[[ inputs.ocudu_ref ]]
+    file: .gitlab/ci-shared/docker.yml
+
+stages:
+  - test
+  - publish
+  - manifest
+
+.docker-builder-ipsec-sidecar:
+  extends: .docker-builder
+  variables:
+    CONTEXT: images/ipsec-sidecar
+    VERSION: "${STRONGSWAN_VERSION}"
+    BUILD_ARGS: "STRONGSWAN_VERSION=${STRONGSWAN_VERSION}"
+    NAME: ipsec-sidecar
+    # The Dockerfile has a later stage carrying packet capture and traffic generation
+    # tools. Building without naming a stage would build that one, which would put those
+    # tools in the image that runs beside a live private key.
+    DOCKER_TARGET: runtime
+    MULTI_ARCH_BUILD: "true"
+    REGISTRY_URI: ${CI_REGISTRY}/${CI_PROJECT_PATH}
+    REGISTRY_ORG: ""
+  parallel:
+    matrix:
+      - PLATFORM: ["arm64", "amd64"]
+
+only-build-ipsec-sidecar:
+  stage: test
+  extends: .docker-builder-ipsec-sidecar
+  rules:
+    - if: $ON_MR
+  variables:
+    MODE: test
+
+build-and-publish-ipsec-sidecar:
+  stage: publish
+  extends: .docker-builder-ipsec-sidecar
+  rules:
+    - if: $ON_DEFAULT_BRANCH
+    - if: $ON_MR
+      when: manual
+      allow_failure: true
+  variables:
+    MODE: publish
+
+docker manifest ipsec-sidecar:
+  extends: .docker manifest
+  stage: manifest
+  variables:
+    REGISTRY_URI: ${CI_REGISTRY}/${CI_PROJECT_PATH}
+    REGISTRY_ORG: ""
+    NAME: ipsec-sidecar
+    VERSION: "${STRONGSWAN_VERSION}"
+  needs:
+    - job: build-and-publish-ipsec-sidecar
+      optional: false

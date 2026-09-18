@@ -43,6 +43,28 @@ headers:
 ## Images
 ################################################################################
 
+ipsec-sidecar image:
+  stage: child
+  variables:
+    STRONGSWAN_VERSION: "6.0.4"
+  rules:
+    - if: $ON_MR
+      changes:
+        paths:
+          - images/ipsec-sidecar/**/*
+    - if: $ON_DEFAULT_BRANCH
+      changes:
+        paths:
+          - images/ipsec-sidecar/**/*
+  trigger:
+    strategy: mirror
+    include:
+      - local: images/ipsec-sidecar/.gitlab-ci.yml
+        inputs:
+          ocudu_path: $[[ inputs.ocudu_path ]]
+          ocudu_ref: $[[ inputs.ocudu_ref ]]
+  needs: []
+
 linuxptp image:
   stage: child
   variables:
