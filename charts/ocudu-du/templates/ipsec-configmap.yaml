@@ -68,8 +68,19 @@ data:
                     if_id_in = {{ $conn.ifId }}
                     if_id_out = {{ $conn.ifId }}
 
-                    start_action = {{ if $initiates }}start{{ else }}none{{ end }}
-                    close_action = none
+                    # The side that calls keeps calling. `start_action` only fires once,
+                    # when the configuration is loaded, so without `close_action` a peer
+                    # that shuts down cleanly — a pod restart, say — takes the tunnel with
+                    # it and nothing ever brings it back. A clean shutdown is not a dead
+                    # peer, so `dpd_action` does not cover that case.
+                    # `trap` installs a policy and negotiates when the first packet
+                    # that matches it appears. That is what makes this survive a peer
+                    # restart: `start` fires once, at load, and a peer that comes back at
+                    # a different address is then never reached again. With a trap the
+                    # application's own retries drive the negotiation, and the peer name
+                    # is resolved fresh each time.
+                    start_action = {{ if $initiates }}trap{{ else }}none{{ end }}
+                    close_action = {{ if $initiates }}trap{{ else }}none{{ end }}
                     dpd_action = restart
                 }
             {{- end }}
