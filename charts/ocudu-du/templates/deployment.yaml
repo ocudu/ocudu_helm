@@ -22,18 +22,16 @@ spec:
       {{- include "ocudu-du.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- if or (not (.Values.o1).enable_ocudu_o1) .Values.podAnnotations }}
       annotations:
-        {{- if not (.Values.o1).enable_ocudu_o1 }}
+        # That template renders the entrypoint script as well as the configuration, and
+        # both need to roll the pod, whichever configuration source is in use.
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yml") . | sha256sum }}
-        {{- end }}
         {{- if .Values.ipsec.enabled }}
         checksum/ipsec-config: {{ include (print $.Template.BasePath "/ipsec-configmap.yaml") . | sha256sum }}
         {{- end }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- end }}
       labels:
         {{- include "ocudu-du.selectorLabels" . | nindent 8 }}
         {{- with .Values.extraLabels }}
