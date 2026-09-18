@@ -282,6 +282,9 @@ like success and is not. A failed install is recoverable; plaintext on the wire 
 {{- if not .Values.ipsec.certSecret -}}
 {{- fail "ipsec.certSecret is required: it holds tls.crt, tls.key and ca.crt, and without them the peer cannot be authenticated" -}}
 {{- end -}}
+{{- if and .Values.ipsec.certManager.enabled (not .Values.ipsec.certManager.issuerRef.name) -}}
+{{- fail "ipsec.certManager.issuerRef.name is required when ipsec.certManager.enabled is true: without an issuer the certificate is never signed and the secret is never written" -}}
+{{- end -}}
 {{- if not .Values.ipsec.localId -}}
 {{- fail "ipsec.localId is required: it is the identity this pod presents, and it has to match the certificate in ipsec.certSecret" -}}
 {{- end -}}

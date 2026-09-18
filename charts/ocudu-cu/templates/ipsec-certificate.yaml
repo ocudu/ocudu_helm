@@ -1,0 +1,41 @@
+{{- if and .Values.ipsec.enabled .Values.ipsec.certManager.enabled }}
+
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# Optional, and never a requirement: the supported path is a secret the operator supplies.
+# This is here so a cluster that already runs cert-manager does not have to build a second
+# way of getting the same three files into the same secret.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Values.ipsec.certSecret }}
+  labels:
+    {{- include "ocudu-cu.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ipsec
+spec:
+  # The same secret the sidecar mounts. cert-manager writes tls.crt, tls.key and ca.crt
+  # into it, which is exactly the set the sidecar reads.
+  secretName: {{ .Values.ipsec.certSecret }}
+  duration: {{ .Values.ipsec.certManager.duration }}
+  renewBefore: {{ .Values.ipsec.certManager.renewBefore }}
+  privateKey:
+    {{- toYaml .Values.ipsec.certManager.privateKey | nindent 4 }}
+  # A certificate used to prove an identity and nothing else. The key is never used to
+  # encrypt: the session keys come from the key exchange.
+  usages:
+    - digital signature
+  # What the peer checks. Its 'peer.id' has to match one of these, or the connection is
+  # refused after the certificate has already validated.
+  dnsNames:
+    {{- if .Values.ipsec.certManager.dnsNames }}
+    {{- toYaml .Values.ipsec.certManager.dnsNames | nindent 4 }}
+    {{- else }}
+    - {{ .Values.ipsec.localId | quote }}
+    {{- end }}
+  issuerRef:
+    {{- toYaml .Values.ipsec.certManager.issuerRef | nindent 4 }}
+  {{- with .Values.ipsec.certManager.extraSpec }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}
+{{- end }}

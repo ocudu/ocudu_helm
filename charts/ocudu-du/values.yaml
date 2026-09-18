@@ -417,8 +417,51 @@ ipsec:
     pullPolicy: IfNotPresent
 
   # -- Secret holding this pod's identity: `tls.crt`, `tls.key` and `ca.crt`.
-  # Bring your own. It is mounted read-only into the sidecar and nowhere else.
+  # Bring your own, or have `certManager` below issue it. It is mounted read-only into the
+  # sidecar and nowhere else.
   certSecret: ""
+
+  certManager:
+    # -- Issue `certSecret` with cert-manager instead of bringing your own.
+    # Off by default. It renders a `Certificate`, so the cert-manager custom resource
+    # definitions have to be installed on the cluster first. The secret cert-manager
+    # writes holds `tls.crt`, `tls.key` and `ca.crt`, which is what the sidecar reads.
+    # The sidecar reads them once, at start: a renewal replaces the secret but does not
+    # restart the daemon, so restart the pod to pick a renewed certificate up.
+    # @default -- `false`
+    enabled: false
+
+    issuerRef:
+      # -- Issuer to sign with. Required when `certManager.enabled` is true.
+      name: ""
+      # -- `Issuer` for one namespace, or `ClusterIssuer` for the whole cluster
+      kind: Issuer
+      # -- API group of the issuer
+      group: cert-manager.io
+
+    # -- How long an issued certificate is valid for
+    duration: 2160h
+    # -- How long before expiry it is renewed
+    renewBefore: 360h
+
+    privateKey:
+      # -- Key algorithm. The default matches the elliptic-curve group in `ike.proposal`.
+      algorithm: ECDSA
+      # -- Key size
+      size: 256
+      # -- Whether a renewal also makes a new private key
+      rotationPolicy: Always
+
+    # -- Subject alternative names to request.
+    # The default asks for `localId`, which is the identity the peer checks, and is right
+    # whenever that identity is a name. Where it is not — a distinguished name or an email
+    # address — leave this empty and put the matching field in `extraSpec` instead.
+    # @default -- `[localId]`
+    dnsNames: []
+
+    # -- Extra fields merged into the `Certificate` spec, for anything the keys above do
+    # not name, such as `subject`, `emailAddresses` or `ipAddresses`.
+    extraSpec: {}
 
   # -- IKE identity this pod presents. It must match a subject or subject alternative
   # name of `tls.crt` in `certSecret`.
