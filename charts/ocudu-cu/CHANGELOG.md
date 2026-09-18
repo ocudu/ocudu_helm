@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.12.0 (2026-10-16)
+
+### Added
+
+- `ipsec`: optional strongSwan sidecar protecting F1-C and F1-U with IKEv2 and tunnel-mode ESP. One daemon per pod and one child association per interface, each on its own XFRM interface and protected address, so the CU and the DU stay separate tunnel endpoints even on one node. Off by default. It brings a headless service for the peer to resolve, a NetworkPolicy that allows the peer the tunnel and nothing else, render-time guards that refuse any configuration that would run unprotected, and an optional cert-manager `Certificate`. Requires Kubernetes 1.29 or newer, `network.hostNetwork: false`, and a node whose kernel provides XFRM interfaces and ESP to an unprivileged container. See `docs/ipsec.md`
+
+### Fixed
+
+- `dnsPolicy: ClusterFirstWithHostNet` was set twice in the pod spec, so every pod got the host-network policy whether or not it used host networking
+- `checksum/config` was skipped in O1 mode, so a change to the entrypoint script did not roll an O1 pod
+
 ## 1.11.0 (2026-10-11)
 
 ### Changed
