@@ -178,13 +178,17 @@ terminate() {
 }
 trap terminate TERM INT
 
-# The socket appearing is the only reliable signal that the daemon is ready to be
-# configured. A fixed sleep either wastes time or races.
-for _ in $(seq 1 50); do
-    [ -S "$VICI_SOCKET" ] && break
+# Wait until the daemon actually answers. The socket file existing is not enough: /run
+# outlives a restart of this container, so a socket left behind by the previous run is
+# still there on the next one, and a check for the file alone passes at once and then
+# talks to nothing. That turns one restart into a permanent crash loop.
+vici_ready() { swanctl --stats >/dev/null 2>&1; }
+
+for _ in $(seq 1 100); do
+    vici_ready && break
     sleep 0.2
 done
-[ -S "$VICI_SOCKET" ] || fail "the daemon never opened $VICI_SOCKET"
+vici_ready || fail "the daemon never answered on $VICI_SOCKET"
 
 # ------------------------------------------------------------------ 5. the configuration --
 
