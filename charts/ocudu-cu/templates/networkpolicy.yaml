@@ -32,6 +32,24 @@ spec:
     {{- end }}
 
     {{- if .Values.networkPolicy.ingress.du.enabled }}
+    {{- if .Values.ipsec.enabled }}
+    # With IPsec on, the peer may send nothing but the tunnel itself. The plaintext
+    # F1 ports are deliberately absent here: leaving them open would keep alive the
+    # exact path this feature exists to close.
+    - from:
+      {{- toYaml .Values.networkPolicy.ingress.du.from | nindent 6 }}
+      {{- if eq .Values.ipsec.encapsulation "udp" }}
+      ports:
+        - protocol: UDP
+          port: 500   # IKE
+        - protocol: UDP
+          port: 4500  # IKE, and ESP once either end is behind address translation
+      {{- else }}
+      # Native ESP is IP protocol 50, and a policy can only name TCP, UDP and SCTP,
+      # so this rule has to permit every protocol to the peer — including the
+      # plaintext F1 ports. That is the cost of `native`, and why `udp` is default.
+      {{- end }}
+    {{- else }}
     # Allow traffic from DU (F1-C/F1-U interfaces)
     - from:
       {{- toYaml .Values.networkPolicy.ingress.du.from | nindent 6 }}
@@ -40,6 +58,7 @@ spec:
           port: 38472  # F1-C interface (F1AP)
         - protocol: UDP
           port: {{ .Values.f1uService.targetPort }}  # F1-U interface (GTP-U, internal port)
+    {{- end }}
     {{- end }}
 
     {{- if and .Values.metricsService.enabled .Values.networkPolicy.ingress.monitoring.enabled }}
@@ -69,6 +88,24 @@ spec:
     {{- end }}
 
     {{- if .Values.networkPolicy.egress.du.enabled }}
+    {{- if .Values.ipsec.enabled }}
+    # With IPsec on, the peer may send nothing but the tunnel itself. The plaintext
+    # F1 ports are deliberately absent here: leaving them open would keep alive the
+    # exact path this feature exists to close.
+    - to:
+      {{- toYaml .Values.networkPolicy.egress.du.to | nindent 6 }}
+      {{- if eq .Values.ipsec.encapsulation "udp" }}
+      ports:
+        - protocol: UDP
+          port: 500   # IKE
+        - protocol: UDP
+          port: 4500  # IKE, and ESP once either end is behind address translation
+      {{- else }}
+      # Native ESP is IP protocol 50, and a policy can only name TCP, UDP and SCTP,
+      # so this rule has to permit every protocol to the peer — including the
+      # plaintext F1 ports. That is the cost of `native`, and why `udp` is default.
+      {{- end }}
+    {{- else }}
     # Allow traffic to DU (F1-C/F1-U)
     - to:
       {{- toYaml .Values.networkPolicy.egress.du.to | nindent 6 }}
@@ -77,6 +114,7 @@ spec:
           port: 38472  # F1-C (F1AP)
         - protocol: UDP
           port: 2152   # F1-U (GTP-U)
+    {{- end }}
     {{- end }}
 
     # Allow DNS resolution
