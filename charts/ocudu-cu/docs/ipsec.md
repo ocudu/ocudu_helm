@@ -212,21 +212,24 @@ takes to retry, not as long as the tunnel takes to build.
 A compatibility claim is only worth what was measured, so here is the line.
 
 **Measured**, on one cluster with a CNI in native-routing mode with no address translation
-between pods, both pods on the same node:
+between pods, with both pods on the same node and again with one pod on each of two nodes:
 
 - F1-C over the tunnel, with an F1AP association established through it.
 - A capture across the whole host network namespace, with a positive control in the same
-  measurement: no plaintext F1 packets, and the expected ESP packets present.
-- The tunnel comes back after either pod is restarted.
+  measurement: no plaintext F1 packets, and the expected ESP packets present. Across two
+  nodes this was captured on both of them at once.
+- The tunnel comes back after either pod is restarted, including when the restarted pod
+  comes back with a different address, and including across a node boundary.
 - The NetworkPolicy on, with the tunnel working through it.
+- Across two nodes, the outer packets carry the two pod addresses unchanged, and the tunnel
+  interface takes its size from the pod interface rather than from a fixed number.
 
 **Not measured:**
 
-- Pods on different nodes. No architecture or configuration change is expected beyond the
-  pod addresses, but it has not been run.
-- F1-U carrying user traffic. The child association is configured and installs; nothing has
-  been sent through it.
+- F1-U carrying user traffic. The child association is configured and its policy installs;
+  nothing has been sent through it.
 - `native` encapsulation on a cluster, and its throughput against `udp`.
+- Throughput, latency or CPU cost, on one node or across two.
 - Any CNI other than the one above. The requirements are listed so an operator can check
   their own; nothing here claims a CNI was tested that was not.
 
