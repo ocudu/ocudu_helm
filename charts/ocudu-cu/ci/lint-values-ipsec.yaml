@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# Minimal values for linting the IPsec path. `ipsec.enabled` is false in the shipped
+# defaults, so without this file none of the IPsec templates is ever rendered and none of
+# the render-time guards is ever reached.
+#
+# This is a lint fixture, not a deployment example. The application config below carries
+# only the keys the guards read; `docs/ipsec.md` has the worked example.
+#
+# cert-manager stays off on purpose: its custom resource definitions have no schema here,
+# and an unknown kind fails the manifest check.
+
+# Both publish an unprotected path to the pod address, so the chart refuses to render
+# while either is on.
+f1cService:
+  enabled: false
+f1uService:
+  enabled: false
+
+networkPolicy:
+  enabled: true
+
+ipsec:
+  enabled: true
+  certSecret: ocudu-cu-ipsec
+  localId: cu.example.com
+  peer:
+    id: du.example.com
+    # No address, so this side waits for the peer to connect. The DU fixture sets one and
+    # exercises the other branch.
+  connections:
+    f1c:
+      ifName: ipsec-f1c
+      ifId: 257
+      local: 100.64.10.1
+      remote: 100.64.10.2
+    f1u:
+      ifName: ipsec-f1u
+      ifId: 258
+      local: 100.64.30.1
+      remote: 100.64.30.2
+
+config:
+  cu-config.yml: |-
+    cu_cp:
+      f1ap:
+        bind_addrs: 100.64.10.1
+
+    cu_up:
+      f1u:
+        bind_port: 2151
+        socket:
+          - bind_addr: 100.64.30.1
