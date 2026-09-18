@@ -206,8 +206,13 @@ not restart the daemon, so restart the pod to pick up a renewed certificate.
 Either pod can be restarted and the tunnel comes back on its own. The side that starts the
 connection installs a policy rather than a connection, and negotiates when the first packet
 that matches it appears, so the application's own retries drive the reconnection and the
-peer name is resolved again each time. Expect recovery to take as long as the application
-takes to retry, not as long as the tunnel takes to build.
+peer name is resolved again on each attempt.
+
+How long that takes depends on which side moved. When the side that starts the connection
+is the one that restarted, recovery takes as long as the application takes to retry. When
+it is the **peer** that moved, and an attempt to reach its old address is already in
+flight, the name is not resolved again until that attempt gives up — so expect minutes
+rather than seconds. It still recovers without help.
 
 ## What was measured, and what was not
 
@@ -217,9 +222,16 @@ A compatibility claim is only worth what was measured, so here is the line.
 between pods, with both pods on the same node and again with one pod on each of two nodes:
 
 - F1-C over the tunnel, with an F1AP association established through it.
+- F1-U over the tunnel. The child association is negotiated by the first packet that
+  matches it, and the traffic left as ESP.
 - A capture across the whole host network namespace, with a positive control in the same
   measurement: no plaintext F1 packets, and the expected ESP packets present. Across two
   nodes this was captured on both of them at once.
+- Five ways of breaking it, each measured with captures on both nodes at once: the child
+  association torn down, the tunnel interface deleted, the daemon killed, credentials
+  signed by an authority the peer does not know, and an application addressing the peer's
+  pod address directly to go around the tunnel. None of them produced a plaintext F1
+  packet, and each was measured with the NetworkPolicy on.
 - The tunnel comes back after either pod is restarted, including when the restarted pod
   comes back with a different address, and including across a node boundary.
 - The NetworkPolicy on, with the tunnel working through it.
@@ -228,8 +240,9 @@ between pods, with both pods on the same node and again with one pod on each of 
 
 **Not measured:**
 
-- F1-U carrying user traffic. The child association is configured and its policy installs;
-  nothing has been sent through it.
+- F1-U under a real user's load. It was proved with traffic built for the purpose, not
+  with user equipment attached through a radio and a core, so nothing here says anything
+  about throughput or about the application's own handling of user traffic.
 - `native` encapsulation on a cluster, and its throughput against `udp`.
 - Throughput, latency or CPU cost, on one node or across two.
 - Any CNI other than the one above. The requirements are listed so an operator can check
