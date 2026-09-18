@@ -117,17 +117,23 @@ spec:
     {{- end }}
     {{- end }}
 
+    {{- if .Values.networkPolicy.egress.dnsTo }}
     # Allow DNS resolution
     - to:
-        - namespaceSelector: {}
-          podSelector:
-            matchLabels:
-              k8s-app: kube-dns
+        {{- toYaml .Values.networkPolicy.egress.dnsTo | nindent 8 }}
       ports:
         - protocol: UDP
           port: 53
         - protocol: TCP
           port: 53
+    {{- else }}
+    # Allow DNS resolution. No destination is named, so this is port 53 to anywhere.
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    {{- end }}
 
     {{- if .Values.networkPolicy.egress.monitoring.enabled }}
     # Allow traffic to monitoring systems

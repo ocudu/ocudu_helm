@@ -321,12 +321,13 @@ networkPolicy:
       # @default -- `true`
       enabled: true
       # -- Source selectors for DU traffic
+      # A pod selector names the peer by the labels the chart sets on it. A CIDR peer is
+      # not a reliable way to name a pod: some CNIs do not apply CIDR rules to addresses
+      # inside the cluster, and such a rule then silently matches nothing.
       from:
         - podSelector:
             matchLabels:
-              app: ocudu-du
-        - ipBlock:
-            cidr: 10.0.0.0/8  # Adjust for your network CIDR
+              app.kubernetes.io/name: ocudu-du
 
     # -- Allow traffic from monitoring systems
     monitoring:
@@ -364,12 +365,27 @@ networkPolicy:
       # @default -- `true`
       enabled: true
       # -- Destination selectors for DU traffic
+      # A pod selector names the peer by the labels the chart sets on it. A CIDR peer is
+      # not a reliable way to name a pod: some CNIs do not apply CIDR rules to addresses
+      # inside the cluster, and such a rule then silently matches nothing.
       to:
         - podSelector:
             matchLabels:
-              app: ocudu-du
-        - ipBlock:
-            cidr: 10.0.0.0/8  # Adjust for your network CIDR
+              app.kubernetes.io/name: ocudu-du
+
+    # -- Where the cluster DNS lives.
+    # The default names the cluster DNS pods. That is the narrow answer, and it works on a
+    # CNI that translates a service address before it applies policy. Some CNIs apply
+    # policy to the service address itself; there this rule matches nothing, every name
+    # lookup fails, and anything that resolves a name at startup never starts. Set it to
+    # `[]` to allow port 53 to any destination instead: wider on destinations, still only
+    # port 53.
+    # @default -- the cluster DNS pods
+    dnsTo:
+      - namespaceSelector: {}
+        podSelector:
+          matchLabels:
+            k8s-app: kube-dns
 
     # -- Allow traffic to monitoring systems
     monitoring:
