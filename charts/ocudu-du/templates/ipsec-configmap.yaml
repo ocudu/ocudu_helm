@@ -1,0 +1,88 @@
+{{- include "ocudu-du.ipsec.validate" . }}
+{{- if .Values.ipsec.enabled }}
+
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+{{- $encap := eq .Values.ipsec.encapsulation "udp" }}
+{{- $initiates := ne (default "" .Values.ipsec.peer.address) "" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ocudu-du.ipsec.configmapName" . }}
+  labels:
+    {{- include "ocudu-du.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ipsec
+data:
+  # The whole daemon configuration, rendered here rather than assembled at start-up. It is
+  # already a typed, documented format, and a proposal that gets mis-quoted on its way
+  # through a shell script becomes a weaker cipher that still looks like it worked.
+  swanctl.conf: |
+    # One connection with one child per protected interface. A pod is a single network
+    # namespace, so a second daemon would contend with the first for the same ports,
+    # policies and routes.
+    connections {
+        f1 {
+            version = 2
+            local_addrs = %any
+            remote_addrs = {{ if $initiates }}{{ .Values.ipsec.peer.address }}{{ else }}%any{{ end }}
+
+            # Exactly one proposal, so there is nothing to fall back to.
+            proposals = {{ .Values.ipsec.ike.proposal }}
+
+            encap = {{ if $encap }}yes{{ else }}no{{ end }}
+            mobike = no
+            unique = replace
+
+            dpd_delay = {{ .Values.ipsec.ike.dpdDelay }}
+            dpd_timeout = {{ .Values.ipsec.ike.dpdTimeout }}
+            rekey_time = {{ .Values.ipsec.ike.rekeyTime }}
+            over_time = 10m
+            rand_time = 3m
+
+            send_cert = always
+            send_certreq = yes
+            fragmentation = yes
+
+            local {
+                auth = pubkey
+                certs = cert.crt
+                id = {{ .Values.ipsec.localId }}
+            }
+
+            remote {
+                auth = pubkey
+                id = {{ .Values.ipsec.peer.id }}
+            }
+
+            children {
+            {{- range $child, $conn := .Values.ipsec.connections }}
+                {{ $child }} {
+                    mode = tunnel
+                    local_ts = {{ $conn.local }}/32
+                    remote_ts = {{ $conn.remote }}/32
+                    esp_proposals = {{ $conn.espProposal | default $.Values.ipsec.ike.espProposal }}
+
+                    # A local number only. Nothing about it is negotiated or sent, so the
+                    # two ends need not agree on it.
+                    if_id_in = {{ $conn.ifId }}
+                    if_id_out = {{ $conn.ifId }}
+
+                    start_action = {{ if $initiates }}start{{ else }}none{{ end }}
+                    close_action = none
+                    dpd_action = restart
+                }
+            {{- end }}
+            }
+        }
+    }
+  # The plumbing the daemon configuration cannot express: which interface carries which
+  # child, and which addresses sit on it. The child names match the children above,
+  # because that pairing is what tells the sidecar whether every tunnel it was asked for
+  # is really up.
+  links.conf: |
+    # child  ifname  if_id  local  peer
+    {{- range $child, $conn := .Values.ipsec.connections }}
+    {{ $child }} {{ $conn.ifName }} {{ $conn.ifId }} {{ $conn.local }}/32 {{ $conn.remote }}/32
+    {{- end }}
+{{- end }}
