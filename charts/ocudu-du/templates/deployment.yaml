@@ -481,7 +481,6 @@ spec:
               mountPath: {{ .Values.persistence.mountPath }}
             {{- end }}
         {{- end }}
-      dnsPolicy: ClusterFirstWithHostNet
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
