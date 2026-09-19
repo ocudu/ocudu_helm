@@ -161,9 +161,15 @@ done < "$LINKS_FILE"
 
 install -d -m 0755 "$SWANCTL_DIR/x509" "$SWANCTL_DIR/x509ca" "$SWANCTL_DIR/private" \
     || fail "could not prepare $SWANCTL_DIR — it has to be writable, see the image README"
-install -m 0644 "$CREDENTIALS_DIR/ca.crt"  "$SWANCTL_DIR/x509ca/ca.crt"  || fail "no readable ca.crt in $CREDENTIALS_DIR"
-install -m 0644 "$CREDENTIALS_DIR/tls.crt" "$SWANCTL_DIR/x509/cert.crt"  || fail "no readable tls.crt in $CREDENTIALS_DIR"
-install -m 0600 "$CREDENTIALS_DIR/tls.key" "$SWANCTL_DIR/private/key.pem" || fail "no readable tls.key in $CREDENTIALS_DIR"
+
+# One function, used at start and again on renewal, so the two paths cannot drift apart.
+place_credentials() {
+    install -m 0644 "$CREDENTIALS_DIR/ca.crt"  "$SWANCTL_DIR/x509ca/ca.crt"  || return 1
+    install -m 0644 "$CREDENTIALS_DIR/tls.crt" "$SWANCTL_DIR/x509/cert.crt"  || return 1
+    install -m 0600 "$CREDENTIALS_DIR/tls.key" "$SWANCTL_DIR/private/key.pem" || return 1
+}
+
+place_credentials || fail "no readable ca.crt, tls.crt and tls.key in $CREDENTIALS_DIR"
 install -m 0644 "$SWANCTL_CONF" "$SWANCTL_DIR/swanctl.conf" || fail "could not place swanctl.conf"
 log "credentials and connection configuration in place"
 
@@ -194,6 +200,64 @@ vici_ready || fail "the daemon never answered on $VICI_SOCKET"
 
 swanctl --load-all || fail "the daemon rejected the connection configuration"
 log "configuration loaded:$children"
+
+# ------------------------------------------------------------ 6. a renewed certificate --
+# The credentials are read once, at start. An issuer that renews them replaces the contents
+# of the mounted secret and nothing else happens: the daemon goes on presenting the old
+# certificate until it is told otherwise, and these connections do not reauthenticate on
+# their own, so "until it is told otherwise" means for ever.
+#
+# So watch the mount. On a change, put the new files in place, load them, and close the IKE
+# association so the next thing that needs the tunnel authenticates with the new
+# certificate. The child policies survive that: traffic to a protected address is still
+# encrypted or dropped while the association is being rebuilt, never sent in clear.
+
+CREDENTIAL_RELOAD="${IPSEC_CREDENTIAL_RELOAD:-yes}"
+CREDENTIAL_INTERVAL="${IPSEC_CREDENTIAL_INTERVAL:-60}"
+
+credential_fingerprint() {
+    cat "$CREDENTIALS_DIR/ca.crt" "$CREDENTIALS_DIR/tls.crt" "$CREDENTIALS_DIR/tls.key" \
+        2>/dev/null | sha256sum 2>/dev/null | cut -d' ' -f1
+}
+
+watch_credentials() {
+    local previous current
+    previous=$(credential_fingerprint)
+    [ -n "$previous" ] || { log "cannot fingerprint the credentials, not watching them"; return; }
+
+    while sleep "$CREDENTIAL_INTERVAL"; do
+        current=$(credential_fingerprint)
+        # An empty answer is a read caught mid-update, not a change. Waiting is correct.
+        [ -n "$current" ] || continue
+        [ "$current" = "$previous" ] && continue
+
+        log "the credentials changed on disk, loading them"
+        # --clear first, so the daemon ends up holding exactly what is on disk. Without it
+        # the load adds to what is already there and the superseded certificate stays
+        # loaded and usable, which is not what a renewal is for.
+        if ! place_credentials || ! swanctl --load-creds --clear; then
+            # Loud, not quiet. The container restarts and every assertion runs again.
+            log "error: could not load the renewed credentials"
+            kill -TERM $$
+            return
+        fi
+
+        # Close the association so it is rebuilt with the new certificate. Without this the
+        # load succeeds and changes nothing anyone can observe.
+        while read -r conn; do
+            [ -n "$conn" ] || continue
+            swanctl --terminate --ike "$conn" >/dev/null 2>&1 \
+                && log "closed $conn so it reconnects with the new certificate"
+        done < <(swanctl --list-conns 2>/dev/null | sed -n 's/^\([A-Za-z0-9_.-]\+\): .*/\1/p')
+
+        previous=$current
+    done
+}
+
+if [ "$CREDENTIAL_RELOAD" = "yes" ]; then
+    watch_credentials &
+    log "watching $CREDENTIALS_DIR for a renewed certificate every ${CREDENTIAL_INTERVAL}s"
+fi
 
 # No internal restart loop. If the daemon exits, so does this script, and the container
 # restarts with every assertion above re-run from the top. A loop here would turn a repeated
