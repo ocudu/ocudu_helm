@@ -259,45 +259,10 @@ it is the **peer** that moved, and an attempt to reach its old address is alread
 flight, the name is not resolved again until that attempt gives up — so expect minutes
 rather than seconds. It still recovers without help.
 
-## What was measured, and what was not
+## What this is not
 
-A compatibility claim is only worth what was measured, so here is the line.
-
-**Measured**, on one cluster with a CNI in native-routing mode with no address translation
-between pods, with both pods on the same node and again with one pod on each of two nodes:
-
-- F1-C over the tunnel, with an F1AP association established through it.
-- F1-U over the tunnel. The child association is negotiated by the first packet that
-  matches it, and the traffic left as ESP.
-- A capture across the whole host network namespace, with a positive control in the same
-  measurement: no plaintext F1 packets, and the expected ESP packets present. Across two
-  nodes this was captured on both of them at once.
-- Five ways of breaking it, each measured with captures on both nodes at once: the child
-  association torn down, the tunnel interface deleted, the daemon killed, credentials
-  signed by an authority the peer does not know, and an application addressing the peer's
-  pod address directly to go around the tunnel. None of them produced a plaintext F1
-  packet, and each was measured with the NetworkPolicy on.
-- The tunnel comes back after either pod is restarted, including when the restarted pod
-  comes back with a different address, and including across a node boundary.
-- The NetworkPolicy on, with the tunnel working through it.
-- Across two nodes, the outer packets carry the two pod addresses unchanged, and the tunnel
-  interface takes its size from the pod interface rather than from a fixed number.
-- A renewed certificate picked up without restarting the pod, and the association rebuilt
-  with it.
-- `ikeOnNatTPortOnly`, with the tunnel up and `NET_BIND_SERVICE` gone from the sidecar.
-
-**Not measured:**
-
-- F1-U under a real user's load. It was proved with traffic built for the purpose, not
-  with user equipment attached through a radio and a core, so nothing here says anything
-  about throughput or about the application's own handling of user traffic.
-- `native` encapsulation on a cluster, and its throughput against `udp`.
-- Throughput, latency or CPU cost, on one node or across two.
-- Any CNI other than the one above. The requirements are listed so an operator can check
-  their own; nothing here claims a CNI was tested that was not.
-
-This is a design that targets the IPsec requirements for the F1 interface. It is not a
-compliance statement.
+This targets the IPsec requirements for the F1 interface. It is not a compliance statement,
+and it claims nothing about any CNI beyond the requirements listed above.
 
 ## Limits
 
