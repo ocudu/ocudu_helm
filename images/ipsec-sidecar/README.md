@@ -21,17 +21,6 @@ same ports, policies, states and routes, so there is only ever one.
   says why. A protected address is never reachable by a path that does not encrypt, not even
   during startup.
 
-## Stages
-
-| Stage | Contents |
-|---|---|
-| `runtime` | the daemon, `swanctl`, `iproute2`, the scripts. This is what ships. |
-| `poc` | `runtime` plus SCTP, `socat`, `tcpdump`, `ping` and `iperf3`, for validating a network |
-
-The `poc` stage exists to prove a tunnel carries traffic. The tools that do that are the
-same tools that read traffic off a wire, so they stay out of the stage that runs next to a
-live private key. Nothing should reference `poc` by default.
-
 ## What the pod must provide
 
 | Requirement | Why |

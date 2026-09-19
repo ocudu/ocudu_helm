@@ -29,10 +29,6 @@ stages:
     VERSION: "${STRONGSWAN_VERSION}"
     BUILD_ARGS: "STRONGSWAN_VERSION=${STRONGSWAN_VERSION}"
     NAME: ipsec-sidecar
-    # The Dockerfile has a later stage carrying packet capture and traffic generation
-    # tools. Building without naming a stage would build that one, which would put those
-    # tools in the image that runs beside a live private key.
-    DOCKER_TARGET: runtime
     MULTI_ARCH_BUILD: "true"
     REGISTRY_URI: ${CI_REGISTRY}/${CI_PROJECT_PATH}
     REGISTRY_ORG: ""
