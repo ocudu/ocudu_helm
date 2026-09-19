@@ -154,7 +154,7 @@ spec:
           image: "{{ include "ocudu-du.ipsec.image" . }}"
           imagePullPolicy: {{ .Values.ipsec.image.pullPolicy }}
           securityContext:
-            {{- toYaml .Values.ipsec.securityContext | nindent 12 }}
+            {{- include "ocudu-du.ipsec.securityContext" . | nindent 12 }}
           {{- with .Values.ipsec.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
@@ -165,6 +165,10 @@ spec:
               value: {{ if eq .Values.ipsec.encapsulation "udp" }}"yes"{{ else }}"no"{{ end }}
             - name: IPSEC_PROTECTED_SUPERNET
               value: {{ .Values.ipsec.protectedSupernet | quote }}
+            - name: IPSEC_CREDENTIAL_RELOAD
+              value: {{ if .Values.ipsec.credentialReload.enabled }}"yes"{{ else }}"no"{{ end }}
+            - name: IPSEC_CREDENTIAL_INTERVAL
+              value: {{ .Values.ipsec.credentialReload.intervalSeconds | quote }}
           {{- if .Values.ipsec.readinessProbe.enabled }}
           readinessProbe:
             exec:
@@ -179,6 +183,14 @@ spec:
             - name: ipsec-config
               mountPath: /etc/ipsec-config
               readOnly: true
+            {{- if .Values.ipsec.ikeOnNatTPortOnly }}
+            # A drop-in beside the daemon's own configuration. subPath so the image's file
+            # next to it is left alone.
+            - name: ipsec-config
+              mountPath: /etc/strongswan.d/99-ocudu-natt.conf
+              subPath: strongswan-hardening.conf
+              readOnly: true
+            {{- end }}
             # The private key is mounted here and nowhere else. The application container
             # never sees it and never gains a network capability.
             - name: ipsec-credentials

@@ -361,5 +361,43 @@ out of the tunnel. Both look like a working configuration and neither is protect
 {{- end -}}
 {{- end -}}
 
+{{/*
+F1-U must not sit on the port the policy has to leave open for the core.
+
+The policy allows GTP-U to the core on UDP 2152 for N3, and a NetworkPolicy rule names a
+port and an address range, never a peer. The peer's pod address is inside that range, so
+while F1-U uses the same port that one rule also permits plaintext F1-U straight to the
+peer, around the tunnel. The core's port is fixed in the application and cannot move;
+F1-U's is configurable, so F1-U is what moves.
+
+An absent bind_port is the same as 2152, because that is what the application defaults to.
+*/}}
+{{- $corePort := 2152 -}}
+{{- $f1uPort := $corePort -}}
+{{- $f1uSection := include "ocudu-du.ipsec.section" (dict "blob" $blob "key" "f1u") -}}
+{{- range $line := splitList "\n" $f1uSection -}}
+  {{- $parts := splitn ":" 2 $line -}}
+  {{- if eq (trimPrefix "- " (trim $parts._0)) "bind_port" -}}
+    {{- $f1uPort = int (trimAll "\"'" (trim (default "" $parts._1))) -}}
+  {{- end -}}
 {{- end -}}
+{{- if and (eq $f1uPort $corePort) (not .Values.ipsec.allowF1uOnCorePort) -}}
+{{- fail (printf "the application config leaves F1-U on UDP %d, which is the port the policy has to open for the core. That one rule then also permits plaintext F1-U to the peer's pod address, around the tunnel. Set f1u.bind_port to another port on both ends, or set ipsec.allowF1uOnCorePort to true if there is no core to reach" $corePort) -}}
+{{- end -}}
+
+{{- end -}}
+{{- end -}}
+
+{{/*
+The sidecar's security context, with NET_BIND_SERVICE removed when IKE no longer binds a
+privileged port. The capability is only there for that bind: the socket plugin refuses to
+open a privileged port without it however permissive the runtime is, and needs nothing once
+the port is not privileged.
+*/}}
+{{- define "ocudu-du.ipsec.securityContext" -}}
+{{- $ctx := deepCopy .Values.ipsec.securityContext -}}
+{{- if .Values.ipsec.ikeOnNatTPortOnly -}}
+{{- $_ := set $ctx.capabilities "add" (without $ctx.capabilities.add "NET_BIND_SERVICE") -}}
+{{- end -}}
+{{- toYaml $ctx -}}
 {{- end -}}

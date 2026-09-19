@@ -51,4 +51,5 @@ config:
     f1u:
       socket:
         - bind_addr: 100.64.30.2
-      peer_port: 2152
+      bind_port: 2151
+      peer_port: 2151

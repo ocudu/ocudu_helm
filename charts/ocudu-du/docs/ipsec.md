@@ -134,7 +134,8 @@ config:
     f1u:
       socket:
         - bind_addr: 100.64.30.2
-      peer_port: 2152
+      bind_port: 2151
+      peer_port: 2151
 ```
 
 The CU is the mirror image, with `peer.address` left empty and `local` and `remote` the
@@ -151,6 +152,21 @@ to render it.
 `f1ap.addrs` is the CU's protected F1-C address, which is the same value as
 `ipsec.connections.f1c.remote`. F1-U needs no peer address: the tunnel endpoints are
 signalled inside F1AP, so binding the protected address is enough.
+
+**F1-U must not use the core's GTP-U port.** The policy has to let the application reach the
+core on UDP 2152, and a NetworkPolicy rule names a port and an address range, never a peer.
+The peer's pod address is inside that range, so while F1-U uses 2152 that one rule also
+permits plaintext F1-U straight to the peer, around the tunnel. The core's port is fixed;
+F1-U's is not, so F1-U moves. Set the same port on both ends:
+
+```yaml
+f1u:
+  bind_port: 2151
+  peer_port: 2151
+```
+
+The chart refuses to render otherwise. Set `ipsec.allowF1uOnCorePort: true` if there is no
+core to reach.
 
 ## What the chart refuses to render
 
@@ -169,6 +185,28 @@ exists to prevent.
 | a duplicate or zero `ifId`, a duplicate or over-long `ifName` | two children sharing one tunnel, or no tunnel at all |
 | a missing `certSecret`, `localId` or `peer.id` | without a peer identity any certificate the authority signed would be accepted, from anyone |
 | an F1 address in the config that is not in `ipsec.connections`, or a wildcard bind | traffic that would never enter the tunnel |
+| F1-U on the core's GTP-U port, 2152 | the policy rule that lets the core be reached also permits plaintext F1-U to the peer; override with `ipsec.allowF1uOnCorePort` |
+
+## Dropping a capability
+
+`ipsec.ikeOnNatTPortOnly` carries IKE on UDP 4500 only. Nothing then binds a privileged
+port, so the sidecar runs without `NET_BIND_SERVICE` and the policy opens one port instead
+of two. **Both ends have to set it**: a peer still listening on 500 is never reached.
+
+```yaml
+ipsec:
+  ikeOnNatTPortOnly: true
+```
+
+## Readiness
+
+`ipsec.readinessProbe.enabled` reports the sidecar ready when the IKE association is up and
+every protected interface has either a child association or the policy that stands in for
+one until traffic arrives.
+
+Turn it on for the side that starts the connection. The side that waits has neither until
+its peer connects, so a probe there holds the pod unready for something that cannot have
+happened yet. Traffic is protected either way — the probe reports, it does not enforce.
 
 ## Encapsulation
 
@@ -198,8 +236,15 @@ By default it asks for `localId` as a subject alternative name, which is right w
 identity is a name. Where it is not — a distinguished name, an email address — leave
 `dnsNames` empty and put the matching field in `extraSpec`.
 
-The sidecar reads its credentials once, at start. A renewal replaces the secret but does
-not restart the daemon, so restart the pod to pick up a renewed certificate.
+The sidecar watches the mounted secret and picks up a renewal on its own. When the contents
+change it loads the new credentials, discarding what it held before, and closes the IKE
+association so the next traffic authenticates with the new certificate. The pod is not
+restarted. Expect it to take the time your cluster needs to update a mounted secret, plus
+`ipsec.credentialReload.intervalSeconds`.
+
+The child policies stay installed throughout, so protected traffic is encrypted or dropped
+while the association is rebuilt, never sent in clear. Set
+`ipsec.credentialReload.enabled: false` to turn the watch off.
 
 ## Restarts
 
@@ -237,6 +282,9 @@ between pods, with both pods on the same node and again with one pod on each of 
 - The NetworkPolicy on, with the tunnel working through it.
 - Across two nodes, the outer packets carry the two pod addresses unchanged, and the tunnel
   interface takes its size from the pod interface rather than from a fixed number.
+- A renewed certificate picked up without restarting the pod, and the association rebuilt
+  with it.
+- `ikeOnNatTPortOnly`, with the tunnel up and `NET_BIND_SERVICE` gone from the sidecar.
 
 **Not measured:**
 
@@ -259,4 +307,3 @@ compliance statement.
 - **This protects F1 and nothing else.** The fronthaul is a separate interface with its own
   requirements, and a kernel-bypass datapath does not pass through XFRM at all. F1-C and
   F1-U go through the kernel network stack, which is why they can be protected this way.
-- **The sidecar does not reload credentials.** See cert-manager above.

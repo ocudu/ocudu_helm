@@ -6,8 +6,13 @@
 
 - `ipsec`: optional strongSwan sidecar protecting F1-C and F1-U with IKEv2 and tunnel-mode ESP. One daemon per pod and one child association per interface, each on its own XFRM interface and protected address, so the CU and the DU stay separate tunnel endpoints even on one node. Off by default. It brings a headless service for the peer to resolve, a NetworkPolicy that allows the peer the tunnel and nothing else, render-time guards that refuse any configuration that would run unprotected, and an optional cert-manager `Certificate`. Requires Kubernetes 1.29 or newer, `network.hostNetwork: false`, and a node whose kernel provides XFRM interfaces and ESP to an unprivileged container. See `docs/ipsec.md`
 
+- `ipsec.ikeOnNatTPortOnly`: carry IKE on UDP 4500 only. Nothing binds a privileged port, so the sidecar runs without `NET_BIND_SERVICE` and the network policy opens one port instead of two. Off by default, and both ends have to set it
+- `ipsec.credentialReload`: the sidecar watches its mounted secret and picks up a renewed certificate on its own, loading the new credentials in place of the old ones and closing the IKE association so the next traffic authenticates with the new certificate. No pod restart. On by default
+- `ipsec.allowF1uOnCorePort`: the chart now refuses to render when the application leaves F1-U on the core's GTP-U port, because the policy rule that has to stay open for the core would also permit plaintext F1-U to the peer's pod address. Set F1-U to another port on both ends, or set this to allow it where there is no core
+
 ### Fixed
 
+- `ipsec.readinessProbe`: the probe reported not ready for any interface that had no traffic yet, which is the normal state of F1-U with no user attached, so a pod with it enabled never became ready. It now reports ready when the IKE association is up and every interface has a child association or the policy that stands in for one
 - `dnsPolicy: ClusterFirstWithHostNet` was set twice in the pod spec, so every pod got the host-network policy whether or not it used host networking
 - `checksum/config` was skipped in O1 mode, so a change to the entrypoint script did not roll an O1 pod
 

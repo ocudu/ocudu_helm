@@ -26,6 +26,14 @@ data:
             version = 2
             local_addrs = %any
             remote_addrs = {{ if $initiates }}{{ .Values.ipsec.peer.address }}{{ else }}%any{{ end }}
+{{- if .Values.ipsec.ikeOnNatTPortOnly }}
+
+            # IKE is carried on 4500 only, so neither end binds or expects the privileged
+            # port. Both of these are needed: not binding 500 locally does not stop this
+            # side dialling the peer's 500, which is where nothing is listening any more.
+            local_port = 4500
+            remote_port = 4500
+{{- end }}
 
             # Exactly one proposal, so there is nothing to fall back to.
             proposals = {{ .Values.ipsec.ike.proposal }}
@@ -96,4 +104,20 @@ data:
     {{- range $child, $conn := .Values.ipsec.connections }}
     {{ $child }} {{ $conn.ifName }} {{ $conn.ifId }} {{ $conn.local }}/32 {{ $conn.remote }}/32
     {{- end }}
+{{- if .Values.ipsec.ikeOnNatTPortOnly }}
+  # Mounted over the daemon's own configuration directory so IKE never binds a privileged
+  # port, which is what lets the sidecar drop NET_BIND_SERVICE. Both namespaces are set:
+  # the daemon reads its settings under charon-systemd, and a setting written only under
+  # charon is accepted and then silently ignored.
+  strongswan-hardening.conf: |
+    charon {
+        port = 0
+        port_nat_t = 4500
+    }
+
+    charon-systemd {
+        port = 0
+        port_nat_t = 4500
+    }
+{{- end }}
 {{- end }}

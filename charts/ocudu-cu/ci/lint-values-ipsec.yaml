@@ -50,5 +50,6 @@ config:
     cu_up:
       f1u:
         bind_port: 2151
+        peer_port: 2151
         socket:
           - bind_addr: 100.64.30.1

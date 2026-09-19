@@ -40,8 +40,10 @@ spec:
       {{- toYaml .Values.networkPolicy.ingress.du.from | nindent 6 }}
       {{- if eq .Values.ipsec.encapsulation "udp" }}
       ports:
+        {{- if not .Values.ipsec.ikeOnNatTPortOnly }}
         - protocol: UDP
           port: 500   # IKE
+        {{- end }}
         - protocol: UDP
           port: 4500  # IKE, and ESP once either end is behind address translation
       {{- else }}
@@ -96,8 +98,10 @@ spec:
       {{- toYaml .Values.networkPolicy.egress.du.to | nindent 6 }}
       {{- if eq .Values.ipsec.encapsulation "udp" }}
       ports:
+        {{- if not .Values.ipsec.ikeOnNatTPortOnly }}
         - protocol: UDP
           port: 500   # IKE
+        {{- end }}
         - protocol: UDP
           port: 4500  # IKE, and ESP once either end is behind address translation
       {{- else }}

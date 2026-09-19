@@ -490,6 +490,32 @@ ipsec:
   # so a protected address is never reachable by another path, not even for a moment.
   protectedSupernet: 100.64.0.0/16
 
+  # -- Move IKE off the privileged port so the sidecar can drop `NET_BIND_SERVICE`.
+  # With this on, IKE is carried on UDP 4500 only and UDP 500 is never bound, so the
+  # capability that exists to bind a privileged port is not needed. **Both ends have to
+  # agree**: a peer still expecting UDP 500 will not connect.
+  # @default -- `false`
+  ikeOnNatTPortOnly: false
+
+  # -- Allow F1-U to stay on the core's GTP-U port while IPsec is on.
+  # The policy has to let the application reach the core on UDP 2152 for N3, and that rule
+  # names a port, not a peer. If F1-U uses the same port, that one rule also permits
+  # plaintext F1-U to the peer's pod address. Moving F1-U to any other port closes it.
+  # Set this to true only where there is no core to reach.
+  # @default -- `false`
+  allowF1uOnCorePort: false
+
+  credentialReload:
+    # -- Pick up a renewed certificate without a pod restart.
+    # The sidecar watches the mounted secret. When it changes it loads the new credentials
+    # and closes the IKE association, so the next traffic authenticates with the new
+    # certificate. The child policies stay installed throughout, so protected traffic is
+    # encrypted or dropped while the association is rebuilt, never sent in clear.
+    # @default -- `true`
+    enabled: true
+    # -- How often the mounted secret is checked, in seconds.
+    intervalSeconds: 60
+
   # -- The interfaces to protect: one child association each, all under a single IKE
   # association. Required when `enabled` is true. For example:
   #
@@ -533,10 +559,13 @@ ipsec:
 
   readinessProbe:
     # -- Enable the sidecar readiness probe.
-    # Off by default. A side that waits for its peer has no association until the peer
-    # connects, so a readiness probe there would hold the pod unready waiting for
-    # something that cannot have happened yet. It is safe on a side that starts the
-    # connection. Traffic is protected either way: the probe reports, it does not enforce.
+    # Ready means every protected interface is protected by the kernel — an installed
+    # association, or an installed policy for one that has no traffic yet. An interface
+    # that has never carried a packet is still protected, so it counts as ready.
+    # Off by default, because a side that waits for its peer has neither until the peer
+    # connects, and a probe there would hold the pod unready waiting for something that
+    # cannot have happened yet. Safe to turn on for the side that starts the connection.
+    # Traffic is protected either way: the probe reports, it does not enforce.
     # @default -- `false`
     enabled: false
     initialDelaySeconds: 10
