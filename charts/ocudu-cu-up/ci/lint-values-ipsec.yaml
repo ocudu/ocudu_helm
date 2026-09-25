@@ -51,8 +51,9 @@ config:
   cu-up-config.yml: |-
     cu_up:
       e1ap:
-        addrs: 100.64.20.1
-        bind_addrs: 100.64.20.2
+        gateways:
+          - addrs: 100.64.20.1
+            bind_addrs: 100.64.20.2
 
       f1u:
         bind_port: 2151

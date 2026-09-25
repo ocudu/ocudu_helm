@@ -148,8 +148,9 @@ config:
   cu-up-config.yml: |-
     cu_up:
       e1ap:
-        addrs: 100.64.20.1
-        bind_addrs: 100.64.20.2
+        gateways:
+          - addrs: 100.64.20.1
+            bind_addrs: 100.64.20.2
 
       f1u:
         bind_port: 2151
@@ -162,6 +163,11 @@ The DU sets `peers.<name>.address` to this pod's headless service —
 `<release>-ocudu-cu-up-ipsec` — with `local` and `remote` the other way round.
 
 ### 3. Point the application at the protected addresses
+
+E1 is configured as a list here: `cu_up.e1ap.gateways` takes one entry per gateway, each
+with its own `addrs` and `bind_addrs`. The CU-CP side is a single flat `cu_cp.e1ap.bind_addrs`
+because it listens rather than dials. Only the addresses inside a gateway entry are checked
+against `ipsec.connections`.
 
 The chart does not rewrite the application config; it checks it. Every `local` address in
 `ipsec.connections` has to appear in the `f1u` and `e1ap` sections of the config, and those
