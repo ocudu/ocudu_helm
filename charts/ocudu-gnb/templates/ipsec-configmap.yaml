@@ -1,0 +1,174 @@
+{{- include "ocudu-gnb.ipsec.validate" . }}
+{{- if .Values.ipsec.enabled }}
+
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+{{- $encap := eq .Values.ipsec.encapsulation "udp" }}
+{{- $peers := .Values.ipsec.peers }}
+{{/* A traffic selector names the protocol by its IP number, not by its name. */}}
+{{- $protoNums := dict "sctp" "132" "udp" "17" "tcp" "6" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ocudu-gnb.ipsec.configmapName" . }}
+  labels:
+    {{- include "ocudu-gnb.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ipsec
+data:
+  # The whole daemon configuration, rendered here rather than assembled at start-up. It is
+  # already a typed, documented format, and a proposal that gets mis-quoted on its way
+  # through a shell script becomes a weaker cipher that still looks like it worked.
+  swanctl.conf: |
+    # One connection per peer, and under each the interfaces that peer carries. A pod is a
+    # single network namespace, so a second daemon would contend with the first for the
+    # same ports, policies and routes: every peer this pod talks to lives in this one file
+    # and is served by the one daemon.
+    connections {
+{{- range $peerName, $peer := $peers }}
+{{- $initiates := ne (default "" $peer.address) "" }}
+        {{ $peerName }} {
+            version = 2
+            local_addrs = %any
+            remote_addrs = {{ if $initiates }}{{ $peer.address }}{{ else }}%any{{ end }}
+{{- if $.Values.ipsec.ikeOnNatTPortOnly }}
+
+            # IKE is carried on 4500 only, so neither end binds or expects the privileged
+            # port. Both of these are needed: not binding 500 locally does not stop this
+            # side dialling the peer's 500, which is where nothing is listening any more.
+            local_port = 4500
+            remote_port = 4500
+{{- end }}
+
+            # Exactly one proposal, so there is nothing to fall back to.
+            proposals = {{ $.Values.ipsec.ike.proposal }}
+
+            encap = {{ if $encap }}yes{{ else }}no{{ end }}
+            mobike = no
+            unique = replace
+
+            dpd_delay = {{ $.Values.ipsec.ike.dpdDelay }}
+            dpd_timeout = {{ $.Values.ipsec.ike.dpdTimeout }}
+            rekey_time = {{ $.Values.ipsec.ike.rekeyTime }}
+            over_time = 10m
+            rand_time = 3m
+
+            send_cert = always
+            send_certreq = yes
+            fragmentation = yes
+
+            local {
+                auth = pubkey
+                certs = cert.crt
+                id = {{ $.Values.ipsec.localId }}
+            }
+
+            remote {
+                auth = pubkey
+                id = {{ $peer.id }}
+            }
+
+            children {
+            {{- range $child, $conn := $.Values.ipsec.connections }}
+            {{- if eq (include "ocudu-gnb.ipsec.peerOf" (dict "conn" $conn "peers" $peers)) $peerName }}
+                {{ $child }} {
+                    mode = tunnel
+
+                    # Narrowed to the protocol this interface speaks, where one is given.
+                    # Anything else between the two protected addresses then matches no
+                    # policy at all: it routes to the tunnel interface, finds no transform
+                    # and is dropped, rather than being quietly encrypted and delivered.
+                    {{- $sel := "" }}
+                    {{- if $conn.protocol }}{{ $sel = printf "[%s]" (get $protoNums (lower (toString $conn.protocol))) }}{{ end }}
+                    local_ts = {{ $conn.local }}/32{{ $sel }}
+                    remote_ts = {{ $conn.remote }}/32{{ $sel }}
+                    esp_proposals = {{ $conn.espProposal | default $.Values.ipsec.ike.espProposal }}
+
+                    # A local number only. Nothing about it is negotiated or sent, so the
+                    # two ends need not agree on it.
+                    {{- $ifId := include "ocudu-gnb.ipsec.ifId" (dict "name" $child "conn" $conn) }}
+                    if_id_in = {{ $ifId }}
+                    if_id_out = {{ $ifId }}
+
+                    # The side that calls keeps calling. `start_action` only fires once,
+                    # when the configuration is loaded, so without `close_action` a peer
+                    # that shuts down cleanly — a pod restart, say — takes the tunnel with
+                    # it and nothing ever brings it back. A clean shutdown is not a dead
+                    # peer, so `dpd_action` does not cover that case.
+                    # `trap` installs a policy and negotiates when the first packet
+                    # that matches it appears. That is what makes this survive a peer
+                    # restart: `start` fires once, at load, and a peer that comes back at
+                    # a different address is then never reached again. With a trap the
+                    # application's own retries drive the negotiation, and the peer name
+                    # is resolved fresh each time.
+                    start_action = {{ if $initiates }}trap{{ else }}none{{ end }}
+                    close_action = {{ if $initiates }}trap{{ else }}none{{ end }}
+                    dpd_action = restart
+                }
+            {{- end }}
+            {{- end }}
+            }
+        }
+{{- end }}
+    }
+  # The plumbing the daemon configuration cannot express: which interface carries which
+  # child, and which addresses sit on it. The child names match the children above,
+  # because that pairing is what tells the sidecar whether every tunnel it was asked for
+  # is really up.
+  links.conf: |
+    # child  ifname  if_id  local  peer
+    {{- range $child, $conn := .Values.ipsec.connections }}
+    {{ $child }} {{ include "ocudu-gnb.ipsec.ifName" (dict "name" $child "conn" $conn) }} {{ include "ocudu-gnb.ipsec.ifId" (dict "name" $child "conn" $conn) }} {{ $conn.local }}/32 {{ $conn.remote }}/32
+    {{- end }}
+  # Daemon settings the connection configuration cannot express. Mounted beside the
+  # image's own drop-in rather than over it.
+  #
+  # Every setting appears twice on purpose. The daemon reads its settings under
+  # charon-systemd, and a setting written only under charon is accepted and then silently
+  # ignored — so one written only there would look configured and do nothing.
+  strongswan-tuning.conf: |
+    charon {
+{{- if .Values.ipsec.ikeOnNatTPortOnly }}
+        # IKE is carried on 4500 only, so no privileged port is ever bound and the sidecar
+        # runs without NET_BIND_SERVICE.
+        port = 0
+        port_nat_t = 4500
+{{- end }}
+        # How fast a peer that has stopped answering is given up on. This, not dpd_delay,
+        # decides it: the defaults retry for about 165 seconds, and for all of that time
+        # this side keeps encrypting into an association the peer no longer has.
+        retransmit_timeout = {{ .Values.ipsec.ike.retransmitTimeout }}
+        retransmit_tries = {{ .Values.ipsec.ike.retransmitTries }}
+
+        # How far out of order a packet may arrive and still be accepted. This is a daemon
+        # setting: a replay window written into a child section is accepted by the parser
+        # and then has no effect at all, which is worse than leaving it out.
+        replay_window = {{ .Values.ipsec.ike.replayWindow }}
+
+        filelog {
+            stderr {
+                default = {{ .Values.ipsec.logLevel }}
+            }
+        }
+    }
+
+    charon-systemd {
+{{- if .Values.ipsec.ikeOnNatTPortOnly }}
+        port = 0
+        port_nat_t = 4500
+{{- end }}
+        retransmit_timeout = {{ .Values.ipsec.ike.retransmitTimeout }}
+        retransmit_tries = {{ .Values.ipsec.ike.retransmitTries }}
+
+        # How far out of order a packet may arrive and still be accepted. This is a daemon
+        # setting: a replay window written into a child section is accepted by the parser
+        # and then has no effect at all, which is worse than leaving it out.
+        replay_window = {{ .Values.ipsec.ike.replayWindow }}
+
+        filelog {
+            stderr {
+                default = {{ .Values.ipsec.logLevel }}
+            }
+        }
+    }
+{{- end }}

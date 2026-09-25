@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.15.0 (2026-10-19)
+
+### Added
+
+- `ipsec`: optional strongSwan sidecar protecting Xn-C and Xn-U with IKEv2 and tunnel-mode ESP. One daemon per pod, one IKE association per peer under `ipsec.peers`, and one child association per interface under `ipsec.connections`, each on its own XFRM interface and protected address, so two gNBs stay separate tunnel endpoints even on one node. Off by default. It brings a headless service for the peer to resolve, a NetworkPolicy that allows the peer the tunnel and nothing else, render-time guards that refuse any configuration that would run unprotected, and an optional cert-manager `Certificate`. Requires Kubernetes 1.29 or newer, `network.hostNetwork: false`, and a node whose kernel provides XFRM interfaces and ESP to an unprivileged container. See `docs/ipsec.md`
+
+- Xn is the only interface this chart can protect. F1-C, F1-U and E1 are in-process connectors in a monolithic gNB, with no sockets to intercept; N2 and N3 reach a core that does not terminate IKEv2, so they need a security gateway in front of the core rather than a tunnel from this pod
+- `networkPolicy.ingress.xn` and `networkPolicy.egress.xn`: allow an Xn peer. Off by default, because a rule for a peer that does not exist opens a port for nothing. With IPsec on they open the tunnel and nothing else; with it off they open Xn-C on SCTP 38422 and Xn-U on `xnuPort`
+- `ipsec.allowXnuOnCorePort`: the chart refuses to render while a protected Xn-U sits on the core's GTP-U port, because the rule the policy has to open for the core would also permit plaintext Xn-U to the peer's pod address. Xn-U's port is configurable, so move it on both ends rather than open this
+- `networkPolicy.egress.dnsTo`: choose where the cluster DNS is. The rule named the cluster DNS pods and nothing else, which matches nothing on a CNI that applies policy to the service address — there every name lookup failed, and anything resolving a name at startup never started. Set it to `[]` to allow port 53 to any destination instead
+
 ## 3.14.0 (2026-10-19)
 
 ### Changed

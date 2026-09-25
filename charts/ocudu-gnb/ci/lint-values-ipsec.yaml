@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# Minimal values for linting the IPsec path. `ipsec.enabled` is false in the shipped
+# defaults, so without this file none of the IPsec templates is ever rendered and none of
+# the render-time guards is ever reached.
+#
+# This is a lint fixture, not a deployment example. The application config below carries
+# only the keys the guards read; `docs/ipsec.md` has the worked example.
+#
+# cert-manager stays off on purpose: its custom resource definitions have no schema here,
+# and an unknown kind fails the manifest check.
+
+networkPolicy:
+  enabled: true
+
+ipsec:
+  enabled: true
+  certSecret: ocudu-gnb-ipsec
+  localId: gnb-a.example.com
+  # One peer, so neither connection has to name it. The other gNB in the pair leaves
+  # `address` out and waits, with `cu_cp.xnap.no_connection_init` set to match.
+  peers:
+    xn:
+      id: gnb-b.example.com
+      address: ocudu-gnb-b-ipsec
+  connections:
+    xnc:
+      protocol: sctp
+      local: 100.64.40.1
+      remote: 100.64.40.2
+    xnu:
+      protocol: udp
+      local: 100.64.50.1
+      remote: 100.64.50.2
+
+config:
+  gnb-config.yml: |-
+    cu_cp:
+      # Xn-C is shaped as a list of gateways, each with a list of peer connections, and
+      # the addresses inside are lists too. Written here in that form on purpose: an
+      # address on its own line is checked the same as one written beside its key.
+      xnap:
+        gateways:
+          - bind_addrs:
+              - 100.64.40.1
+            connections:
+              - peer_addrs:
+                  - 100.64.40.2
+
+    cu_up:
+      # Off the core's GTP-U port, which the chart refuses to share with a protected
+      # interface. Both ends have to agree on this number.
+      xnu:
+        bind_port: 2153
+        peer_port: 2153
+        socket:
+          - bind_addr: 100.64.50.1

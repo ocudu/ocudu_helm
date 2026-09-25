@@ -25,6 +25,9 @@ spec:
         {{- if not .Values.o1.enable_ocudu_o1 }}
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yml") . | sha256sum }}
         {{- end }}
+        {{- if .Values.ipsec.enabled }}
+        checksum/ipsec-config: {{ include (print $.Template.BasePath "/ipsec-configmap.yaml") . | sha256sum }}
+        {{- end }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -45,6 +48,23 @@ spec:
       hostNetwork: true
       {{- end }}
       volumes:
+        {{- if .Values.ipsec.enabled }}
+        - name: ipsec-config
+          configMap:
+            name: {{ include "ocudu-gnb.ipsec.configmapName" . }}
+        - name: ipsec-credentials
+          secret:
+            secretName: {{ .Values.ipsec.certSecret }}
+            defaultMode: 0400
+        # The daemon writes its credentials, its socket and its scratch files somewhere.
+        # Giving it these three keeps the rest of its root filesystem read-only.
+        - name: ipsec-swanctl
+          emptyDir: {}
+        - name: ipsec-run
+          emptyDir: {}
+        - name: ipsec-tmp
+          emptyDir: {}
+        {{- end }}
         - name: entrypoint-volume-ocudu-gnb
           configMap:
             name: {{ include "ocudu-gnb.entrypointConfigmapName" . }}
@@ -121,6 +141,74 @@ spec:
             medium: HugePages-2Mi
         {{- end }}
       {{- $resourceRequests := default dict .Values.resources.requests }}
+      {{- if .Values.ipsec.enabled }}
+      # A sidecar init container rather than an ordinary one. The kubelet starts it before
+      # the application container and stops it only after that container has gone, so the
+      # tunnel is up for the whole life of the application instead of racing it at both
+      # ends. This is what ties the feature to Kubernetes 1.29.
+      initContainers:
+        - name: ipsec
+          restartPolicy: Always
+          image: "{{ include "ocudu-gnb.ipsec.image" . }}"
+          imagePullPolicy: {{ .Values.ipsec.image.pullPolicy }}
+          securityContext:
+            {{- include "ocudu-gnb.ipsec.securityContext" . | nindent 12 }}
+          {{- with .Values.ipsec.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command: [ "/usr/local/bin/entrypoint-ipsec.sh" ]
+          env:
+            - name: IPSEC_ENCAP
+              value: {{ if eq .Values.ipsec.encapsulation "udp" }}"yes"{{ else }}"no"{{ end }}
+            - name: IPSEC_PROTECTED_SUPERNET
+              value: {{ .Values.ipsec.protectedSupernet | quote }}
+            - name: IPSEC_CREDENTIAL_RELOAD
+              value: {{ if .Values.ipsec.credentialReload.enabled }}"yes"{{ else }}"no"{{ end }}
+            - name: IPSEC_CREDENTIAL_INTERVAL
+              value: {{ .Values.ipsec.credentialReload.intervalSeconds | quote }}
+          {{- if .Values.ipsec.startupProbe.enabled }}
+          startupProbe:
+            exec:
+              command: [ "/usr/local/bin/startup-ipsec.sh" ]
+            initialDelaySeconds: {{ .Values.ipsec.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.ipsec.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.ipsec.startupProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.ipsec.startupProbe.failureThreshold }}
+            successThreshold: {{ .Values.ipsec.startupProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.ipsec.readinessProbe.enabled }}
+          readinessProbe:
+            exec:
+              command: [ "/usr/local/bin/readiness-ipsec.sh" ]
+            initialDelaySeconds: {{ .Values.ipsec.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.ipsec.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.ipsec.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.ipsec.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.ipsec.readinessProbe.successThreshold }}
+          {{- end }}
+          volumeMounts:
+            - name: ipsec-config
+              mountPath: /etc/ipsec-config
+              readOnly: true
+            # A drop-in beside the daemon's own configuration. subPath so the image's
+            # file next to it is left alone, and a higher number so this wins.
+            - name: ipsec-config
+              mountPath: /etc/strongswan.d/99-ocudu-tuning.conf
+              subPath: strongswan-tuning.conf
+              readOnly: true
+            # The private key is mounted here and nowhere else. The application container
+            # never sees it and never gains a network capability.
+            - name: ipsec-credentials
+              mountPath: /credentials
+              readOnly: true
+            - name: ipsec-swanctl
+              mountPath: /etc/swanctl
+            - name: ipsec-run
+              mountPath: /run
+            - name: ipsec-tmp
+              mountPath: /tmp
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           tty: true

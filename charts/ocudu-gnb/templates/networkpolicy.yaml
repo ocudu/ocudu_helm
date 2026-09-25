@@ -49,6 +49,38 @@ spec:
           port: {{ .Values.o1.o1Port | default 830 }}
     {{- end }}
     
+    {{- if .Values.networkPolicy.ingress.xn.enabled }}
+    {{- if .Values.ipsec.enabled }}
+    # With IPsec on, the peer may exchange nothing but the tunnel itself. The plaintext
+    # Xn ports are deliberately absent here: leaving them open would keep alive the
+    # exact path this feature exists to close.
+    - from:
+      {{- toYaml .Values.networkPolicy.ingress.xn.from | nindent 6 }}
+      {{- if eq .Values.ipsec.encapsulation "udp" }}
+      ports:
+        {{- if not .Values.ipsec.ikeOnNatTPortOnly }}
+        - protocol: UDP
+          port: 500   # IKE
+        {{- end }}
+        - protocol: UDP
+          port: 4500  # IKE, and ESP once either end is behind address translation
+      {{- else }}
+      # Native ESP is IP protocol 50, and a policy can only name TCP, UDP and SCTP, so
+      # this rule has to permit every protocol to the peer — including the plaintext
+      # ports. That is the cost of `native`, and why `udp` is the default.
+      {{- end }}
+    {{- else }}
+    # Allow traffic from an Xn peer (Xn-C and Xn-U)
+    - from:
+      {{- toYaml .Values.networkPolicy.ingress.xn.from | nindent 6 }}
+      ports:
+        - protocol: SCTP
+          port: 38422  # Xn-C (XnAP)
+        - protocol: UDP
+          port: {{ .Values.networkPolicy.ingress.xn.xnuPort }}  # Xn-U (GTP-U)
+    {{- end }}
+    {{- end }}
+
     {{- range .Values.networkPolicy.ingress.custom }}
     # Custom ingress rule
     - {{ toYaml . | nindent 6 }}
@@ -66,17 +98,55 @@ spec:
           port: 2152   # UPF (N3/GTP-U)
     {{- end }}
     
+    {{- if .Values.networkPolicy.egress.xn.enabled }}
+    {{- if .Values.ipsec.enabled }}
+    # With IPsec on, the peer may exchange nothing but the tunnel itself. The plaintext
+    # Xn ports are deliberately absent here: leaving them open would keep alive the
+    # exact path this feature exists to close.
+    - to:
+      {{- toYaml .Values.networkPolicy.egress.xn.to | nindent 6 }}
+      {{- if eq .Values.ipsec.encapsulation "udp" }}
+      ports:
+        {{- if not .Values.ipsec.ikeOnNatTPortOnly }}
+        - protocol: UDP
+          port: 500   # IKE
+        {{- end }}
+        - protocol: UDP
+          port: 4500  # IKE, and ESP once either end is behind address translation
+      {{- else }}
+      # Native ESP is IP protocol 50, and a policy can only name TCP, UDP and SCTP, so
+      # this rule has to permit every protocol to the peer — including the plaintext
+      # ports. That is the cost of `native`, and why `udp` is the default.
+      {{- end }}
+    {{- else }}
+    # Allow traffic to an Xn peer (Xn-C and Xn-U)
+    - to:
+      {{- toYaml .Values.networkPolicy.egress.xn.to | nindent 6 }}
+      ports:
+        - protocol: SCTP
+          port: 38422  # Xn-C (XnAP)
+        - protocol: UDP
+          port: {{ .Values.networkPolicy.egress.xn.xnuPort }}  # Xn-U (GTP-U)
+    {{- end }}
+    {{- end }}
+
+    {{- if .Values.networkPolicy.egress.dnsTo }}
     # Allow DNS resolution
     - to:
-        - namespaceSelector: {}
-          podSelector:
-            matchLabels:
-              k8s-app: kube-dns
+        {{- toYaml .Values.networkPolicy.egress.dnsTo | nindent 8 }}
       ports:
         - protocol: UDP
           port: 53
         - protocol: TCP
           port: 53
+    {{- else }}
+    # Allow DNS resolution. No destination is named, so this is port 53 to anywhere.
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    {{- end }}
     
     {{- if .Values.networkPolicy.egress.monitoring.enabled }}
     # Allow traffic to monitoring systems

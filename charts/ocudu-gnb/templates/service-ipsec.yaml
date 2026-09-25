@@ -1,0 +1,40 @@
+{{- if .Values.ipsec.enabled }}
+
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# A headless service, so the name resolves straight to the pod address. A cluster IP
+# service cannot carry this traffic: it forwards only the ports it declares, it cannot
+# forward ESP at all, and it rewrites addresses, which breaks the address detection IKE
+# depends on.
+#
+# publishNotReadyAddresses is load-bearing. Without it the record does not exist until the
+# pod is ready, and a pod that is waiting for its peer cannot become ready until the peer
+# finds it — neither side would ever start.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ocudu-gnb.ipsec.serviceName" . }}
+  labels:
+    {{- include "ocudu-gnb.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ipsec
+  {{- with .Values.ipsec.serviceAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - name: ike
+      port: 500
+      targetPort: 500
+      protocol: UDP
+    - name: ike-nat
+      port: 4500
+      targetPort: 4500
+      protocol: UDP
+  selector:
+    {{- include "ocudu-gnb.selectorLabels" . | nindent 4 }}
+{{- end }}
