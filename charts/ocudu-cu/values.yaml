@@ -336,6 +336,23 @@ networkPolicy:
             matchLabels:
               app.kubernetes.io/name: ocudu-du
 
+    # -- Allow ingress from an Xn peer (Xn-C/XnAP, Xn-U/GTP-U).
+    # Off by default, because most deployments have no Xn peer and a rule for one that
+    # does not exist opens a port for nothing. The selectors name the charts that
+    # terminate Xn in the same namespace; a peer elsewhere needs its own selector.
+    xn:
+      enabled: false
+      # -- The UDP port Xn-U uses while IPsec is off, matching `xnu.bind_port` in the
+      # application config. Xn-C's port is fixed in the application, so it needs no key.
+      # With IPsec on neither is opened: the peer is allowed the tunnel and nothing else.
+      xnuPort: 2152
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ocudu-gnb
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ocudu-cu
     # -- Allow traffic from monitoring systems
     monitoring:
       # -- Enable monitoring ingress
@@ -380,6 +397,23 @@ networkPolicy:
             matchLabels:
               app.kubernetes.io/name: ocudu-du
 
+    # -- Allow egress to an Xn peer (Xn-C/XnAP, Xn-U/GTP-U).
+    # Off by default, because most deployments have no Xn peer and a rule for one that
+    # does not exist opens a port for nothing. The selectors name the charts that
+    # terminate Xn in the same namespace; a peer elsewhere needs its own selector.
+    xn:
+      enabled: false
+      # -- The UDP port Xn-U uses while IPsec is off, matching `xnu.bind_port` in the
+      # application config. Xn-C's port is fixed in the application, so it needs no key.
+      # With IPsec on neither is opened: the peer is allowed the tunnel and nothing else.
+      xnuPort: 2152
+      to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ocudu-gnb
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ocudu-cu
     # -- Where the cluster DNS lives.
     # The default names the cluster DNS pods. That is the narrow answer, and it works on a
     # CNI that translates a service address before it applies policy. Some CNIs apply

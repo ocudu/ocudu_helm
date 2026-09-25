@@ -2,6 +2,10 @@
 
 ## 1.10.0 (2026-10-19)
 
+### Added
+
+- `ipsec`: Xn-C can now be protected, against another gNB running the same sidecar. Add the peer and a connection for it, and point `cu_cp.xnap.gateways[].bind_addrs` and `.connections[].peer_addrs` at the protected addresses. One side carries the peer's `address` and starts the connection; the other leaves it out and sets `cu_cp.xnap.no_connection_init`, so neither layer dials from that end. The peer is allowed through with `networkPolicy.ingress.xn` and `networkPolicy.egress.xn`, both off by default and both opening the tunnel only. See `docs/ipsec.md`
+
 ### Fixed
 
 - `ipsec`: the render-time address check read only addresses written beside their key, so a protected section that listed its bind addresses one per line — the form SCTP multi-homing uses — could name a wildcard or a pod address alongside the protected one and still render. A value written as a list item is now checked the same way as one written inline

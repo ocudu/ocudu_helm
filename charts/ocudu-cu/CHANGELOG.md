@@ -5,6 +5,7 @@
 ### Added
 
 - `ipsec.allowXnuOnCorePort`: the companion to `allowF1uOnCorePort` for Xn-U, which defaults to the same GTP-U port the policy has to open for the core. The chart now refuses to render while a protected Xn-U sits on that port, because the rule opened for the core would also permit plaintext Xn-U to the peer's pod address. Xn-U's port is configurable, so move it on both ends rather than open this
+- `ipsec`: Xn-C and Xn-U can now be protected, against another gNB running the same sidecar. Add the peer and a connection for each, and point `cu_cp.xnap.gateways[].bind_addrs`, `.connections[].peer_addrs` and `cu_up.xnu.socket[].bind_addr` at the protected addresses. Xn-U also has to leave the core's GTP-U port, on both ends. One side carries the peer's `address` and starts the connection; the other leaves it out and sets `cu_cp.xnap.no_connection_init`, so neither layer dials from that end. The peer is allowed through with `networkPolicy.ingress.xn` and `networkPolicy.egress.xn`, both off by default and both opening the tunnel only. See `docs/ipsec.md`
 
 ### Fixed
 

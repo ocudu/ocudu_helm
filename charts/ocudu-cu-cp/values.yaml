@@ -295,6 +295,19 @@ networkPolicy:
               app.kubernetes.io/name: ocudu-du
         - ipBlock:
             cidr: 10.0.0.0/8
+    # -- Allow ingress from an Xn peer (Xn-C/XnAP).
+    # Off by default, because most deployments have no Xn peer and a rule for one that
+    # does not exist opens a port for nothing. The selectors name the charts that
+    # terminate Xn in the same namespace; a peer elsewhere needs its own selector.
+    xn:
+      enabled: false
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ocudu-gnb
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ocudu-cu-cp
     # -- Allow ingress from monitoring systems
     monitoring:
       enabled: true
@@ -333,6 +346,19 @@ networkPolicy:
               app.kubernetes.io/name: ocudu-du
         - ipBlock:
             cidr: 10.0.0.0/8
+    # -- Allow egress to an Xn peer (Xn-C/XnAP).
+    # Off by default, because most deployments have no Xn peer and a rule for one that
+    # does not exist opens a port for nothing. The selectors name the charts that
+    # terminate Xn in the same namespace; a peer elsewhere needs its own selector.
+    xn:
+      enabled: false
+      to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ocudu-gnb
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ocudu-cu-cp
     # -- Where the cluster DNS lives.
     # The default names the cluster DNS pods. That is the narrow answer, and it works on a
     # CNI that translates a service address before it applies policy. Some CNIs apply

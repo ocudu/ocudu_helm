@@ -34,6 +34,11 @@ ipsec:
       # No address on either: the CU-CP is the side both others dial.
     cuup:
       id: cu-up.example.com
+    xn:
+      id: gnb-b.example.com
+      # Set, so this side starts the Xn connection. The peer leaves it empty and waits,
+      # with `cu_cp.xnap.no_connection_init` set to match.
+      address: ocudu-gnb-ipsec
   connections:
     f1c:
       peer: du
@@ -45,6 +50,11 @@ ipsec:
       protocol: sctp
       local: 100.64.20.1
       remote: 100.64.20.2
+    xnc:
+      peer: xn
+      protocol: sctp
+      local: 100.64.40.1
+      remote: 100.64.40.2
 
 config:
   cu-cp-config.yml: |-
@@ -54,3 +64,14 @@ config:
 
       f1ap:
         bind_addrs: 100.64.10.1
+
+      # Xn-C is shaped as a list of gateways, each with a list of peer connections, and
+      # the addresses inside are lists too. Written here in that form on purpose: an
+      # address on its own line is checked the same as one written beside its key.
+      xnap:
+        gateways:
+          - bind_addrs:
+              - 100.64.40.1
+            connections:
+              - peer_addrs:
+                  - 100.64.40.2

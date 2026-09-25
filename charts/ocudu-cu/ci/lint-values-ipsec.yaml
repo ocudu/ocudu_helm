@@ -28,20 +28,35 @@ ipsec:
   peers:
     du:
       id: du.example.com
-      # No address, so this side waits for the peer to connect. The DU fixture sets one
-      # and exercises the other branch.
-  # No `peer` key on either connection: with a single peer there is nothing to choose, and
-  # this is the branch that lets a two-pod deployment stay as short as it ever was. The DU
-  # fixture names its peer and exercises the explicit branch.
+      # No address, so this side waits for the DU to connect. The DU fixture sets one and
+      # exercises the other branch.
+    xn:
+      id: gnb-b.example.com
+      # Set, so this side starts the Xn connection.
+      address: ocudu-gnb-ipsec
+  # Every connection names its peer, which is what a pod with more than one has to do. The
+  # DU fixture has a single peer and exercises the branch that leaves the key out.
   connections:
     f1c:
+      peer: du
       protocol: sctp
       local: 100.64.10.1
       remote: 100.64.10.2
     f1u:
+      peer: du
       protocol: udp
       local: 100.64.30.1
       remote: 100.64.30.2
+    xnc:
+      peer: xn
+      protocol: sctp
+      local: 100.64.40.1
+      remote: 100.64.40.2
+    xnu:
+      peer: xn
+      protocol: udp
+      local: 100.64.50.1
+      remote: 100.64.50.2
 
 config:
   cu-config.yml: |-
@@ -49,9 +64,28 @@ config:
       f1ap:
         bind_addrs: 100.64.10.1
 
+      # Xn-C is shaped as a list of gateways, each with a list of peer connections, and
+      # the addresses inside are lists too. Written here in that form on purpose: an
+      # address on its own line is checked the same as one written beside its key.
+      xnap:
+        gateways:
+          - bind_addrs:
+              - 100.64.40.1
+            connections:
+              - peer_addrs:
+                  - 100.64.40.2
+
     cu_up:
       f1u:
         bind_port: 2151
         peer_port: 2151
         socket:
           - bind_addr: 100.64.30.1
+
+      # Off the core's GTP-U port, which the chart refuses to share with a protected
+      # interface. Both ends have to agree on this number.
+      xnu:
+        bind_port: 2153
+        peer_port: 2153
+        socket:
+          - bind_addr: 100.64.50.1

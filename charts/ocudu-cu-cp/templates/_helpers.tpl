@@ -373,7 +373,7 @@ interface it was meant to protect would be somewhere else entirely, in clear.
 
 {{- $blob := include "ocudu-cu-cp.ipsec.configBlob" . -}}
 {{- $protected := "" -}}
-{{- range $key := (list "f1ap" "e1ap") -}}
+{{- range $key := (list "f1ap" "e1ap" "xnap") -}}
 {{- $protected = printf "%s\n%s" $protected (include "ocudu-cu-cp.ipsec.section" (dict "blob" $blob "key" $key)) -}}
 {{- end -}}
 {{/*
@@ -386,7 +386,7 @@ straight out of the tunnel. Both look like a working configuration and neither i
 {{- $allowed = append $allowed (toString $conn.local) -}}
 {{- $allowed = append $allowed (toString $conn.remote) -}}
 {{- end -}}
-{{- $addrKeys := list "addr" "addrs" "bind_addr" "bind_addrs" "ext_addr" "ext_bind_addr" -}}
+{{- $addrKeys := list "addr" "addrs" "bind_addr" "bind_addrs" "ext_addr" "ext_bind_addr" "peer_addrs" -}}
 {{/*
 Every one of these keys takes a list as readily as a scalar, and a list writes its values on
 their own lines with no key beside them. Reading the key alone would see `bind_addrs:` with

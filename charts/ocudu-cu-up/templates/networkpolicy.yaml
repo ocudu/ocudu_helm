@@ -89,6 +89,36 @@ spec:
     {{- end }}
     {{- end }}
 
+    {{- if .Values.networkPolicy.ingress.xn.enabled }}
+    {{- if .Values.ipsec.enabled }}
+    # With IPsec on, the peer may exchange nothing but the tunnel itself. The plaintext
+    # Xn ports are deliberately absent here: leaving them open would keep alive the
+    # exact path this feature exists to close.
+    - from:
+      {{- toYaml .Values.networkPolicy.ingress.xn.from | nindent 6 }}
+      {{- if eq .Values.ipsec.encapsulation "udp" }}
+      ports:
+        {{- if not .Values.ipsec.ikeOnNatTPortOnly }}
+        - protocol: UDP
+          port: 500   # IKE
+        {{- end }}
+        - protocol: UDP
+          port: 4500  # IKE, and ESP once either end is behind address translation
+      {{- else }}
+      # Native ESP is IP protocol 50, and a policy can only name TCP, UDP and SCTP, so
+      # this rule has to permit every protocol to the peer — including the plaintext
+      # ports. That is the cost of `native`, and why `udp` is the default.
+      {{- end }}
+    {{- else }}
+    # Allow traffic from an Xn peer (Xn-U)
+    - from:
+      {{- toYaml .Values.networkPolicy.ingress.xn.from | nindent 6 }}
+      ports:
+        - protocol: UDP
+          port: {{ .Values.networkPolicy.ingress.xn.xnuPort }}  # Xn-U (GTP-U)
+    {{- end }}
+    {{- end }}
+
     {{- if and .Values.metricsService.enabled .Values.networkPolicy.ingress.monitoring.enabled }}
     # Allow traffic from monitoring systems (Telegraf)
     - from:
@@ -170,6 +200,36 @@ spec:
       ports:
         - protocol: UDP
           port: 2152   # F1-U (GTP-U)
+    {{- end }}
+    {{- end }}
+
+    {{- if .Values.networkPolicy.egress.xn.enabled }}
+    {{- if .Values.ipsec.enabled }}
+    # With IPsec on, the peer may exchange nothing but the tunnel itself. The plaintext
+    # Xn ports are deliberately absent here: leaving them open would keep alive the
+    # exact path this feature exists to close.
+    - to:
+      {{- toYaml .Values.networkPolicy.egress.xn.to | nindent 6 }}
+      {{- if eq .Values.ipsec.encapsulation "udp" }}
+      ports:
+        {{- if not .Values.ipsec.ikeOnNatTPortOnly }}
+        - protocol: UDP
+          port: 500   # IKE
+        {{- end }}
+        - protocol: UDP
+          port: 4500  # IKE, and ESP once either end is behind address translation
+      {{- else }}
+      # Native ESP is IP protocol 50, and a policy can only name TCP, UDP and SCTP, so
+      # this rule has to permit every protocol to the peer — including the plaintext
+      # ports. That is the cost of `native`, and why `udp` is the default.
+      {{- end }}
+    {{- else }}
+    # Allow traffic to an Xn peer (Xn-U)
+    - to:
+      {{- toYaml .Values.networkPolicy.egress.xn.to | nindent 6 }}
+      ports:
+        - protocol: UDP
+          port: {{ .Values.networkPolicy.egress.xn.xnuPort }}  # Xn-U (GTP-U)
     {{- end }}
     {{- end }}
 

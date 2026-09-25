@@ -73,6 +73,20 @@ DU pod                                        CU pod
          eth0 <pod address>  ==ESP in UDP==>  eth0 <pod address>
 ```
 
+The examples here follow one convention, a `/24` per interface inside
+`ipsec.protectedSupernet`:
+
+| Interface | Subnet |
+|---|---|
+| F1-C | `100.64.10.0/24` |
+| E1 | `100.64.20.0/24` |
+| F1-U | `100.64.30.0/24` |
+| Xn-C | `100.64.40.0/24` |
+| Xn-U | `100.64.50.0/24` |
+
+Nothing enforces it and the addresses are yours to choose, but keeping to it means two
+charts configured separately do not land on the same one.
+
 The inner addresses come from `ipsec.protectedSupernet` and are yours to choose. They exist
 only inside the two pods. The outer addresses are the pod addresses, which is why the peer
 is named by a headless service: its record resolves straight to the pod address, and the
@@ -285,7 +299,7 @@ exists to prevent.
 | `connections.<name>.protocol` set to anything but `sctp`, `udp` or `tcp` | a selector naming a protocol the kernel does not match leaves the interface with no policy at all |
 | `ipsec.ike.replayWindow` or a connection's `replayWindow` set to 0 | replay protection would be off, so a captured packet could be replayed and accepted |
 | `ipsec.encapsulation` set to anything but `udp` or `native` | there is no third way to carry ESP, and a typo would otherwise pick the default silently |
-| an F1 address in the config that is not in `ipsec.connections`, or a wildcard bind | traffic that would never enter the tunnel |
+| a protected address in the config that is not in `ipsec.connections`, or a wildcard bind | traffic that would never enter the tunnel. An address written as a list item is read the same as one written beside its key |
 | F1-U on the core's GTP-U port, 2152 | the policy rule that lets the core be reached also permits plaintext F1-U to the peer; override with `ipsec.allowF1uOnCorePort` |
 
 ## Dropping a capability

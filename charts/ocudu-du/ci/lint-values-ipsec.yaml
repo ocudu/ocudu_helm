@@ -31,16 +31,15 @@ ipsec:
       # Set, so this side starts the connection. The CU fixture leaves it empty and
       # exercises the other branch.
       address: ocudu-cu-ipsec
-  # Both connections name their peer, which is what a pod with more than one has to do.
-  # The CU fixture leaves the key out and exercises the single-peer branch.
+  # No `peer` key on either connection: with a single peer there is nothing to choose, and
+  # this is the branch that lets a two-pod deployment stay as short as it ever was. The CU
+  # fixture has more than one peer and exercises the explicit branch.
   connections:
     f1c:
-      peer: cu
       protocol: sctp
       local: 100.64.10.2
       remote: 100.64.10.1
     f1u:
-      peer: cu
       protocol: udp
       local: 100.64.30.2
       remote: 100.64.30.1
