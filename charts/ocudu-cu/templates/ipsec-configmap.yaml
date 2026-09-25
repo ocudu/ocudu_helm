@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: BSD-3-Clause-Open-MPI
 
 {{- $encap := eq .Values.ipsec.encapsulation "udp" }}
-{{- $initiates := ne (default "" .Values.ipsec.peer.address) "" }}
+{{- $peers := .Values.ipsec.peers }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -18,15 +18,18 @@ data:
   # already a typed, documented format, and a proposal that gets mis-quoted on its way
   # through a shell script becomes a weaker cipher that still looks like it worked.
   swanctl.conf: |
-    # One connection with one child per protected interface. A pod is a single network
-    # namespace, so a second daemon would contend with the first for the same ports,
-    # policies and routes.
+    # One connection per peer, and under each the interfaces that peer carries. A pod is a
+    # single network namespace, so a second daemon would contend with the first for the
+    # same ports, policies and routes: every peer this pod talks to lives in this one file
+    # and is served by the one daemon.
     connections {
-        f1 {
+{{- range $peerName, $peer := $peers }}
+{{- $initiates := ne (default "" $peer.address) "" }}
+        {{ $peerName }} {
             version = 2
             local_addrs = %any
-            remote_addrs = {{ if $initiates }}{{ .Values.ipsec.peer.address }}{{ else }}%any{{ end }}
-{{- if .Values.ipsec.ikeOnNatTPortOnly }}
+            remote_addrs = {{ if $initiates }}{{ $peer.address }}{{ else }}%any{{ end }}
+{{- if $.Values.ipsec.ikeOnNatTPortOnly }}
 
             # IKE is carried on 4500 only, so neither end binds or expects the privileged
             # port. Both of these are needed: not binding 500 locally does not stop this
@@ -36,15 +39,15 @@ data:
 {{- end }}
 
             # Exactly one proposal, so there is nothing to fall back to.
-            proposals = {{ .Values.ipsec.ike.proposal }}
+            proposals = {{ $.Values.ipsec.ike.proposal }}
 
             encap = {{ if $encap }}yes{{ else }}no{{ end }}
             mobike = no
             unique = replace
 
-            dpd_delay = {{ .Values.ipsec.ike.dpdDelay }}
-            dpd_timeout = {{ .Values.ipsec.ike.dpdTimeout }}
-            rekey_time = {{ .Values.ipsec.ike.rekeyTime }}
+            dpd_delay = {{ $.Values.ipsec.ike.dpdDelay }}
+            dpd_timeout = {{ $.Values.ipsec.ike.dpdTimeout }}
+            rekey_time = {{ $.Values.ipsec.ike.rekeyTime }}
             over_time = 10m
             rand_time = 3m
 
@@ -55,16 +58,17 @@ data:
             local {
                 auth = pubkey
                 certs = cert.crt
-                id = {{ .Values.ipsec.localId }}
+                id = {{ $.Values.ipsec.localId }}
             }
 
             remote {
                 auth = pubkey
-                id = {{ .Values.ipsec.peer.id }}
+                id = {{ $peer.id }}
             }
 
             children {
-            {{- range $child, $conn := .Values.ipsec.connections }}
+            {{- range $child, $conn := $.Values.ipsec.connections }}
+            {{- if eq (include "ocudu-cu.ipsec.peerOf" (dict "conn" $conn "peers" $peers)) $peerName }}
                 {{ $child }} {
                     mode = tunnel
                     local_ts = {{ $conn.local }}/32
@@ -92,8 +96,10 @@ data:
                     dpd_action = restart
                 }
             {{- end }}
+            {{- end }}
             }
         }
+{{- end }}
     }
   # The plumbing the daemon configuration cannot express: which interface carries which
   # child, and which addresses sit on it. The child names match the children above,

@@ -92,9 +92,16 @@ if cert-manager is installed — see below.
 
 ### 2. The values
 
-One side sets `ipsec.peer.address` and starts the connection; the other leaves it empty and
-waits. Either side can be the one that starts. Below the DU starts, which suits it: it is
-the side that opens F1 anyway.
+Every peer this pod talks to is an entry under `ipsec.peers`, and every protected
+interface is an entry under `ipsec.connections` naming the peer that carries it. One side
+sets that peer's `address` and starts the connection; the other leaves it empty and waits.
+Either side can be the one that starts. Below the DU starts, which suits it: it is the side
+that opens F1 anyway.
+
+With a single peer the `peer` key on a connection may be left out. It becomes required the
+moment a second peer appears, because then which association carries an interface is a real
+choice and guessing it wrong puts that interface on an association whose peer identity is
+not the one that owns it.
 
 ```yaml
 # DU
@@ -110,17 +117,20 @@ ipsec:
   enabled: true
   certSecret: ocudu-du-ipsec
   localId: du.example.com
-  peer:
-    id: cu.example.com
-    # The CU's headless service, which resolves straight to its pod address.
-    address: <release>-ocudu-cu-ipsec
+  peers:
+    cu:
+      id: cu.example.com
+      # The CU's headless service, which resolves straight to its pod address.
+      address: <release>-ocudu-cu-ipsec
   connections:
     f1c:
+      peer: cu
       ifName: ipsec-f1c
       ifId: 257
       local: 100.64.10.2
       remote: 100.64.10.1
     f1u:
+      peer: cu
       ifName: ipsec-f1u
       ifId: 258
       local: 100.64.30.2
@@ -183,7 +193,10 @@ exists to prevent.
 | `networkPolicy.enabled: false` | the application could still address the peer directly; override with `ipsec.allowWithoutNetworkPolicy` only where unprotected traffic is blocked some other way |
 | an empty `ipsec.connections` | a sidecar protecting nothing |
 | a duplicate or zero `ifId`, a duplicate or over-long `ifName` | two children sharing one tunnel, or no tunnel at all |
-| a missing `certSecret`, `localId` or `peer.id` | without a peer identity any certificate the authority signed would be accepted, from anyone |
+| a missing `certSecret`, `localId` or `peers.<name>.id` | without a peer identity any certificate the authority signed would be accepted, from anyone |
+| an empty `ipsec.peers`, or a peer no connection names | the daemon would hold an association that protects nothing and report itself ready for it |
+| a connection naming a peer that is not in `ipsec.peers`, or naming none while there is more than one | the interface would land on the wrong association, or on none |
+| `ipsec.encapsulation` set to anything but `udp` or `native` | there is no third way to carry ESP, and a typo would otherwise pick the default silently |
 | an F1 address in the config that is not in `ipsec.connections`, or a wildcard bind | traffic that would never enter the tunnel |
 | F1-U on the core's GTP-U port, 2152 | the policy rule that lets the core be reached also permits plaintext F1-U to the peer; override with `ipsec.allowF1uOnCorePort` |
 

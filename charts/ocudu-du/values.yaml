@@ -467,16 +467,23 @@ ipsec:
   # name of `tls.crt` in `certSecret`.
   localId: ""
 
-  peer:
-    # -- IKE identity the peer must present. The connection is refused if the peer
-    # presents anything else.
-    id: ""
-    # -- Address or name of the peer's outer endpoint.
-    # Set it and this side starts the connection. Leave it empty and this side waits for
-    # the peer, which is what a side with no stable peer address should do.
-    # Use a headless service name, never a cluster IP service: a cluster IP forwards only
-    # the ports it declares and rewrites addresses, which breaks address detection.
-    address: ""
+  # -- The peers this pod builds an IKE association with, keyed by a name you choose.
+  # One association per peer, each carrying the connections that name it. Required when
+  # `enabled` is true. For example:
+  #
+  #   peers:
+  #     du:
+  #       id: du.ocudu.example
+  #       address: ""
+  #
+  # `id` is the identity the peer must present, and the connection is refused if it
+  # presents anything else. `address` is the peer's outer endpoint: set it and this side
+  # starts the connection, leave it empty and this side waits for the peer, which is what
+  # a side with no stable peer address should do. Use a headless service name, never a
+  # cluster IP service: a cluster IP forwards only the ports it declares and rewrites
+  # addresses, which breaks address detection.
+  # @default -- `{}`
+  peers: {}
 
   # -- How ESP is carried: `udp` (ESP inside UDP port 4500) or `native` (IP protocol 50).
   # `udp` is the default because every CNI carries UDP, and because a NetworkPolicy cannot
@@ -516,22 +523,26 @@ ipsec:
     # -- How often the mounted secret is checked, in seconds.
     intervalSeconds: 60
 
-  # -- The interfaces to protect: one child association each, all under a single IKE
-  # association. Required when `enabled` is true. For example:
+  # -- The interfaces to protect: one child association each, carried by the peer it
+  # names. Required when `enabled` is true. For example:
   #
   #   connections:
   #     f1c:
+  #       peer: du
   #       ifName: ipsec-f1c
   #       ifId: 257
   #       local: 100.64.10.1
   #       remote: 100.64.10.2
   #     f1u:
+  #       peer: du
   #       ifName: ipsec-f1u
   #       ifId: 258
   #       local: 100.64.30.1
   #       remote: 100.64.30.2
   #       espProposal: aes256gcm16-ecp256-esn-noesn
   #
+  # `peer` is a key from `peers`. It may be left out while there is exactly one peer, and
+  # is required as soon as there is a second.
   # `ifId` is a local number only. Nothing about it is negotiated or sent, so the two ends
   # need not agree on it, but it must be unique inside the pod and must not be 0.
   # `local` is the address this pod binds to, `remote` is the peer's. Both have to appear

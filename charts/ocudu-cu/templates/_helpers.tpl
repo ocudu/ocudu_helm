@@ -288,8 +288,13 @@ like success and is not. A failed install is recoverable; plaintext on the wire 
 {{- if not .Values.ipsec.localId -}}
 {{- fail "ipsec.localId is required: it is the identity this pod presents, and it has to match the certificate in ipsec.certSecret" -}}
 {{- end -}}
-{{- if not .Values.ipsec.peer.id -}}
-{{- fail "ipsec.peer.id is required: without it any certificate signed by the CA would be accepted, from any peer" -}}
+{{- if not .Values.ipsec.peers -}}
+{{- fail "ipsec.peers is empty: there is no one to build an association with, so the sidecar would run and protect nothing" -}}
+{{- end -}}
+{{- range $peerName, $peer := .Values.ipsec.peers -}}
+{{- if not $peer.id -}}
+{{- fail (printf "ipsec.peers.%s.id is required: without it any certificate signed by the CA would be accepted, from any peer" $peerName) -}}
+{{- end -}}
 {{- end -}}
 {{- if not (has .Values.ipsec.encapsulation (list "udp" "native")) -}}
 {{- fail (printf "ipsec.encapsulation is %q, and the only values are \"udp\" and \"native\"" .Values.ipsec.encapsulation) -}}
@@ -299,6 +304,8 @@ like success and is not. A failed install is recoverable; plaintext on the wire 
 {{- fail "ipsec.connections is empty: the sidecar would run and protect nothing" -}}
 {{- end -}}
 
+{{- $peerKeys := keys .Values.ipsec.peers | sortAlpha -}}
+{{- $carried := list -}}
 {{- $names := list -}}
 {{- $ids := list -}}
 {{- range $child, $conn := .Values.ipsec.connections -}}
@@ -326,6 +333,34 @@ like success and is not. A failed install is recoverable; plaintext on the wire 
   {{- if not $conn.remote -}}
   {{- fail (printf "ipsec.connections.%s.remote is required: it is the peer's protected address" $child) -}}
   {{- end -}}
+  {{/*
+  Which association carries this interface. With one peer there is nothing to choose, so
+  the key may be left out. With two there is, and guessing would silently put an interface
+  on the wrong association, where the peer identity checked is not the one that owns it.
+  */}}
+  {{- $peerName := "" -}}
+  {{- if $conn.peer -}}
+    {{- $peerName = toString $conn.peer -}}
+  {{- else if eq (len $peerKeys) 1 -}}
+    {{- $peerName = first $peerKeys -}}
+  {{- else -}}
+    {{- fail (printf "ipsec.connections.%s.peer is required: there is more than one entry in ipsec.peers, so which association carries this interface cannot be guessed" $child) -}}
+  {{- end -}}
+  {{- if not (has $peerName $peerKeys) -}}
+  {{- fail (printf "ipsec.connections.%s.peer is %q, and ipsec.peers has no entry by that name" $child $peerName) -}}
+  {{- end -}}
+  {{- $carried = append $carried $peerName -}}
+{{- end -}}
+
+{{/*
+A peer nothing names would render an association that protects no traffic. The daemon
+would establish it, the readiness probe would see an established association, and the
+interface it was meant to protect would be somewhere else entirely, in clear.
+*/}}
+{{- range $peerName, $peer := .Values.ipsec.peers -}}
+{{- if not (has $peerName $carried) -}}
+{{- fail (printf "ipsec.peers.%s carries no connection: the daemon would hold an association that protects nothing, and report itself ready for it" $peerName) -}}
+{{- end -}}
 {{- end -}}
 
 {{- $blob := include "ocudu-cu.ipsec.configBlob" . -}}
@@ -385,6 +420,19 @@ An absent bind_port is the same as 2152, because that is what the application de
 {{- fail (printf "the application config leaves F1-U on UDP %d, which is the port the policy has to open for the core. That one rule then also permits plaintext F1-U to the peer's pod address, around the tunnel. Set f1u.bind_port to another port on both ends, or set ipsec.allowF1uOnCorePort to true if there is no core to reach" $corePort) -}}
 {{- end -}}
 
+{{- end -}}
+{{- end -}}
+
+{{/*
+The peer that carries a connection. With exactly one peer the key may be left out, which
+keeps a single-peer deployment reading the way it always did. The validation helper
+refuses to render the moment that shortcut becomes ambiguous.
+*/}}
+{{- define "ocudu-cu.ipsec.peerOf" -}}
+{{- if .conn.peer -}}
+{{- toString .conn.peer -}}
+{{- else -}}
+{{- first (keys .peers | sortAlpha) -}}
 {{- end -}}
 {{- end -}}
 

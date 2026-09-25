@@ -25,10 +25,14 @@ ipsec:
   enabled: true
   certSecret: ocudu-cu-ipsec
   localId: cu.example.com
-  peer:
-    id: du.example.com
-    # No address, so this side waits for the peer to connect. The DU fixture sets one and
-    # exercises the other branch.
+  peers:
+    du:
+      id: du.example.com
+      # No address, so this side waits for the peer to connect. The DU fixture sets one
+      # and exercises the other branch.
+  # No `peer` key on either connection: with a single peer there is nothing to choose, and
+  # this is the branch that lets a two-pod deployment stay as short as it ever was. The DU
+  # fixture names its peer and exercises the explicit branch.
   connections:
     f1c:
       ifName: ipsec-f1c
