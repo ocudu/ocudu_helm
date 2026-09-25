@@ -386,9 +386,9 @@ interface it was meant to protect would be somewhere else entirely, in clear.
 {{- end -}}
 
 {{- $blob := include "ocudu-du.ipsec.configBlob" . -}}
-{{- $f1 := "" -}}
+{{- $protected := "" -}}
 {{- range $key := (list "f1ap" "f1u") -}}
-{{- $f1 = printf "%s\n%s" $f1 (include "ocudu-du.ipsec.section" (dict "blob" $blob "key" $key)) -}}
+{{- $protected = printf "%s\n%s" $protected (include "ocudu-du.ipsec.section" (dict "blob" $blob "key" $key)) -}}
 {{- end -}}
 {{/*
 Every address the protected sections name has to be one this chart knows about. A wildcard
@@ -401,19 +401,42 @@ straight out of the tunnel. Both look like a working configuration and neither i
 {{- $allowed = append $allowed (toString $conn.remote) -}}
 {{- end -}}
 {{- $addrKeys := list "addr" "addrs" "bind_addr" "bind_addrs" "ext_addr" "ext_bind_addr" -}}
-{{- range $line := splitList "\n" $f1 -}}
-{{- $parts := splitn ":" 2 $line -}}
-{{- $k := trimPrefix "- " (trim $parts._0) -}}
+{{/*
+Every one of these keys takes a list as readily as a scalar, and a list writes its values on
+their own lines with no key beside them. Reading the key alone would see `bind_addrs:` with
+nothing after it, then a bare `- 0.0.0.0` that looks like no address at all, and let both
+through. So a line that is only a list item is measured against the key that opened the
+list, and any other line closes it.
+*/}}
+{{- $pending := false -}}
+{{- range $line := splitList "\n" $protected -}}
+{{- $text := trim $line -}}
+{{- $item := hasPrefix "- " $text -}}
+{{- $body := trim (trimPrefix "- " $text) -}}
+{{- $parts := splitn ":" 2 $body -}}
+{{- $k := trim $parts._0 -}}
 {{- $v := trimAll "\"'" (trim (default "" $parts._1)) -}}
-{{- if and (has $k $addrKeys) (ne $v "") (not (has $v $allowed)) -}}
-{{- if or (eq $v "0.0.0.0") (eq $v "::") -}}
-{{- fail (printf "the application config still binds a protected interface to the wildcard address %s. With IPsec on, the application listens on the pod address as well as the protected one, so the tunnel can be walked around. Bind it to its address from ipsec.connections instead" $v) -}}
+{{- $addr := "" -}}
+{{- if has $k $addrKeys -}}
+  {{- $pending = true -}}
+  {{- if ne $v "" -}}
+    {{- $addr = $v -}}
+    {{- $pending = false -}}
+  {{- end -}}
+{{- else if and $item $pending -}}
+  {{- $addr = trimAll "\"'" $body -}}
+{{- else -}}
+  {{- $pending = false -}}
 {{- end -}}
-{{- fail (printf "the application config points a protected interface at %q, which is not one of the addresses in ipsec.connections. Traffic to or from it would not enter the tunnel" $v) -}}
+{{- if and (ne $addr "") (not (has $addr $allowed)) -}}
+{{- if or (eq $addr "0.0.0.0") (eq $addr "::") -}}
+{{- fail (printf "the application config still binds a protected interface to the wildcard address %s. With IPsec on, the application listens on the pod address as well as the protected one, so the tunnel can be walked around. Bind it to its address from ipsec.connections instead" $addr) -}}
+{{- end -}}
+{{- fail (printf "the application config points a protected interface at %q, which is not one of the addresses in ipsec.connections. Traffic to or from it would not enter the tunnel" $addr) -}}
 {{- end -}}
 {{- end -}}
 {{- range $child, $conn := .Values.ipsec.connections -}}
-{{- if not (contains $conn.local $f1) -}}
+{{- if not (contains $conn.local $protected) -}}
 {{- fail (printf "ipsec.connections.%s.local is %s, and no protected section of the application config mentions it. The application would keep its old addresses and its traffic would not enter the tunnel" $child $conn.local) -}}
 {{- end -}}
 {{- end -}}

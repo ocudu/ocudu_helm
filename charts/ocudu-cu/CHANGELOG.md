@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.13.0 (2026-10-19)
+
+### Fixed
+
+- `ipsec`: the render-time address check read only addresses written beside their key, so a protected section that listed its bind addresses one per line — the form SCTP multi-homing uses — could name a wildcard or a pod address alongside the protected one and still render. A value written as a list item is now checked the same way as one written inline
+
 ## 1.12.0 (2026-10-16)
 
 ### Added
