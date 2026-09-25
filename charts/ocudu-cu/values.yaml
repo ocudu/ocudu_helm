@@ -543,12 +543,14 @@ ipsec:
   #     f1c:
   #       peer: du
   #       ifName: ipsec-f1c
+  #       protocol: sctp
   #       ifId: 257
   #       local: 100.64.10.1
   #       remote: 100.64.10.2
   #     f1u:
   #       peer: du
   #       ifName: ipsec-f1u
+  #       protocol: udp
   #       ifId: 258
   #       local: 100.64.30.1
   #       remote: 100.64.30.2
@@ -556,6 +558,10 @@ ipsec:
   #
   # `peer` is a key from `peers`. It may be left out while there is exactly one peer, and
   # is required as soon as there is a second.
+  # `protocol` narrows the tunnel to what that interface actually speaks: `sctp` for F1-C
+  # and E1, `udp` for F1-U. Traffic between the two protected addresses that is not that
+  # protocol then matches no policy, so it is dropped rather than encrypted and delivered.
+  # Leave it out to admit any protocol, which also admits ICMP and so path-MTU discovery.
   # `ifId` is a local number only. Nothing about it is negotiated or sent, so the two ends
   # need not agree on it, but it must be unique inside the pod and must not be 0.
   # `local` is the address this pod binds to, `remote` is the peer's. Both have to appear

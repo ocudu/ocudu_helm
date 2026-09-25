@@ -126,12 +126,14 @@ ipsec:
     f1c:
       peer: cu
       ifName: ipsec-f1c
+      protocol: sctp
       ifId: 257
       local: 100.64.10.2
       remote: 100.64.10.1
     f1u:
       peer: cu
       ifName: ipsec-f1u
+      protocol: udp
       ifId: 258
       local: 100.64.30.2
       remote: 100.64.30.1
@@ -178,6 +180,21 @@ f1u:
 The chart refuses to render otherwise. Set `ipsec.allowF1uOnCorePort: true` if there is no
 core to reach.
 
+### Narrowing a tunnel to one protocol
+
+`connections.<name>.protocol` is optional. Set it — `sctp` for F1-C and E1, `udp` for
+F1-U — and the child's traffic selectors carry that protocol, so only it enters the
+tunnel. Anything else between the two protected addresses then matches no policy: it
+routes to the tunnel interface, finds no transform and is dropped, exactly as it would if
+the tunnel were down.
+
+Both ends write the same value. It is not narrowed by port as well, because the side that
+dials an SCTP interface binds an ephemeral source port, so a port selector would have to
+differ per side — an easy way to end up with one direction protected and the other not.
+
+Leaving it out admits any protocol between the two addresses, which also admits ICMP and
+so path-MTU discovery. On a UDP interface behind a smaller path MTU that may matter.
+
 ## What the chart refuses to render
 
 Each of these stops `helm install` with a message explaining why. None of them is a
@@ -196,6 +213,7 @@ exists to prevent.
 | a missing `certSecret`, `localId` or `peers.<name>.id` | without a peer identity any certificate the authority signed would be accepted, from anyone |
 | an empty `ipsec.peers`, or a peer no connection names | the daemon would hold an association that protects nothing and report itself ready for it |
 | a connection naming a peer that is not in `ipsec.peers`, or naming none while there is more than one | the interface would land on the wrong association, or on none |
+| `connections.<name>.protocol` set to anything but `sctp`, `udp` or `tcp` | a selector naming a protocol the kernel does not match leaves the interface with no policy at all |
 | `ipsec.encapsulation` set to anything but `udp` or `native` | there is no third way to carry ESP, and a typo would otherwise pick the default silently |
 | an F1 address in the config that is not in `ipsec.connections`, or a wildcard bind | traffic that would never enter the tunnel |
 | F1-U on the core's GTP-U port, 2152 | the policy rule that lets the core be reached also permits plaintext F1-U to the peer; override with `ipsec.allowF1uOnCorePort` |

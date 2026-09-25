@@ -71,8 +71,13 @@ data:
             {{- if eq (include "ocudu-cu.ipsec.peerOf" (dict "conn" $conn "peers" $peers)) $peerName }}
                 {{ $child }} {
                     mode = tunnel
-                    local_ts = {{ $conn.local }}/32
-                    remote_ts = {{ $conn.remote }}/32
+
+                    # Narrowed to the protocol this interface speaks, where one is given.
+                    # Anything else between the two protected addresses then matches no
+                    # policy at all: it routes to the tunnel interface, finds no transform
+                    # and is dropped, rather than being quietly encrypted and delivered.
+                    local_ts = {{ $conn.local }}/32{{ if $conn.protocol }}[{{ $conn.protocol }}]{{ end }}
+                    remote_ts = {{ $conn.remote }}/32{{ if $conn.protocol }}[{{ $conn.protocol }}]{{ end }}
                     esp_proposals = {{ $conn.espProposal | default $.Values.ipsec.ike.espProposal }}
 
                     # A local number only. Nothing about it is negotiated or sent, so the

@@ -330,6 +330,9 @@ like success and is not. A failed install is recoverable; plaintext on the wire 
   {{- if not $conn.local -}}
   {{- fail (printf "ipsec.connections.%s.local is required: it is the protected address this pod binds to" $child) -}}
   {{- end -}}
+  {{- if and $conn.protocol (not (has (toString $conn.protocol) (list "sctp" "udp" "tcp"))) -}}
+  {{- fail (printf "ipsec.connections.%s.protocol is %q, and the only values are \"sctp\", \"udp\" and \"tcp\". Leave it out to admit any protocol between the two protected addresses" $child $conn.protocol) -}}
+  {{- end -}}
   {{- if not $conn.remote -}}
   {{- fail (printf "ipsec.connections.%s.remote is required: it is the peer's protected address" $child) -}}
   {{- end -}}

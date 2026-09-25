@@ -36,11 +36,13 @@ ipsec:
   connections:
     f1c:
       ifName: ipsec-f1c
+      protocol: sctp
       ifId: 257
       local: 100.64.10.1
       remote: 100.64.10.2
     f1u:
       ifName: ipsec-f1u
+      protocol: udp
       ifId: 258
       local: 100.64.30.1
       remote: 100.64.30.2
