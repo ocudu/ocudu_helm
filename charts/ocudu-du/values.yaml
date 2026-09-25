@@ -529,16 +529,12 @@ ipsec:
   #   connections:
   #     f1c:
   #       peer: du
-  #       ifName: ipsec-f1c
   #       protocol: sctp
-  #       ifId: 257
   #       local: 100.64.10.1
   #       remote: 100.64.10.2
   #     f1u:
   #       peer: du
-  #       ifName: ipsec-f1u
   #       protocol: udp
-  #       ifId: 258
   #       local: 100.64.30.1
   #       remote: 100.64.30.2
   #       espProposal: aes256gcm16-ecp256-esn-noesn
@@ -549,8 +545,9 @@ ipsec:
   # and E1, `udp` for F1-U. Traffic between the two protected addresses that is not that
   # protocol then matches no policy, so it is dropped rather than encrypted and delivered.
   # Leave it out to admit any protocol, which also admits ICMP and so path-MTU discovery.
-  # `ifId` is a local number only. Nothing about it is negotiated or sent, so the two ends
-  # need not agree on it, but it must be unique inside the pod and must not be 0.
+  # `ifName` and `ifId` are both derived from the connection name and are only worth setting
+  # where a specific value is required. `ifId` is a local number: nothing about it is
+  # negotiated or sent, so the two ends need not agree on it.
   # `local` is the address this pod binds to, `remote` is the peer's. Both have to appear
   # in the application config, and the chart refuses to render if they do not.
   # @default -- `{}`

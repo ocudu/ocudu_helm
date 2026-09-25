@@ -71,8 +71,10 @@ name is resolved again on every attempt, so a rescheduled peer is found at its n
 A cluster IP service cannot carry this traffic — it forwards only the ports it declares and
 it rewrites addresses.
 
-`ifId` is a local number. Nothing about it is negotiated or sent, so the two ends need not
-agree on it, but it has to be unique inside the pod and must not be 0.
+`ifName` and `ifId` are derived from the connection name, so a connection is four keys:
+the peer that carries it, the protocol, and the two protected addresses. Both can still be
+set where a specific value is required. `ifId` is a local number — nothing about it is
+negotiated or sent, so the two ends need not agree on it.
 
 ## Configuring it
 
@@ -125,16 +127,12 @@ ipsec:
   connections:
     f1c:
       peer: cu
-      ifName: ipsec-f1c
       protocol: sctp
-      ifId: 257
       local: 100.64.10.2
       remote: 100.64.10.1
     f1u:
       peer: cu
-      ifName: ipsec-f1u
       protocol: udp
-      ifId: 258
       local: 100.64.30.2
       remote: 100.64.30.1
 

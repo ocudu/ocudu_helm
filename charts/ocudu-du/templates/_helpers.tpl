@@ -309,19 +309,17 @@ like success and is not. A failed install is recoverable; plaintext on the wire 
 {{- $names := list -}}
 {{- $ids := list -}}
 {{- range $child, $conn := .Values.ipsec.connections -}}
-  {{- if not $conn.ifName -}}
-  {{- fail (printf "ipsec.connections.%s.ifName is required" $child) -}}
+  {{- $ifName := include "ocudu-du.ipsec.ifName" (dict "name" $child "conn" $conn) -}}
+  {{- if gt (len $ifName) 15 -}}
+  {{- fail (printf "ipsec.connections.%s.ifName is %q, which is longer than the 15 characters an interface name can hold" $child $ifName) -}}
   {{- end -}}
-  {{- if gt (len $conn.ifName) 15 -}}
-  {{- fail (printf "ipsec.connections.%s.ifName is %q, which is longer than the 15 characters an interface name can hold" $child $conn.ifName) -}}
+  {{- if has $ifName $names -}}
+  {{- fail (printf "ipsec.connections.%s.ifName is %q, and another connection already uses that name" $child $ifName) -}}
   {{- end -}}
-  {{- if has $conn.ifName $names -}}
-  {{- fail (printf "ipsec.connections.%s.ifName is %q, and another connection already uses that name" $child $conn.ifName) -}}
-  {{- end -}}
-  {{- $names = append $names $conn.ifName -}}
-  {{- $id := int (default 0 $conn.ifId) -}}
+  {{- $names = append $names $ifName -}}
+  {{- $id := int (include "ocudu-du.ipsec.ifId" (dict "name" $child "conn" $conn)) -}}
   {{- if eq $id 0 -}}
-  {{- fail (printf "ipsec.connections.%s.ifId is 0 or missing, and interface id 0 selects no tunnel at all" $child) -}}
+  {{- fail (printf "ipsec.connections.%s.ifId is 0, and interface id 0 selects no tunnel at all" $child) -}}
   {{- end -}}
   {{- if has $id $ids -}}
   {{- fail (printf "ipsec.connections.%s.ifId is %d, and another connection already uses that id, so the two would share one tunnel" $child $id) -}}
@@ -423,6 +421,32 @@ An absent bind_port is the same as 2152, because that is what the application de
 {{- fail (printf "the application config leaves F1-U on UDP %d, which is the port the policy has to open for the core. That one rule then also permits plaintext F1-U to the peer's pod address, around the tunnel. Set f1u.bind_port to another port on both ends, or set ipsec.allowF1uOnCorePort to true if there is no core to reach" $corePort) -}}
 {{- end -}}
 
+{{- end -}}
+{{- end -}}
+
+{{/*
+The tunnel interface for a connection. Defaults to `ipsec-<name>`, which is what it always
+was in practice, so it is only worth setting where a specific name is required.
+
+Call with: dict "name" <string> "conn" <map>
+*/}}
+{{- define "ocudu-du.ipsec.ifName" -}}
+{{- default (printf "ipsec-%s" .name) .conn.ifName -}}
+{{- end -}}
+
+{{/*
+The interface id for a connection. Purely local — nothing about it is negotiated or sent —
+so the two ends need not agree on it and there is nothing to coordinate. Derived from the
+connection name so it is stable across renders and unique without anyone counting. The
+uniqueness guard still runs, because an override can collide with a derived one.
+
+Call with: dict "name" <string> "conn" <map>
+*/}}
+{{- define "ocudu-du.ipsec.ifId" -}}
+{{- if .conn.ifId -}}
+{{- .conn.ifId -}}
+{{- else -}}
+{{- add (mod (int (adler32sum .name)) 65535) 1 -}}
 {{- end -}}
 {{- end -}}
 

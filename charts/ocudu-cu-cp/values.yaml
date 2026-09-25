@@ -326,6 +326,20 @@ networkPolicy:
               app.kubernetes.io/name: ocudu-du
         - ipBlock:
             cidr: 10.0.0.0/8
+    # -- Where the cluster DNS lives.
+    # The default names the cluster DNS pods. That is the narrow answer, and it works on a
+    # CNI that translates a service address before it applies policy. Some CNIs apply
+    # policy to the service address itself; there this rule matches nothing, every name
+    # lookup fails, and anything that resolves a name at startup never starts. Set it to
+    # `[]` to allow port 53 to any destination instead: wider on destinations, still only
+    # port 53.
+    # @default -- the cluster DNS pods
+    dnsTo:
+      - namespaceSelector: {}
+        podSelector:
+          matchLabels:
+            k8s-app: kube-dns
+
     # -- Allow egress to monitoring systems
     monitoring:
       enabled: true
@@ -471,16 +485,12 @@ ipsec:
   #   connections:
   #     f1c:
   #       peer: du
-  #       ifName: ipsec-f1c
   #       protocol: sctp
-  #       ifId: 257
   #       local: 100.64.10.1
   #       remote: 100.64.10.2
   #     e1:
   #       peer: cuup
-  #       ifName: ipsec-e1
   #       protocol: sctp
-  #       ifId: 259
   #       local: 100.64.20.1
   #       remote: 100.64.20.2
   #       espProposal: aes256gcm16-ecp256-esn-noesn
@@ -491,8 +501,9 @@ ipsec:
   # and E1, `udp` for F1-U. Traffic between the two protected addresses that is not that
   # protocol then matches no policy, so it is dropped rather than encrypted and delivered.
   # Leave it out to admit any protocol, which also admits ICMP and so path-MTU discovery.
-  # `ifId` is a local number only. Nothing about it is negotiated or sent, so the two ends
-  # need not agree on it, but it must be unique inside the pod and must not be 0.
+  # `ifName` and `ifId` are both derived from the connection name and are only worth setting
+  # where a specific value is required. `ifId` is a local number: nothing about it is
+  # negotiated or sent, so the two ends need not agree on it.
   # `local` is the address this pod binds to, `remote` is the peer's. Both have to appear
   # in the application config, and the chart refuses to render if they do not.
   # @default -- `{}`

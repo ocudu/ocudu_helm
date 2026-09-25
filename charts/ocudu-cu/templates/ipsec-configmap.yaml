@@ -82,8 +82,9 @@ data:
 
                     # A local number only. Nothing about it is negotiated or sent, so the
                     # two ends need not agree on it.
-                    if_id_in = {{ $conn.ifId }}
-                    if_id_out = {{ $conn.ifId }}
+                    {{- $ifId := include "ocudu-cu.ipsec.ifId" (dict "name" $child "conn" $conn) }}
+                    if_id_in = {{ $ifId }}
+                    if_id_out = {{ $ifId }}
 
                     # The side that calls keeps calling. `start_action` only fires once,
                     # when the configuration is loaded, so without `close_action` a peer
@@ -113,7 +114,7 @@ data:
   links.conf: |
     # child  ifname  if_id  local  peer
     {{- range $child, $conn := .Values.ipsec.connections }}
-    {{ $child }} {{ $conn.ifName }} {{ $conn.ifId }} {{ $conn.local }}/32 {{ $conn.remote }}/32
+    {{ $child }} {{ include "ocudu-cu.ipsec.ifName" (dict "name" $child "conn" $conn) }} {{ include "ocudu-cu.ipsec.ifId" (dict "name" $child "conn" $conn) }} {{ $conn.local }}/32 {{ $conn.remote }}/32
     {{- end }}
 {{- if .Values.ipsec.ikeOnNatTPortOnly }}
   # Mounted over the daemon's own configuration directory so IKE never binds a privileged

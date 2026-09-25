@@ -38,15 +38,11 @@ ipsec:
     f1c:
       peer: du
       protocol: sctp
-      ifName: ipsec-f1c
-      ifId: 257
       local: 100.64.10.1
       remote: 100.64.10.2
     e1:
       peer: cuup
       protocol: sctp
-      ifName: ipsec-e1
-      ifId: 259
       local: 100.64.20.1
       remote: 100.64.20.2
 
