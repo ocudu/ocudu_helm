@@ -531,11 +531,13 @@ ipsec:
     # -- Default ESP proposal. A connection may override it with `espProposal`.
     espProposal: aes256gcm16-ecp256
     # -- How far out of order a packet may arrive and still be accepted, in packets.
-    # A connection may override it with `replayWindow`. The daemon's own default is 32,
-    # which is narrow for an interface where reordering is normal, and leaving it unset
-    # means the width is whatever the daemon picked rather than a number chosen here.
-    # **0 switches replay protection off entirely**, and the chart refuses to render it.
-    replayWindow: 1024
+    # 32 is the widest the kernel can manage without extended sequence numbers, and it is
+    # what the daemon would have used anyway — set here so the width is a number this chart
+    # chose rather than one it inherited. A wider window needs `esn` in `espProposal`, and
+    # the chart refuses to render a wider one without it, because the kernel would silently
+    # fall back to a window of 1.
+    # **0 switches replay protection off entirely**, and that is refused too.
+    replayWindow: 32
     # -- How long to wait before resending an unanswered IKE message, in seconds.
     # This pair, not `dpdDelay`, decides how fast a peer that has stopped answering is
     # given up on. The daemon's defaults retry for about 165 seconds, and for all of that

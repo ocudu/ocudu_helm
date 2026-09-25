@@ -303,6 +303,21 @@ like success and is not. A failed install is recoverable; plaintext on the wire 
 {{- if eq (int .Values.ipsec.ike.replayWindow) 0 -}}
 {{- fail "ipsec.ike.replayWindow is 0, which switches replay protection off: a captured packet could then be replayed and accepted. Give it a width instead" -}}
 {{- end -}}
+{{/*
+A window wider than 32 needs extended sequence numbers. Without them the kernel cannot hold
+a bitmap that size and ends up with a window of 1 — narrower than the 32 it would have used
+had nobody asked for anything. The configuration loads either way and nothing reports it,
+so this is refused at render time rather than discovered on a capture.
+*/}}
+{{- if gt (int .Values.ipsec.ike.replayWindow) 32 -}}
+{{- $esp := .Values.ipsec.ike.espProposal -}}
+{{- range $child, $conn := .Values.ipsec.connections -}}
+{{- $esp = printf "%s %s" $esp (toString ($conn.espProposal | default "")) -}}
+{{- end -}}
+{{- if not (contains "esn" $esp) -}}
+{{- fail (printf "ipsec.ike.replayWindow is %d, and a window wider than 32 needs extended sequence numbers: add esn to espProposal, or the kernel silently falls back to a window of 1" (int .Values.ipsec.ike.replayWindow)) -}}
+{{- end -}}
+{{- end -}}
 {{- if not .Values.ipsec.connections -}}
 {{- fail "ipsec.connections is empty: the sidecar would run and protect nothing" -}}
 {{- end -}}
@@ -334,8 +349,8 @@ like success and is not. A failed install is recoverable; plaintext on the wire 
   {{- if and $conn.protocol (not (has (toString $conn.protocol) (list "sctp" "udp" "tcp"))) -}}
   {{- fail (printf "ipsec.connections.%s.protocol is %q, and the only values are \"sctp\", \"udp\" and \"tcp\". Leave it out to admit any protocol between the two protected addresses" $child $conn.protocol) -}}
   {{- end -}}
-  {{- if and (hasKey $conn "replayWindow") (eq (int $conn.replayWindow) 0) -}}
-  {{- fail (printf "ipsec.connections.%s.replayWindow is 0, which switches replay protection off for that interface" $child) -}}
+  {{- if hasKey $conn "replayWindow" -}}
+  {{- fail (printf "ipsec.connections.%s.replayWindow is set, and the replay window is not a per-connection setting: the daemon takes one width for all of them. Set ipsec.ike.replayWindow instead" $child) -}}
   {{- end -}}
   {{- if not $conn.remote -}}
   {{- fail (printf "ipsec.connections.%s.remote is required: it is the peer's protected address" $child) -}}

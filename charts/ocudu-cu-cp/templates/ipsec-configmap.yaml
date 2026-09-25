@@ -84,12 +84,6 @@ data:
                     remote_ts = {{ $conn.remote }}/32{{ $sel }}
                     esp_proposals = {{ $conn.espProposal | default $.Values.ipsec.ike.espProposal }}
 
-                    # How far out of order a packet may arrive and still be accepted. The
-                    # daemon's own default is 32, which is narrow for a reordering-prone
-                    # interface, and leaving it unset means the width is whatever the
-                    # daemon picked rather than something this chart chose.
-                    replay_window = {{ $conn.replayWindow | default $.Values.ipsec.ike.replayWindow }}
-
                     # A local number only. Nothing about it is negotiated or sent, so the
                     # two ends need not agree on it.
                     {{- $ifId := include "ocudu-cu-cp.ipsec.ifId" (dict "name" $child "conn" $conn) }}
@@ -146,6 +140,11 @@ data:
         retransmit_timeout = {{ .Values.ipsec.ike.retransmitTimeout }}
         retransmit_tries = {{ .Values.ipsec.ike.retransmitTries }}
 
+        # How far out of order a packet may arrive and still be accepted. This is a daemon
+        # setting: a replay window written into a child section is accepted by the parser
+        # and then has no effect at all, which is worse than leaving it out.
+        replay_window = {{ .Values.ipsec.ike.replayWindow }}
+
         filelog {
             stderr {
                 default = {{ .Values.ipsec.logLevel }}
@@ -160,6 +159,11 @@ data:
 {{- end }}
         retransmit_timeout = {{ .Values.ipsec.ike.retransmitTimeout }}
         retransmit_tries = {{ .Values.ipsec.ike.retransmitTries }}
+
+        # How far out of order a packet may arrive and still be accepted. This is a daemon
+        # setting: a replay window written into a child section is accepted by the parser
+        # and then has no effect at all, which is worse than leaving it out.
+        replay_window = {{ .Values.ipsec.ike.replayWindow }}
 
         filelog {
             stderr {

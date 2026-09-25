@@ -179,10 +179,26 @@ so path-MTU discovery. On a UDP interface behind a smaller path MTU that may mat
 ### Replay protection, and how fast a dead peer is noticed
 
 `ipsec.ike.replayWindow` sets how far out of order a packet may arrive and still be
-accepted, in packets. The daemon's own default is 32, which is narrow wherever reordering
-is normal, and leaving it unset means the width is whatever the daemon chose rather than a
-number chosen here. A connection may override it with `replayWindow`. **A width of 0
-switches replay protection off**, and the chart refuses to render it.
+accepted, in packets. It defaults to 32, which is the widest the kernel manages without
+extended sequence numbers and is what the daemon would have used anyway — set explicitly so
+the width is a number chosen here rather than one inherited.
+
+It applies to the whole daemon, not to one interface: a replay window written into a child
+section is accepted by the parser and then has **no effect at all**, which is why the chart
+refuses a per-connection `replayWindow` rather than rendering something that does nothing.
+
+**A window wider than 32 needs `esn` in `espProposal`.** Without it the kernel cannot hold a
+bitmap that size and falls back to a window of **1** — narrower than if nobody had asked.
+Nothing reports this, so the chart refuses the combination at render time:
+
+```yaml
+ipsec:
+  ike:
+    replayWindow: 1024
+    espProposal: aes256gcm16-ecp256-esn
+```
+
+**A width of 0 switches replay protection off**, and that is refused too.
 
 `ipsec.ike.retransmitTimeout` and `retransmitTries` decide how quickly a peer that has
 stopped answering is given up on. This pair, not `dpdDelay`, is what governs it: the
