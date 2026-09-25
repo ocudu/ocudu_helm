@@ -16,6 +16,7 @@
 - `ipsec.credentialReload`: the sidecar watches its mounted secret and picks up a renewed certificate on its own, loading the new credentials in place of the old ones and closing the IKE association so the next traffic authenticates with the new certificate. No pod restart. On by default
 - `ipsec.connections.<name>.protocol`: narrow a tunnel to the protocol that interface speaks, `sctp` for F1-C and E1 or `udp` for F1-U. Traffic between the two protected addresses that is not that protocol then matches no policy and is dropped, instead of being encrypted and delivered. Optional; left out, the tunnel admits any protocol between those addresses, which also admits ICMP and so path-MTU discovery
 - `ipsec.allowF1uOnCorePort`: the chart now refuses to render when the application leaves F1-U on the core's GTP-U port, because the policy rule that has to stay open for the core would also permit plaintext F1-U to the peer's pod address. Set F1-U to another port on both ends, or set this to allow it where there is no core
+- `docs/ipsec.md` now covers choosing the certificate authority for these tunnels. A peer is accepted on two things only — its certificate chains to the authority in `ca.crt`, and its identity matches the `id` configured for it — so an authority dedicated to these tunnels is safer than a general-purpose one that also serves other systems
 
 ## 1.8.0 (2026-10-11)
 

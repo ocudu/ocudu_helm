@@ -91,6 +91,13 @@ Create a secret holding `tls.crt`, `tls.key` and `ca.crt`, and name it in
 `ipsec.certSecret`. The two ends need certificates from the same certificate authority, and
 each end's `localId` has to match a subject alternative name of its own certificate.
 
+**Choose that authority carefully — it is doing more work than it looks.** A peer is
+accepted on exactly two things: its certificate chains to the authority in `ca.crt`, and its
+identity matches the `id` configured for that peer. A certificate's extended key usage is
+not among the checks, so a certificate issued by that authority for the expected identity is
+accepted whatever purpose it was issued for. Use an authority dedicated to these tunnels
+rather than a general-purpose one that also serves other systems.
+
 ```bash
 kubectl create secret generic ocudu-cu-cp-ipsec \
   --from-file=tls.crt=cu.crt --from-file=tls.key=cu.key --from-file=ca.crt=ca.crt

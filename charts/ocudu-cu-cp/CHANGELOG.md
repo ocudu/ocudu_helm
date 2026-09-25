@@ -15,6 +15,7 @@
 - `ipsec.ikeOnNatTPortOnly`: carry IKE on UDP 4500 only. Nothing binds a privileged port, so the sidecar runs without `NET_BIND_SERVICE` and the network policy opens one port instead of two. Off by default, and both ends have to set it
 - `ipsec.credentialReload`: the sidecar watches its mounted secret and picks up a renewed certificate on its own, loading the new credentials in place of the old ones and closing the IKE association so the next traffic authenticates with the new certificate. No pod restart. On by default
 - `ipsec.connections.<name>.protocol`: narrow a tunnel to the protocol that interface speaks, `sctp` for F1-C and E1 or `udp` for F1-U. Traffic between the two protected addresses that is not that protocol then matches no policy and is dropped, instead of being encrypted and delivered. Optional; left out, the tunnel admits any protocol between those addresses, which also admits ICMP and so path-MTU discovery
+- `docs/ipsec.md` now covers choosing the certificate authority for these tunnels. A peer is accepted on two things only — its certificate chains to the authority in `ca.crt`, and its identity matches the `id` configured for it — so an authority dedicated to these tunnels is safer than a general-purpose one that also serves other systems
 
 ## 1.8.0 (2026-10-11)
 
