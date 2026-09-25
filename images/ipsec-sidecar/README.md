@@ -118,6 +118,24 @@ measured.
 The probe reports, it does not enforce. What stops an unprotected packet is the absence of
 any route to a protected address that does not go through a tunnel interface.
 
+## Startup
+
+`startup-ipsec.sh` answers a different question from readiness: not "is a tunnel up" but "did
+the daemon accept everything it was given". It reports started when the daemon answers, every
+child in `links.conf` appears in `swanctl --list-conns`, and every interface named there
+exists as an XFRM interface carrying its address.
+
+It deliberately does **not** require an association or a policy. Neither is true on a side
+that waits to be dialled, and a failing startup probe restarts the container — so either
+check would turn a slow peer into a crash loop.
+
+Used as a `startupProbe` on a sidecar that runs as a native sidecar (an init container with
+`restartPolicy: Always`), it holds the application container until the daemon has loaded.
+That covers the failure that actually happens: a configuration the daemon rejected. A single
+bad value discards the whole connection, so the daemon can be running with nothing loaded at
+all — and a corrupt or unreadable credential stops the entrypoint outright, before any packet
+is sent.
+
 ## What the network must support
 
 The image encrypts inside the pod, so most of what it needs is from the kernel rather than
