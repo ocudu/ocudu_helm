@@ -1,0 +1,65 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# Minimal values for linting the IPsec path. `ipsec.enabled` is false in the shipped
+# defaults, so without this file none of the IPsec templates is ever rendered and none of
+# the render-time guards is ever reached.
+#
+# This is a lint fixture, not a deployment example. The application config below carries
+# only the keys the guards read; `docs/ipsec.md` has the worked example.
+#
+# cert-manager stays off on purpose: its custom resource definitions have no schema here,
+# and an unknown kind fails the manifest check.
+
+# Both publish an unprotected path to the pod address, so the chart refuses to render
+# while either is on. n3Service stays enabled: N3 is not protected here, so its service is
+# not a bypass of anything.
+f1uService:
+  enabled: false
+e1Service:
+  enabled: false
+
+networkPolicy:
+  enabled: true
+
+ipsec:
+  enabled: true
+  certSecret: ocudu-cu-up-ipsec
+  localId: cu-up.example.com
+  # Two peers, and one of each kind: the CU-UP dials the CU-CP for E1, and waits for the
+  # DU on F1-U. So this fixture exercises both the initiator and the responder branch in
+  # one render.
+  peers:
+    cucp:
+      id: cu-cp.example.com
+      address: ocudu-cu-cp-ipsec
+    du:
+      id: du.example.com
+  connections:
+    f1u:
+      peer: du
+      protocol: udp
+      ifName: ipsec-f1u
+      ifId: 258
+      local: 100.64.30.1
+      remote: 100.64.30.2
+    e1:
+      peer: cucp
+      protocol: sctp
+      ifName: ipsec-e1
+      ifId: 259
+      local: 100.64.20.2
+      remote: 100.64.20.1
+
+config:
+  cu-up-config.yml: |-
+    cu_up:
+      e1ap:
+        addrs: 100.64.20.1
+        bind_addrs: 100.64.20.2
+
+      f1u:
+        bind_port: 2151
+        peer_port: 2151
+        socket:
+          - bind_addr: 100.64.30.1

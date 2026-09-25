@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.9.0 (2026-10-16)
+
+### Added
+
+- `ipsec`: optional strongSwan sidecar protecting F1-U and E1 with IKEv2 and tunnel-mode ESP. One daemon per pod, one IKE association per peer under `ipsec.peers`, and one child association per interface under `ipsec.connections`, each on its own XFRM interface and protected address, so the CU-UP, the CU-CP and the DU stay separate tunnel endpoints even on one node. Off by default. It brings a headless service for the peers to resolve, a NetworkPolicy that allows each peer the tunnel and nothing else, render-time guards that refuse any configuration that would run unprotected, and an optional cert-manager `Certificate`. Requires Kubernetes 1.29 or newer, `network.hostNetwork: false`, and a node whose kernel provides XFRM interfaces and ESP to an unprivileged container. N3 is not protected: it needs a peer on the core side that terminates IKEv2. See `docs/ipsec.md`
+
+- `ipsec.ikeOnNatTPortOnly`: carry IKE on UDP 4500 only. Nothing binds a privileged port, so the sidecar runs without `NET_BIND_SERVICE` and the network policy opens one port instead of two. Off by default, and both ends have to set it
+- `ipsec.credentialReload`: the sidecar watches its mounted secret and picks up a renewed certificate on its own, loading the new credentials in place of the old ones and closing the IKE association so the next traffic authenticates with the new certificate. No pod restart. On by default
+- `ipsec.connections.<name>.protocol`: narrow a tunnel to the protocol that interface speaks, `sctp` for F1-C and E1 or `udp` for F1-U. Traffic between the two protected addresses that is not that protocol then matches no policy and is dropped, instead of being encrypted and delivered. Optional; left out, the tunnel admits any protocol between those addresses, which also admits ICMP and so path-MTU discovery
+- `ipsec.allowF1uOnCorePort`: the chart now refuses to render when the application leaves F1-U on the core's GTP-U port, because the policy rule that has to stay open for the core would also permit plaintext F1-U to the peer's pod address. Set F1-U to another port on both ends, or set this to allow it where there is no core
+
 ## 1.8.0 (2026-10-11)
 
 ### Changed
