@@ -339,6 +339,225 @@ networkPolicy:
     # -- Custom egress rules
     custom: []
 
+# -- IPsec protection for the F1-C and E1 interfaces.
+# Adds a strongSwan sidecar to this pod. The pod becomes its own IPsec endpoint: one
+# daemon, one IKE association, and one child association per protected interface. Every
+# pod has its own network namespace, so two pods on the same node are still two separate
+# endpoints and the traffic between them is still encrypted.
+#
+# The application is not modified and never sees the private key. It binds to the
+# protected addresses listed under `connections`, and that is what sends its traffic
+# through the tunnel.
+ipsec:
+  # -- Enable the IPsec sidecar.
+  # Requires Kubernetes 1.29 or newer, `network.hostNetwork: false`, and a node whose
+  # kernel provides XFRM interfaces and ESP.
+  # @default -- `false`
+  enabled: false
+
+  image:
+    # -- Container image repository
+    repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ipsec-sidecar
+    # -- Image tag
+    tag: "6.0.4"
+    # -- Image pull policy
+    pullPolicy: IfNotPresent
+
+  # -- Secret holding this pod's identity: `tls.crt`, `tls.key` and `ca.crt`.
+  # Bring your own, or have `certManager` below issue it. It is mounted read-only into the
+  # sidecar and nowhere else.
+  certSecret: ""
+
+  certManager:
+    # -- Issue `certSecret` with cert-manager instead of bringing your own.
+    # Off by default. It renders a `Certificate`, so the cert-manager custom resource
+    # definitions have to be installed on the cluster first. The secret cert-manager
+    # writes holds `tls.crt`, `tls.key` and `ca.crt`, which is what the sidecar reads.
+    # The sidecar reads them once, at start: a renewal replaces the secret but does not
+    # restart the daemon, so restart the pod to pick a renewed certificate up.
+    # @default -- `false`
+    enabled: false
+
+    issuerRef:
+      # -- Issuer to sign with. Required when `certManager.enabled` is true.
+      name: ""
+      # -- `Issuer` for one namespace, or `ClusterIssuer` for the whole cluster
+      kind: Issuer
+      # -- API group of the issuer
+      group: cert-manager.io
+
+    # -- How long an issued certificate is valid for
+    duration: 2160h
+    # -- How long before expiry it is renewed
+    renewBefore: 360h
+
+    privateKey:
+      # -- Key algorithm. The default matches the elliptic-curve group in `ike.proposal`.
+      algorithm: ECDSA
+      # -- Key size
+      size: 256
+      # -- Whether a renewal also makes a new private key
+      rotationPolicy: Always
+
+    # -- Subject alternative names to request.
+    # The default asks for `localId`, which is the identity the peer checks, and is right
+    # whenever that identity is a name. Where it is not — a distinguished name or an email
+    # address — leave this empty and put the matching field in `extraSpec` instead.
+    # @default -- `[localId]`
+    dnsNames: []
+
+    # -- Extra fields merged into the `Certificate` spec, for anything the keys above do
+    # not name, such as `subject`, `emailAddresses` or `ipAddresses`.
+    extraSpec: {}
+
+  # -- IKE identity this pod presents. It must match a subject or subject alternative
+  # name of `tls.crt` in `certSecret`.
+  localId: ""
+
+  # -- The peers this pod builds an IKE association with, keyed by a name you choose.
+  # One association per peer, each carrying the connections that name it. Required when
+  # `enabled` is true. For example:
+  #
+  #   peers:
+  #     du:
+  #       id: du.ocudu.example
+  #       address: ""
+  #     cuup:
+  #       id: cu-up.ocudu.example
+  #       address: ""
+  #
+  # `id` is the identity the peer must present, and the connection is refused if it
+  # presents anything else. `address` is the peer's outer endpoint: set it and this side
+  # starts the connection, leave it empty and this side waits for the peer, which is what
+  # a side with no stable peer address should do. Use a headless service name, never a
+  # cluster IP service: a cluster IP forwards only the ports it declares and rewrites
+  # addresses, which breaks address detection.
+  # @default -- `{}`
+  peers: {}
+
+  # -- How ESP is carried: `udp` (ESP inside UDP port 4500) or `native` (IP protocol 50).
+  # `udp` is the default because every CNI carries UDP, and because a NetworkPolicy cannot
+  # name IP protocol 50. With `native` the policy has to allow every protocol to the peer,
+  # which re-opens the plaintext path this feature exists to close.
+  # @default -- `udp`
+  encapsulation: udp
+
+  # -- The address range the protected addresses are taken from.
+  # The sidecar installs a route that refuses this whole range before any tunnel exists,
+  # so a protected address is never reachable by another path, not even for a moment.
+  protectedSupernet: 100.64.0.0/16
+
+  # -- Move IKE off the privileged port so the sidecar can drop `NET_BIND_SERVICE`.
+  # With this on, IKE is carried on UDP 4500 only and UDP 500 is never bound, so the
+  # capability that exists to bind a privileged port is not needed. **Both ends have to
+  # agree**: a peer still expecting UDP 500 will not connect.
+  # @default -- `false`
+  ikeOnNatTPortOnly: false
+
+  credentialReload:
+    # -- Pick up a renewed certificate without a pod restart.
+    # The sidecar watches the mounted secret. When it changes it loads the new credentials
+    # and closes the IKE association, so the next traffic authenticates with the new
+    # certificate. The child policies stay installed throughout, so protected traffic is
+    # encrypted or dropped while the association is rebuilt, never sent in clear.
+    # @default -- `true`
+    enabled: true
+    # -- How often the mounted secret is checked, in seconds.
+    intervalSeconds: 60
+
+  # -- The interfaces to protect: one child association each, carried by the peer it
+  # names. Required when `enabled` is true. For example:
+  #
+  #   connections:
+  #     f1c:
+  #       peer: du
+  #       ifName: ipsec-f1c
+  #       protocol: sctp
+  #       ifId: 257
+  #       local: 100.64.10.1
+  #       remote: 100.64.10.2
+  #     e1:
+  #       peer: cuup
+  #       ifName: ipsec-e1
+  #       protocol: sctp
+  #       ifId: 259
+  #       local: 100.64.20.1
+  #       remote: 100.64.20.2
+  #       espProposal: aes256gcm16-ecp256-esn-noesn
+  #
+  # `peer` is a key from `peers`. It may be left out while there is exactly one peer, and
+  # is required as soon as there is a second.
+  # `protocol` narrows the tunnel to what that interface actually speaks: `sctp` for F1-C
+  # and E1, `udp` for F1-U. Traffic between the two protected addresses that is not that
+  # protocol then matches no policy, so it is dropped rather than encrypted and delivered.
+  # Leave it out to admit any protocol, which also admits ICMP and so path-MTU discovery.
+  # `ifId` is a local number only. Nothing about it is negotiated or sent, so the two ends
+  # need not agree on it, but it must be unique inside the pod and must not be 0.
+  # `local` is the address this pod binds to, `remote` is the peer's. Both have to appear
+  # in the application config, and the chart refuses to render if they do not.
+  # @default -- `{}`
+  connections: {}
+
+  ike:
+    # -- IKE proposal. Exactly one, so there is nothing to fall back to.
+    proposal: aes256gcm16-prfsha384-ecp256
+    # -- Default ESP proposal. A connection may override it with `espProposal`.
+    espProposal: aes256gcm16-ecp256
+    # -- How often the peer is checked
+    dpdDelay: 10s
+    # -- How long an unanswered peer is tolerated
+    dpdTimeout: 30s
+    # -- How often the IKE association is rekeyed
+    rekeyTime: 4h
+
+  # -- Render even when `networkPolicy.enabled` is false.
+  # Without a policy the application can still address the peer's pod address directly and
+  # send in clear. Set this true only where unprotected traffic is blocked some other way.
+  # @default -- `false`
+  allowWithoutNetworkPolicy: false
+
+  readinessProbe:
+    # -- Enable the sidecar readiness probe.
+    # Ready means every protected interface is protected by the kernel — an installed
+    # association, or an installed policy for one that has no traffic yet. An interface
+    # that has never carried a packet is still protected, so it counts as ready.
+    # Off by default, because a side that waits for its peer has neither until the peer
+    # connects, and a probe there would hold the pod unready waiting for something that
+    # cannot have happened yet. Safe to turn on for the side that starts the connection.
+    # Traffic is protected either way: the probe reports, it does not enforce.
+    # @default -- `false`
+    enabled: false
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+
+  # -- Annotations for the headless service that publishes this pod's outer address.
+  serviceAnnotations: {}
+
+  # -- Resources for the sidecar.
+  resources: {}
+
+  # -- Security context for the sidecar.
+  # It runs as uid 0 on purpose. Kubernetes does not fill the ambient capability set, so a
+  # non-root sidecar would need file capabilities on `ip`, `swanctl` and the daemon, plus
+  # `allowPrivilegeEscalation: true` — that is strictly worse than uid 0 with escalation
+  # switched off. The application container is untouched and gains nothing.
+  securityContext:
+    runAsUser: 0
+    runAsNonRoot: false
+    privileged: false
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: ["ALL"]
+      add:
+        - NET_ADMIN
+        - NET_BIND_SERVICE
+    seccompProfile:
+      type: RuntimeDefault
+
 # -- Persistent storage configuration
 # Disabled by default: logs go to an `emptyDir`, which keeps the pod reschedulable
 # onto any node. Enable it to keep logs across pod restarts.

@@ -1,0 +1,134 @@
+{{- include "ocudu-cu-up.ipsec.validate" . }}
+{{- if .Values.ipsec.enabled }}
+
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+{{- $encap := eq .Values.ipsec.encapsulation "udp" }}
+{{- $peers := .Values.ipsec.peers }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ocudu-cu-up.ipsec.configmapName" . }}
+  labels:
+    {{- include "ocudu-cu-up.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ipsec
+data:
+  # The whole daemon configuration, rendered here rather than assembled at start-up. It is
+  # already a typed, documented format, and a proposal that gets mis-quoted on its way
+  # through a shell script becomes a weaker cipher that still looks like it worked.
+  swanctl.conf: |
+    # One connection per peer, and under each the interfaces that peer carries. A pod is a
+    # single network namespace, so a second daemon would contend with the first for the
+    # same ports, policies and routes: every peer this pod talks to lives in this one file
+    # and is served by the one daemon.
+    connections {
+{{- range $peerName, $peer := $peers }}
+{{- $initiates := ne (default "" $peer.address) "" }}
+        {{ $peerName }} {
+            version = 2
+            local_addrs = %any
+            remote_addrs = {{ if $initiates }}{{ $peer.address }}{{ else }}%any{{ end }}
+{{- if $.Values.ipsec.ikeOnNatTPortOnly }}
+
+            # IKE is carried on 4500 only, so neither end binds or expects the privileged
+            # port. Both of these are needed: not binding 500 locally does not stop this
+            # side dialling the peer's 500, which is where nothing is listening any more.
+            local_port = 4500
+            remote_port = 4500
+{{- end }}
+
+            # Exactly one proposal, so there is nothing to fall back to.
+            proposals = {{ $.Values.ipsec.ike.proposal }}
+
+            encap = {{ if $encap }}yes{{ else }}no{{ end }}
+            mobike = no
+            unique = replace
+
+            dpd_delay = {{ $.Values.ipsec.ike.dpdDelay }}
+            dpd_timeout = {{ $.Values.ipsec.ike.dpdTimeout }}
+            rekey_time = {{ $.Values.ipsec.ike.rekeyTime }}
+            over_time = 10m
+            rand_time = 3m
+
+            send_cert = always
+            send_certreq = yes
+            fragmentation = yes
+
+            local {
+                auth = pubkey
+                certs = cert.crt
+                id = {{ $.Values.ipsec.localId }}
+            }
+
+            remote {
+                auth = pubkey
+                id = {{ $peer.id }}
+            }
+
+            children {
+            {{- range $child, $conn := $.Values.ipsec.connections }}
+            {{- if eq (include "ocudu-cu-up.ipsec.peerOf" (dict "conn" $conn "peers" $peers)) $peerName }}
+                {{ $child }} {
+                    mode = tunnel
+
+                    # Narrowed to the protocol this interface speaks, where one is given.
+                    # Anything else between the two protected addresses then matches no
+                    # policy at all: it routes to the tunnel interface, finds no transform
+                    # and is dropped, rather than being quietly encrypted and delivered.
+                    local_ts = {{ $conn.local }}/32{{ if $conn.protocol }}[{{ $conn.protocol }}]{{ end }}
+                    remote_ts = {{ $conn.remote }}/32{{ if $conn.protocol }}[{{ $conn.protocol }}]{{ end }}
+                    esp_proposals = {{ $conn.espProposal | default $.Values.ipsec.ike.espProposal }}
+
+                    # A local number only. Nothing about it is negotiated or sent, so the
+                    # two ends need not agree on it.
+                    if_id_in = {{ $conn.ifId }}
+                    if_id_out = {{ $conn.ifId }}
+
+                    # The side that calls keeps calling. `start_action` only fires once,
+                    # when the configuration is loaded, so without `close_action` a peer
+                    # that shuts down cleanly — a pod restart, say — takes the tunnel with
+                    # it and nothing ever brings it back. A clean shutdown is not a dead
+                    # peer, so `dpd_action` does not cover that case.
+                    # `trap` installs a policy and negotiates when the first packet
+                    # that matches it appears. That is what makes this survive a peer
+                    # restart: `start` fires once, at load, and a peer that comes back at
+                    # a different address is then never reached again. With a trap the
+                    # application's own retries drive the negotiation, and the peer name
+                    # is resolved fresh each time.
+                    start_action = {{ if $initiates }}trap{{ else }}none{{ end }}
+                    close_action = {{ if $initiates }}trap{{ else }}none{{ end }}
+                    dpd_action = restart
+                }
+            {{- end }}
+            {{- end }}
+            }
+        }
+{{- end }}
+    }
+  # The plumbing the daemon configuration cannot express: which interface carries which
+  # child, and which addresses sit on it. The child names match the children above,
+  # because that pairing is what tells the sidecar whether every tunnel it was asked for
+  # is really up.
+  links.conf: |
+    # child  ifname  if_id  local  peer
+    {{- range $child, $conn := .Values.ipsec.connections }}
+    {{ $child }} {{ $conn.ifName }} {{ $conn.ifId }} {{ $conn.local }}/32 {{ $conn.remote }}/32
+    {{- end }}
+{{- if .Values.ipsec.ikeOnNatTPortOnly }}
+  # Mounted over the daemon's own configuration directory so IKE never binds a privileged
+  # port, which is what lets the sidecar drop NET_BIND_SERVICE. Both namespaces are set:
+  # the daemon reads its settings under charon-systemd, and a setting written only under
+  # charon is accepted and then silently ignored.
+  strongswan-hardening.conf: |
+    charon {
+        port = 0
+        port_nat_t = 4500
+    }
+
+    charon-systemd {
+        port = 0
+        port_nat_t = 4500
+    }
+{{- end }}
+{{- end }}
