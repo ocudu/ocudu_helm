@@ -30,6 +30,26 @@ spec:
     {{- end }}
 
     {{- if .Values.networkPolicy.ingress.cuUp.enabled }}
+    {{- if .Values.ipsec.enabled }}
+    # With IPsec on, the peer may exchange nothing but the tunnel itself. The plaintext
+    # E1 port is deliberately absent here: leaving it open would keep alive the
+    # exact path this feature exists to close.
+    - from:
+      {{- toYaml .Values.networkPolicy.ingress.cuUp.from | nindent 6 }}
+      {{- if eq .Values.ipsec.encapsulation "udp" }}
+      ports:
+        {{- if not .Values.ipsec.ikeOnNatTPortOnly }}
+        - protocol: UDP
+          port: 500   # IKE
+        {{- end }}
+        - protocol: UDP
+          port: 4500  # IKE, and ESP once either end is behind address translation
+      {{- else }}
+      # Native ESP is IP protocol 50, and a policy can only name TCP, UDP and SCTP, so
+      # this rule has to permit every protocol to the peer — including the plaintext
+      # ports. That is the cost of `native`, and why `udp` is the default.
+      {{- end }}
+    {{- else }}
     # Allow traffic from CU-UP (E1 interface)
     - from:
       {{- toYaml .Values.networkPolicy.ingress.cuUp.from | nindent 6 }}
@@ -37,14 +57,36 @@ spec:
         - protocol: SCTP
           port: 38462  # E1 interface (E1AP)
     {{- end }}
+    {{- end }}
 
     {{- if .Values.networkPolicy.ingress.du.enabled }}
+    {{- if .Values.ipsec.enabled }}
+    # With IPsec on, the peer may exchange nothing but the tunnel itself. The plaintext
+    # F1-C port is deliberately absent here: leaving it open would keep alive the
+    # exact path this feature exists to close.
+    - from:
+      {{- toYaml .Values.networkPolicy.ingress.du.from | nindent 6 }}
+      {{- if eq .Values.ipsec.encapsulation "udp" }}
+      ports:
+        {{- if not .Values.ipsec.ikeOnNatTPortOnly }}
+        - protocol: UDP
+          port: 500   # IKE
+        {{- end }}
+        - protocol: UDP
+          port: 4500  # IKE, and ESP once either end is behind address translation
+      {{- else }}
+      # Native ESP is IP protocol 50, and a policy can only name TCP, UDP and SCTP, so
+      # this rule has to permit every protocol to the peer — including the plaintext
+      # ports. That is the cost of `native`, and why `udp` is the default.
+      {{- end }}
+    {{- else }}
     # Allow traffic from DU (F1-C interface)
     - from:
       {{- toYaml .Values.networkPolicy.ingress.du.from | nindent 6 }}
       ports:
         - protocol: SCTP
           port: 38472  # F1-C interface (F1AP)
+    {{- end }}
     {{- end }}
 
     {{- if and .Values.metricsService.enabled .Values.networkPolicy.ingress.monitoring.enabled }}
@@ -72,6 +114,26 @@ spec:
     {{- end }}
 
     {{- if .Values.networkPolicy.egress.cuUp.enabled }}
+    {{- if .Values.ipsec.enabled }}
+    # With IPsec on, the peer may exchange nothing but the tunnel itself. The plaintext
+    # E1 port is deliberately absent here: leaving it open would keep alive the
+    # exact path this feature exists to close.
+    - to:
+      {{- toYaml .Values.networkPolicy.egress.cuUp.to | nindent 6 }}
+      {{- if eq .Values.ipsec.encapsulation "udp" }}
+      ports:
+        {{- if not .Values.ipsec.ikeOnNatTPortOnly }}
+        - protocol: UDP
+          port: 500   # IKE
+        {{- end }}
+        - protocol: UDP
+          port: 4500  # IKE, and ESP once either end is behind address translation
+      {{- else }}
+      # Native ESP is IP protocol 50, and a policy can only name TCP, UDP and SCTP, so
+      # this rule has to permit every protocol to the peer — including the plaintext
+      # ports. That is the cost of `native`, and why `udp` is the default.
+      {{- end }}
+    {{- else }}
     # Allow traffic to CU-UP (E1)
     - to:
       {{- toYaml .Values.networkPolicy.egress.cuUp.to | nindent 6 }}
@@ -79,14 +141,36 @@ spec:
         - protocol: SCTP
           port: 38462  # E1 (E1AP)
     {{- end }}
+    {{- end }}
 
     {{- if .Values.networkPolicy.egress.du.enabled }}
+    {{- if .Values.ipsec.enabled }}
+    # With IPsec on, the peer may exchange nothing but the tunnel itself. The plaintext
+    # F1-C port is deliberately absent here: leaving it open would keep alive the
+    # exact path this feature exists to close.
+    - to:
+      {{- toYaml .Values.networkPolicy.egress.du.to | nindent 6 }}
+      {{- if eq .Values.ipsec.encapsulation "udp" }}
+      ports:
+        {{- if not .Values.ipsec.ikeOnNatTPortOnly }}
+        - protocol: UDP
+          port: 500   # IKE
+        {{- end }}
+        - protocol: UDP
+          port: 4500  # IKE, and ESP once either end is behind address translation
+      {{- else }}
+      # Native ESP is IP protocol 50, and a policy can only name TCP, UDP and SCTP, so
+      # this rule has to permit every protocol to the peer — including the plaintext
+      # ports. That is the cost of `native`, and why `udp` is the default.
+      {{- end }}
+    {{- else }}
     # Allow traffic to DU (F1-C)
     - to:
       {{- toYaml .Values.networkPolicy.egress.du.to | nindent 6 }}
       ports:
         - protocol: SCTP
           port: 38472  # F1-C (F1AP)
+    {{- end }}
     {{- end }}
 
     # Allow DNS resolution
