@@ -532,6 +532,13 @@ ipsec:
   # @default -- `false`
   allowF1uOnCorePort: false
 
+  # -- Allow Xn-U to stay on the core's GTP-U port while IPsec is on.
+  # The same rule as `allowF1uOnCorePort`, for the other user-plane interface that shares
+  # the core's port. Xn-U defaults to UDP 2152 in the application and its port is
+  # configurable, so move it rather than open this.
+  # @default -- `false`
+  allowXnuOnCorePort: false
+
   credentialReload:
     # -- Pick up a renewed certificate without a pod restart.
     # The sidecar watches the mounted secret. When it changes it loads the new credentials

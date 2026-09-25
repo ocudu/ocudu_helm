@@ -428,27 +428,38 @@ list, and any other line closes it.
 {{- end -}}
 
 {{/*
-F1-U must not sit on the port the policy has to leave open for the core.
+A protected user-plane interface must not sit on the port the policy has to leave open for
+the core.
 
 The policy allows GTP-U to the core on UDP 2152 for N3, and a NetworkPolicy rule names a
 port and an address range, never a peer. The peer's pod address is inside that range, so
-while F1-U uses the same port that one rule also permits plaintext F1-U straight to the
-peer, around the tunnel. The core's port is fixed in the application and cannot move;
-F1-U's is configurable, so F1-U is what moves.
+while a protected interface uses that same port, the one rule opened for the core also
+permits plaintext traffic straight to the peer, around the tunnel. The core's port is fixed
+in the application and cannot move; F1-U's and Xn-U's are configurable, so they are what
+move.
 
 An absent bind_port is the same as 2152, because that is what the application defaults to.
+A section the config does not carry at all is not checked, because that interface is not in
+use.
 */}}
 {{- $corePort := 2152 -}}
-{{- $f1uPort := $corePort -}}
-{{- $f1uSection := include "ocudu-cu-up.ipsec.section" (dict "blob" $blob "key" "f1u") -}}
-{{- range $line := splitList "\n" $f1uSection -}}
+{{- $planes := list
+      (dict "key" "f1u" "name" "F1-U" "flag" "allowF1uOnCorePort" "allow" .Values.ipsec.allowF1uOnCorePort)
+      (dict "key" "xnu" "name" "Xn-U" "flag" "allowXnuOnCorePort" "allow" .Values.ipsec.allowXnuOnCorePort) -}}
+{{- range $plane := $planes -}}
+{{- $section := include "ocudu-cu-up.ipsec.section" (dict "blob" $blob "key" $plane.key) -}}
+{{- if ne (trim $section) "" -}}
+{{- $port := $corePort -}}
+{{- range $line := splitList "\n" $section -}}
   {{- $parts := splitn ":" 2 $line -}}
   {{- if eq (trimPrefix "- " (trim $parts._0)) "bind_port" -}}
-    {{- $f1uPort = int (trimAll "\"'" (trim (default "" $parts._1))) -}}
+    {{- $port = int (trimAll "\"'" (trim (default "" $parts._1))) -}}
   {{- end -}}
 {{- end -}}
-{{- if and (eq $f1uPort $corePort) (not .Values.ipsec.allowF1uOnCorePort) -}}
-{{- fail (printf "the application config leaves F1-U on UDP %d, which is the port the policy has to open for the core. That one rule then also permits plaintext F1-U to the peer's pod address, around the tunnel. Set f1u.bind_port to another port on both ends, or set ipsec.allowF1uOnCorePort to true if there is no core to reach" $corePort) -}}
+{{- if and (eq $port $corePort) (not $plane.allow) -}}
+{{- fail (printf "the application config leaves %s on UDP %d, which is the port the policy has to open for the core. That one rule then also permits plaintext %s to the peer's pod address, around the tunnel. Set %s.bind_port to another port on both ends, or set ipsec.%s to true if there is no core to reach" $plane.name $corePort $plane.name $plane.key $plane.flag) -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
 
 {{- end -}}
