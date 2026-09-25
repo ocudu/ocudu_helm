@@ -84,6 +84,12 @@ data:
                     remote_ts = {{ $conn.remote }}/32{{ $sel }}
                     esp_proposals = {{ $conn.espProposal | default $.Values.ipsec.ike.espProposal }}
 
+                    # How far out of order a packet may arrive and still be accepted. The
+                    # daemon's own default is 32, which is narrow for a reordering-prone
+                    # interface, and leaving it unset means the width is whatever the
+                    # daemon picked rather than something this chart chose.
+                    replay_window = {{ $conn.replayWindow | default $.Values.ipsec.ike.replayWindow }}
+
                     # A local number only. Nothing about it is negotiated or sent, so the
                     # two ends need not agree on it.
                     {{- $ifId := include "ocudu-cu-up.ipsec.ifId" (dict "name" $child "conn" $conn) }}
@@ -120,20 +126,45 @@ data:
     {{- range $child, $conn := .Values.ipsec.connections }}
     {{ $child }} {{ include "ocudu-cu-up.ipsec.ifName" (dict "name" $child "conn" $conn) }} {{ include "ocudu-cu-up.ipsec.ifId" (dict "name" $child "conn" $conn) }} {{ $conn.local }}/32 {{ $conn.remote }}/32
     {{- end }}
-{{- if .Values.ipsec.ikeOnNatTPortOnly }}
-  # Mounted over the daemon's own configuration directory so IKE never binds a privileged
-  # port, which is what lets the sidecar drop NET_BIND_SERVICE. Both namespaces are set:
-  # the daemon reads its settings under charon-systemd, and a setting written only under
-  # charon is accepted and then silently ignored.
-  strongswan-hardening.conf: |
+  # Daemon settings the connection configuration cannot express. Mounted beside the
+  # image's own drop-in rather than over it.
+  #
+  # Every setting appears twice on purpose. The daemon reads its settings under
+  # charon-systemd, and a setting written only under charon is accepted and then silently
+  # ignored — so one written only there would look configured and do nothing.
+  strongswan-tuning.conf: |
     charon {
+{{- if .Values.ipsec.ikeOnNatTPortOnly }}
+        # IKE is carried on 4500 only, so no privileged port is ever bound and the sidecar
+        # runs without NET_BIND_SERVICE.
         port = 0
         port_nat_t = 4500
+{{- end }}
+        # How fast a peer that has stopped answering is given up on. This, not dpd_delay,
+        # decides it: the defaults retry for about 165 seconds, and for all of that time
+        # this side keeps encrypting into an association the peer no longer has.
+        retransmit_timeout = {{ .Values.ipsec.ike.retransmitTimeout }}
+        retransmit_tries = {{ .Values.ipsec.ike.retransmitTries }}
+
+        filelog {
+            stderr {
+                default = {{ .Values.ipsec.logLevel }}
+            }
+        }
     }
 
     charon-systemd {
+{{- if .Values.ipsec.ikeOnNatTPortOnly }}
         port = 0
         port_nat_t = 4500
-    }
 {{- end }}
+        retransmit_timeout = {{ .Values.ipsec.ike.retransmitTimeout }}
+        retransmit_tries = {{ .Values.ipsec.ike.retransmitTries }}
+
+        filelog {
+            stderr {
+                default = {{ .Values.ipsec.logLevel }}
+            }
+        }
+    }
 {{- end }}

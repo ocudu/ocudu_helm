@@ -514,6 +514,19 @@ ipsec:
     proposal: aes256gcm16-prfsha384-ecp256
     # -- Default ESP proposal. A connection may override it with `espProposal`.
     espProposal: aes256gcm16-ecp256
+    # -- How far out of order a packet may arrive and still be accepted, in packets.
+    # A connection may override it with `replayWindow`. The daemon's own default is 32,
+    # which is narrow for an interface where reordering is normal, and leaving it unset
+    # means the width is whatever the daemon picked rather than a number chosen here.
+    # **0 switches replay protection off entirely**, and the chart refuses to render it.
+    replayWindow: 1024
+    # -- How long to wait before resending an unanswered IKE message, in seconds.
+    # This pair, not `dpdDelay`, decides how fast a peer that has stopped answering is
+    # given up on. The daemon's defaults retry for about 165 seconds, and for all of that
+    # time this side keeps encrypting into an association the peer no longer has.
+    retransmitTimeout: 2
+    # -- How many times an unanswered IKE message is resent before the peer is given up on.
+    retransmitTries: 3
     # -- How often the peer is checked
     dpdDelay: 10s
     # -- How long an unanswered peer is tolerated
@@ -543,6 +556,11 @@ ipsec:
     timeoutSeconds: 5
     failureThreshold: 3
     successThreshold: 1
+
+  # -- Daemon log level: 0 silent, 1 negotiation, 2 more detail, 4 very verbose.
+  # Raise it to follow a negotiation that is not completing; 4 prints key material
+  # references and is not for a running deployment.
+  logLevel: 1
 
   # -- Annotations for the headless service that publishes this pod's outer address.
   serviceAnnotations: {}

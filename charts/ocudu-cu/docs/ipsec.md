@@ -189,6 +189,28 @@ differ per side — an easy way to end up with one direction protected and the o
 Leaving it out admits any protocol between the two addresses, which also admits ICMP and
 so path-MTU discovery. On a UDP interface behind a smaller path MTU that may matter.
 
+### Replay protection, and how fast a dead peer is noticed
+
+`ipsec.ike.replayWindow` sets how far out of order a packet may arrive and still be
+accepted, in packets. The daemon's own default is 32, which is narrow wherever reordering
+is normal, and leaving it unset means the width is whatever the daemon chose rather than a
+number chosen here. A connection may override it with `replayWindow`. **A width of 0
+switches replay protection off**, and the chart refuses to render it.
+
+`ipsec.ike.retransmitTimeout` and `retransmitTries` decide how quickly a peer that has
+stopped answering is given up on. This pair, not `dpdDelay`, is what governs it: the
+daemon's defaults retry for about 165 seconds, and for all of that time this side keeps
+encrypting into an association the peer no longer has. The defaults here are 2 seconds and
+3 tries.
+
+Both reach the daemon through a small configuration file the chart mounts beside the
+image's own. Every setting in it is written twice, under `charon` and under
+`charon-systemd`, because the daemon reads only the second and silently ignores a setting
+written only under the first.
+
+`ipsec.logLevel` raises daemon verbosity when a negotiation will not complete: 0 silent,
+1 negotiation, 2 more detail, 4 very verbose. 4 is not for a running deployment.
+
 ## What the chart refuses to render
 
 Each of these stops `helm install` with a message explaining why. None of them is a
@@ -208,6 +230,7 @@ exists to prevent.
 | an empty `ipsec.peers`, or a peer no connection names | the daemon would hold an association that protects nothing and report itself ready for it |
 | a connection naming a peer that is not in `ipsec.peers`, or naming none while there is more than one | the interface would land on the wrong association, or on none |
 | `connections.<name>.protocol` set to anything but `sctp`, `udp` or `tcp` | a selector naming a protocol the kernel does not match leaves the interface with no policy at all |
+| `ipsec.ike.replayWindow` or a connection's `replayWindow` set to 0 | replay protection would be off, so a captured packet could be replayed and accepted |
 | `ipsec.encapsulation` set to anything but `udp` or `native` | there is no third way to carry ESP, and a typo would otherwise pick the default silently |
 | an F1 address in the config that is not in `ipsec.connections`, or a wildcard bind | traffic that would never enter the tunnel |
 | F1-U on the core's GTP-U port, 2152 | the policy rule that lets the core be reached also permits plaintext F1-U to the peer; override with `ipsec.allowF1uOnCorePort` |

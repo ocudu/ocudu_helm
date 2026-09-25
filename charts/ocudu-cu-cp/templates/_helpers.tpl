@@ -286,6 +286,9 @@ like success and is not. A failed install is recoverable; plaintext on the wire 
 {{- fail (printf "ipsec.encapsulation is %q, and the only values are \"udp\" and \"native\"" .Values.ipsec.encapsulation) -}}
 {{- end -}}
 
+{{- if eq (int .Values.ipsec.ike.replayWindow) 0 -}}
+{{- fail "ipsec.ike.replayWindow is 0, which switches replay protection off: a captured packet could then be replayed and accepted. Give it a width instead" -}}
+{{- end -}}
 {{- if not .Values.ipsec.connections -}}
 {{- fail "ipsec.connections is empty: the sidecar would run and protect nothing" -}}
 {{- end -}}
@@ -316,6 +319,9 @@ like success and is not. A failed install is recoverable; plaintext on the wire 
   {{- end -}}
   {{- if and $conn.protocol (not (has (toString $conn.protocol) (list "sctp" "udp" "tcp"))) -}}
   {{- fail (printf "ipsec.connections.%s.protocol is %q, and the only values are \"sctp\", \"udp\" and \"tcp\". Leave it out to admit any protocol between the two protected addresses" $child $conn.protocol) -}}
+  {{- end -}}
+  {{- if and (hasKey $conn "replayWindow") (eq (int $conn.replayWindow) 0) -}}
+  {{- fail (printf "ipsec.connections.%s.replayWindow is 0, which switches replay protection off for that interface" $child) -}}
   {{- end -}}
   {{- if not $conn.remote -}}
   {{- fail (printf "ipsec.connections.%s.remote is required: it is the peer's protected address" $child) -}}
