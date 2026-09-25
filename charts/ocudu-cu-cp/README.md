@@ -65,6 +65,12 @@ workload that should not run overlapping old/new pods.
 | `e1Service.enabled` | bool | `false` | Enable E1 (E1AP) Service |
 | `f1cService.enabled` | bool | `true` | Enable F1-C (F1AP) Service |
 | `networkPolicy.enabled` | bool | `false` | Enable NetworkPolicy (only effective when `hostNetwork: false`) |
+| `ipsec.enabled` | bool | `false` | Protect F1-C and E1 with IKEv2 and tunnel-mode ESP — see [`docs/ipsec.md`](docs/ipsec.md) |
+| `ipsec.peers` | map | `{{}}` | One entry per peer: `id`, plus `address` on the side that dials |
+| `ipsec.connections` | map | `{{}}` | One entry per protected interface: `peer`, `protocol`, `local`, `remote` |
+| `ipsec.certSecret` | string | `""` | Secret holding this pod's identity (`tls.crt`, `tls.key`, `ca.crt`) |
+| `ipsec.certManager.enabled` | bool | `false` | Have cert-manager issue `certSecret` instead of bringing your own |
+| `networkPolicy.egress.dnsTo` | list | cluster DNS pods | Where DNS lives; set `[]` to allow port 53 to any destination |
 | `metricsService.enabled` | bool | `false` | Enable the metrics/remote-control WebSocket endpoint |
 | `persistence.enabled` | bool | `false` | Enable persistent storage for logs (otherwise `emptyDir`) |
 | `persistence.type` | string | `"pvc"` | Storage type: `pvc` or `hostPath` |
@@ -140,6 +146,48 @@ deploying — `fsGroup` does not apply to hostPath volumes.
 A hostPath volume ties the pod to whichever node holds that directory, so it can
 only ever be rescheduled there. Treat this as a local-debugging configuration,
 not a production one. Logs default to an `emptyDir` for that reason.
+
+## IPsec
+
+F1-C and E1 can be carried over IKEv2 with tunnel-mode ESP, by a strongSwan sidecar that runs in
+this pod. Off by default, and nothing renders until `ipsec.enabled` is set.
+
+The pod becomes its own IPsec endpoint: one daemon, one IKE association per peer, and one
+child association per protected interface, each on its own tunnel interface and protected
+address. Every pod has its own network namespace, so two pods on the same node are still
+two endpoints and the traffic between them is still encrypted.
+
+A protected interface is four keys — the peer that carries it, the protocol it speaks, and
+the two protected addresses:
+
+```yaml
+ipsec:
+  enabled: true
+  certManager:
+    enabled: true
+    issuerRef:
+      name: <your issuer>
+  localId: cu-cp
+  peers:
+    du:
+      id: du
+    cuup:
+      id: cu-up
+  connections:
+    f1c: {peer: du, protocol: sctp, local: 100.64.10.1, remote: 100.64.10.2}
+    e1:  {peer: cuup, protocol: sctp, local: 100.64.20.1, remote: 100.64.20.2}
+```
+
+The interface name and interface id are derived from the connection name, so they are only
+worth setting where a specific value is required.
+
+**N2 is not protected.** That needs a peer on the core side which terminates IKEv2.
+The policy keeps its plaintext rule for the core and the chart claims nothing about it.
+
+The application has to bind the protected addresses, and the chart refuses to render if it
+does not — along with a dozen other configurations that would leave traffic unprotected.
+[`docs/ipsec.md`](docs/ipsec.md) has the worked example, the requirements this places on the
+cluster, and the full list of what the chart refuses.
 
 ## Security Context and Capabilities
 
