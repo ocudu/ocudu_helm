@@ -556,6 +556,24 @@ ipsec:
   # @default -- `false`
   allowWithoutNetworkPolicy: false
 
+  startupProbe:
+    # -- Hold the application container until the sidecar is set up.
+    # The sidecar starts before the application and the application does not start until
+    # this passes, so this is what stops the application racing a daemon that is still
+    # loading. It checks that the daemon accepted every child it was given and that every
+    # tunnel interface exists and carries its address — **not** that a tunnel is up, which
+    # a side waiting to be dialled cannot satisfy. A failing startup probe restarts the
+    # container, so a stricter check here would turn a slow peer into a crash loop.
+    # @default -- `true`
+    enabled: true
+    initialDelaySeconds: 2
+    periodSeconds: 3
+    timeoutSeconds: 5
+    # 30 tries at 3 seconds gives the daemon 90 seconds to load before the container is
+    # restarted. Loading normally takes a second or two.
+    failureThreshold: 30
+    successThreshold: 1
+
   readinessProbe:
     # -- Enable the sidecar readiness probe.
     # Ready means every protected interface is protected by the kernel — an installed

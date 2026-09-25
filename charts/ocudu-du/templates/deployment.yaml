@@ -169,6 +169,16 @@ spec:
               value: {{ if .Values.ipsec.credentialReload.enabled }}"yes"{{ else }}"no"{{ end }}
             - name: IPSEC_CREDENTIAL_INTERVAL
               value: {{ .Values.ipsec.credentialReload.intervalSeconds | quote }}
+          {{- if .Values.ipsec.startupProbe.enabled }}
+          startupProbe:
+            exec:
+              command: [ "/usr/local/bin/startup-ipsec.sh" ]
+            initialDelaySeconds: {{ .Values.ipsec.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.ipsec.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.ipsec.startupProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.ipsec.startupProbe.failureThreshold }}
+            successThreshold: {{ .Values.ipsec.startupProbe.successThreshold }}
+          {{- end }}
           {{- if .Values.ipsec.readinessProbe.enabled }}
           readinessProbe:
             exec:
