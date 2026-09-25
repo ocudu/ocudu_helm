@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.5.2 (2026-09-25)
+
+### Changed
+- Bump the default Grafana image tag to `2026.09.21` and the default Telegraf image
+  tag to `2026.09.20`.
+
 ## 2.5.1 (2026-09-16)
 
 ### Changed

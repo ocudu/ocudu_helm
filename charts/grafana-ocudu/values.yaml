@@ -30,7 +30,7 @@ grafana:
     repository: ocudu/ocudu/grafana
     # -- Image tag
     # @default -- Matches OCUDU release version
-    tag: "1.7.6"
+    tag: "2026.09.21"
   # -- Environment variables for Grafana configuration
   env:
     # -- Grafana HTTP port
@@ -186,7 +186,7 @@ telegraf:
     repo: "registry.gitlab.com/ocudu/ocudu/telegraf"
     # -- Image tag
     # @default -- Matches OCUDU release version
-    tag: "0.17.0"
+    tag: "2026.09.20"
   
   # -- Image pull secrets
   imagePullSecrets:
