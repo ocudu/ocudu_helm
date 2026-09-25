@@ -321,10 +321,21 @@ networkPolicy:
       # A pod selector names the peer by the labels the chart sets on it. A CIDR peer is
       # not a reliable way to name a pod: some CNIs do not apply CIDR rules to addresses
       # inside the cluster, and such a rule then silently matches nothing.
+      #
+      # All three CU charts are named, because a DU peers either with a combined CU or with
+      # a CU-CP and a CU-UP, and which one is not something this chart can know. Naming
+      # only the combined CU leaves a split deployment with no rule at all: F1 is dropped,
+      # and with IPsec on it is IKE that is dropped, so the tunnel never starts.
       from:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: ocudu-cu
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ocudu-cu-cp
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ocudu-cu-up
 
     # -- Allow traffic from monitoring systems
     monitoring:
@@ -355,10 +366,21 @@ networkPolicy:
       # A pod selector names the peer by the labels the chart sets on it. A CIDR peer is
       # not a reliable way to name a pod: some CNIs do not apply CIDR rules to addresses
       # inside the cluster, and such a rule then silently matches nothing.
+      #
+      # All three CU charts are named, because a DU peers either with a combined CU or with
+      # a CU-CP and a CU-UP, and which one is not something this chart can know. Naming
+      # only the combined CU leaves a split deployment with no rule at all: F1 is dropped,
+      # and with IPsec on it is IKE that is dropped, so the tunnel never starts.
       to:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: ocudu-cu
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ocudu-cu-cp
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ocudu-cu-up
 
     # -- Where the cluster DNS lives.
     # The default names the cluster DNS pods. That is the narrow answer, and it works on a

@@ -14,6 +14,8 @@
 
 ### Fixed
 
+- `networkPolicy` named only `ocudu-cu` as the DU's peer, so a DU deployed against a split CU-CP and CU-UP had no rule for either and F1 was dropped. With IPsec on it was IKE that was dropped, so the tunnel never started. All three CU chart names are now allowed
+
 - `ipsec.readinessProbe`: the probe reported not ready for any interface that had no traffic yet, which is the normal state of F1-U with no user attached, so a pod with it enabled never became ready. It now reports ready when the IKE association is up and every interface has a child association or the policy that stands in for one
 - `dnsPolicy: ClusterFirstWithHostNet` was set twice in the pod spec, so every pod got the host-network policy whether or not it used host networking
 - `checksum/config` was skipped in O1 mode, so a change to the entrypoint script did not roll an O1 pod
