@@ -209,6 +209,23 @@ differ per side — an easy way to end up with one direction protected and the o
 Leaving it out admits any protocol between the two addresses, which also admits ICMP and
 so path-MTU discovery. On a UDP interface behind a smaller path MTU that may matter.
 
+### Holding the application until the sidecar is set up
+
+`ipsec.startupProbe` is on by default. The sidecar is a sidecar init container, so the
+application does not start until this passes — which is what stops the application racing a
+daemon that is still loading its configuration.
+
+It checks that the daemon answers, that every protected interface appears in what the daemon
+loaded, and that every tunnel interface exists carrying its address. It deliberately does
+**not** check that a tunnel is up. A side that waits to be dialled has neither an association
+nor a policy until its peer connects, and a failing startup probe restarts the container — so
+a stricter check here would turn a slow peer into a crash loop. `ipsec.readinessProbe`
+answers the "is a tunnel up" question, and is off by default for the same reason.
+
+The check that matters most is the second one: a value the daemon rejects takes its whole
+connection with it, so a single bad proposal can leave the daemon running with nothing
+loaded at all.
+
 ### Replay protection, and how fast a dead peer is noticed
 
 `ipsec.ike.replayWindow` sets how far out of order a packet may arrive and still be
