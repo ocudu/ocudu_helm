@@ -29,10 +29,11 @@ same ports, policies, states and routes, so there is only ever one.
 | `NET_BIND_SERVICE` | to bind UDP/500. Not needed if IKE runs on UDP/4500 only |
 | a writable `/run` | the daemon's control socket lives there |
 | a writable `/etc/swanctl` | credentials are remapped into the layout the daemon expects |
+| a writable `/tmp` | the daemon's scratch files |
 | the credentials mount | `ca.crt`, `tls.crt` and `tls.key` |
 | the configuration mount | `swanctl.conf` and `links.conf` |
 
-The two writable paths are what make `readOnlyRootFilesystem: true` reachable — mount an
+Those writable paths are what make `readOnlyRootFilesystem: true` reachable — mount an
 `emptyDir` at each. `privileged` is not needed, and neither is `NET_RAW`.
 
 The entrypoint should run as the container's main process so that the daemon exiting ends
@@ -46,6 +47,14 @@ from the top, whereas a loop would turn a repeated failure into a quiet one.
 Standard strongSwan connection configuration, mounted and used unchanged. Each child
 section needs `if_id_in` and `if_id_out` matching the interface ids in `links.conf`, because
 that is what ties a child association to the interface its traffic arrives on.
+
+One connection per peer. A pod with two peers gets two `connections` sections in this one
+file, served by this one daemon, because a second daemon in the same network namespace would
+contend with the first for the same ports, policies, states and routes.
+
+A traffic selector may carry a protocol, as `100.64.10.1/32[132]`. **The protocol is named
+by its IP number, not by its name**: `[sctp]` is rejected with `invalid value for: local_ts`
+and the daemon then loads no connections at all. 132 is SCTP, 17 is UDP, 6 is TCP.
 
 ### `links.conf`
 
@@ -81,6 +90,12 @@ that never loaded reports no children at all, and every one of them is fine.
 | `IPSEC_UPLINK` | `eth0` | the interface the tunnel MTU is derived from |
 | `IPSEC_ENCAP` | `yes` | whether ESP is carried inside UDP |
 | `IPSEC_TUNNEL_MTU` | derived | overrides the derived value |
+| `IPSEC_CREDENTIAL_RELOAD` | `yes` | whether the mounted credentials are watched for a renewal |
+| `IPSEC_CREDENTIAL_INTERVAL` | `60` | how often they are checked, in seconds |
+| `IPSEC_LINKS_FILE` | `$IPSEC_CONFIG_DIR/links.conf` | where the interface table is read from |
+| `IPSEC_SWANCTL_CONF` | `$IPSEC_CONFIG_DIR/swanctl.conf` | where the connection configuration is read from |
+| `IPSEC_SWANCTL_DIR` | `/etc/swanctl` | the directory the daemon expects its own files in |
+| `IPSEC_VICI_SOCKET` | `/run/charon.vici` | the daemon's control socket |
 
 ## The tunnel MTU is derived, not assumed
 
@@ -90,10 +105,18 @@ ESP is carried inside UDP. On a 1420-byte pod MTU that gives 1355, not 1400.
 
 ## Readiness
 
-`readiness-ipsec.sh` reports ready only when every child listed in `links.conf` has an
-association the kernel has installed. It reports **not ready** when it cannot reach the
-daemon, when `links.conf` is missing, and when `links.conf` lists nothing — none of those
-mean the tunnel is up, they mean nothing was measured.
+`readiness-ipsec.sh` reports ready when the IKE association is up and every child listed in
+`links.conf` is either associated or covered by the policy that stands in for one. The
+second half matters: a child that negotiates on first traffic has only a policy until
+traffic arrives, and an interface with no traffic yet — F1-U with no user attached, say — is
+protected, not broken. Requiring an association there holds the pod unready for ever.
+
+It reports **not ready** when it cannot reach the daemon, when `links.conf` is missing, and
+when `links.conf` lists nothing. None of those mean the tunnel is up; they mean nothing was
+measured.
+
+The probe reports, it does not enforce. What stops an unprotected packet is the absence of
+any route to a protected address that does not go through a tunnel interface.
 
 ## What the network must support
 
