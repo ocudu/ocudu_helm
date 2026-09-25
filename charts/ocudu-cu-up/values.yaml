@@ -602,6 +602,11 @@ ipsec:
   serviceAnnotations: {}
 
   # -- Resources for the sidecar.
+  # On a node whose kubelet runs the `static` CPU manager policy, set requests equal to
+  # limits here. A container is given exclusive CPUs only while the whole pod is
+  # Guaranteed, and that needs every container — the sidecar included — to match. Leave
+  # them unequal there and adding the sidecar drops the pod to Burstable, taking the
+  # application container's pinning with it.
   resources: {}
 
   # -- Security context for the sidecar.

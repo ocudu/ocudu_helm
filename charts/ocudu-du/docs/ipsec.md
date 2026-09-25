@@ -32,6 +32,15 @@ chart refuses to render on anything older.
 container holding `NET_ADMIN`. This is a property of the machine: no chart setting can
 supply it, and the sidecar says so plainly if it is missing.
 
+**Scheduling, where the node pins CPUs.** On a node whose kubelet runs the `static` CPU
+manager policy, a container is given exclusive CPUs only while the whole pod is Guaranteed,
+and that needs every container — the sidecar included — to have requests equal to its
+limits. Give `ipsec.resources` matching requests and limits on such a node. Leave them
+unequal and adding the sidecar drops the pod to Burstable, which takes the application
+container's pinning with it. On this chart that does not stay quiet for long: the
+entrypoint compares the CPU set the container was given against its CPU request and
+refuses to start rather than run DPDK on cores it was not promised.
+
 **Pod networking.** `network.hostNetwork` has to be false. With host networking the pod
 shares the node's network namespace, so it is not a separate endpoint and its traffic
 cannot be told apart from the node's.
