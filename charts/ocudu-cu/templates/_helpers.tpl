@@ -248,7 +248,7 @@ Call with: dict "blob" <string> "key" <string>
 {{- end -}}
 
 {{/*
-Refuse to render anything that would leave F1 traffic unprotected.
+Refuse to render anything that would leave a protected interface unprotected.
 
 Every one of these is a way the tunnel can end up configured but bypassed, which looks
 like success and is not. A failed install is recoverable; plaintext on the wire is not.
@@ -369,9 +369,9 @@ interface it was meant to protect would be somewhere else entirely, in clear.
 {{- $f1 = printf "%s\n%s" $f1 (include "ocudu-cu.ipsec.section" (dict "blob" $blob "key" $key)) -}}
 {{- end -}}
 {{/*
-Every address the F1 sections name has to be one this chart knows about. A wildcard leaves
-the application listening on the pod address as well, and a service name sends it straight
-out of the tunnel. Both look like a working configuration and neither is protected.
+Every address the protected sections name has to be one this chart knows about. A wildcard
+leaves the application listening on the pod address as well, and a service name sends it
+straight out of the tunnel. Both look like a working configuration and neither is protected.
 */}}
 {{- $allowed := list "auto" -}}
 {{- range $child, $conn := .Values.ipsec.connections -}}
@@ -385,14 +385,14 @@ out of the tunnel. Both look like a working configuration and neither is protect
 {{- $v := trimAll "\"'" (trim (default "" $parts._1)) -}}
 {{- if and (has $k $addrKeys) (ne $v "") (not (has $v $allowed)) -}}
 {{- if or (eq $v "0.0.0.0") (eq $v "::") -}}
-{{- fail (printf "the application config still binds an F1 interface to the wildcard address %s. With IPsec on, the application listens on the pod address as well as the protected one, so the tunnel can be walked around. Bind it to its address from ipsec.connections instead" $v) -}}
+{{- fail (printf "the application config still binds a protected interface to the wildcard address %s. With IPsec on, the application listens on the pod address as well as the protected one, so the tunnel can be walked around. Bind it to its address from ipsec.connections instead" $v) -}}
 {{- end -}}
-{{- fail (printf "the application config points an F1 interface at %q, which is not one of the addresses in ipsec.connections. Traffic to or from it would not enter the tunnel" $v) -}}
+{{- fail (printf "the application config points a protected interface at %q, which is not one of the addresses in ipsec.connections. Traffic to or from it would not enter the tunnel" $v) -}}
 {{- end -}}
 {{- end -}}
 {{- range $child, $conn := .Values.ipsec.connections -}}
 {{- if not (contains $conn.local $f1) -}}
-{{- fail (printf "ipsec.connections.%s.local is %s, and no F1 section of the application config mentions it. The application would keep its old addresses and its traffic would not enter the tunnel" $child $conn.local) -}}
+{{- fail (printf "ipsec.connections.%s.local is %s, and no protected section of the application config mentions it. The application would keep its old addresses and its traffic would not enter the tunnel" $child $conn.local) -}}
 {{- end -}}
 {{- end -}}
 
