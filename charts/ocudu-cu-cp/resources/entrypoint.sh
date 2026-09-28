@@ -87,10 +87,13 @@ update_config_paths() {
     local timestamp
     timestamp=$(date +'%Y%m%d-%H%M%S')
 
+    # Only a value with a directory part names a log directory: "stdout",
+    # "stderr" or a bare file name would make dirname return "." and the
+    # timestamped directory would be created in the working directory.
     local first_line
-    first_line=$(grep -E '^[[:space:]]*[A-Za-z0-9_]*filename:' "$config_file" | head -1)
+    first_line=$(grep -E '^[[:space:]]*[A-Za-z0-9_]*filename:[[:space:]]*[^[:space:]]*/' "$config_file" | head -1)
     if [ -z "$first_line" ]; then
-        log_info "No filename entries found in config, skipping log path update" >&2
+        log_info "No filename entry with a directory in config, skipping log path update" >&2
         return 0
     fi
 

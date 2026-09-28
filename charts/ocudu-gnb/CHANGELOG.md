@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.11.3 (2026-10-07)
+
+### Fixed
+
+- The entrypoint no longer takes the log directory from a `filename:` value without a directory part, such as `stdout`, `stderr` or a bare file name. Such a value made it create the timestamped log directory in the working directory, `/`, which fails when the container runs as a non-root user and `persistence.preserveOldLogs` is enabled. The first `filename:` value with a directory part is used instead, and if there is none the log path update is skipped (#73)
+
 ## 3.11.2 (2026-10-06)
 
 ### Fixed
