@@ -204,30 +204,6 @@ spec:
               mountPath: {{ .Values.persistence.mountPath }}
             - name: ocudu-work
               mountPath: /run/ocudu
-          {{- if (.Values.o1).enable_ocudu_o1 }}
-          lifecycle:
-            postStart:
-              exec:
-                command:
-                  - /bin/bash
-                  - -c
-                  - |
-                    timeout=30
-                    elapsed=0
-                    while [ $elapsed -lt $timeout ]; do
-                      response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:{{ (.Values.o1).healthcheckPort }}/config-healthy)
-                      echo "Health check response: $response"
-                      if [[ "$response" =~ 200 || "$response" =~ 400 ]]; then
-                        echo "API server is healthy."
-                        curl -H "Content-Type: application/json" -d "{restarted:true}" -X POST http://localhost:{{ (.Values.o1).healthcheckPort }}/restarted
-                        exit 0
-                      fi
-                      sleep 5
-                      elapsed=$((elapsed + 5))
-                    done
-                    echo "Netconf server not available, last response: $response. Exiting postStart hook."
-                    exit 1
-          {{- end }}
         {{- if (.Values.o1).enable_ocudu_o1 }}
         {{- $adapterFileLog := ((.Values.o1).o1Adapter.fileLog).enabled }}
         {{- $adapterLogFile := printf "%s/%s" .Values.persistence.mountPath (((.Values.o1).o1Adapter.fileLog).filename | default "o1-adapter.log") }}
