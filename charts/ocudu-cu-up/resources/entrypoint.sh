@@ -203,6 +203,15 @@ terminate() {
 # Main Execution Functions
 #==============================================================================
 
+# Tell the O1 adapter that the CU-UP has started, clearing a pending restart
+# request so that its health endpoint reports healthy again
+notify_o1_restarted() {
+    if ! curl -sf -o /dev/null --retry 5 --retry-connrefused --retry-delay 1 \
+        -X POST "http://localhost:${O1_HEALTHCHECK_PORT}/restarted"; then
+        log_warn "Could not notify the O1 adapter that the CU-UP has started"
+    fi
+}
+
 process_and_run_cu_up() {
     local config_file="$1"
     local updated_config="${OCUDU_WORK_DIR:-${OCUDU_LOG_DIR}}/cu-up-config.yml"
@@ -218,7 +227,19 @@ process_and_run_cu_up() {
     cp "$updated_config" "${OCUDU_LOG_DIR}/cu-up-config-rendered.yml"
 
     log_info "Starting CU-UP"
-    exec stdbuf -oL ocuup -c "$updated_config"
+    if [ "$ENABLE_OCUDU_O1" != "true" ]; then
+        exec stdbuf -oL ocuup -c "$updated_config"
+    fi
+
+    # The O1 adapter stops the CU-UP to apply a configuration change, so with O1 the
+    # CU-UP runs as a child and main starts it again. setsid keeps signals sent to
+    # the process group away from it, terminate forwards them once, and stdin
+    # stays attached instead of being redirected from /dev/null.
+    setsid stdbuf -oL ocuup -c "$updated_config" 0<&0 &
+    CU_UP_PID=$!
+    log_info "CU-UP started (PID: $CU_UP_PID)"
+    notify_o1_restarted
+    wait "$CU_UP_PID"
 }
 
 #==============================================================================
@@ -238,6 +259,7 @@ main() {
 
     trap terminate SIGTERM SIGINT
 
+    local config_checksum=""
     while true; do
         # Wait for O1 config if enabled
         if [ "$ENABLE_OCUDU_O1" = "true" ]; then
@@ -245,17 +267,24 @@ main() {
             local elapsed=0
             local timeout="${CONFIG_CREATE_TIMEOUT}"
 
-            while [ ! -f "$config_file" ] && [ $elapsed -lt "$timeout" ]; do
+            # After a restart, wait for the configuration the restart was requested for
+            while { [ ! -s "$config_file" ] || [ "$(cksum < "$config_file")" = "$config_checksum" ]; } && \
+                [ $elapsed -lt "$timeout" ]; do
                 log_info "Waiting for O1 to create config... (${elapsed}/${timeout}s)"
                 sleep 1
                 elapsed=$((elapsed + 1))
             done
 
-            if [ ! -f "$config_file" ]; then
+            if [ ! -s "$config_file" ]; then
                 log_fatal "Timeout after ${timeout}s waiting for config: $config_file"
             fi
 
-            log_info "Config file created by O1"
+            if [ "$(cksum < "$config_file")" = "$config_checksum" ]; then
+                log_warn "No new config from O1 after ${timeout}s, restarting with the current one"
+            else
+                log_info "Config file created by O1"
+            fi
+            config_checksum=$(cksum < "$config_file")
         fi
 
         validate_config_file "$config_file" || log_fatal "Config validation failed"
@@ -266,12 +295,6 @@ main() {
         if [ $exit_code -ne 0 ]; then
             log_error "CU-UP exited with code $exit_code"
             exit $exit_code
-        fi
-
-        # Clean up O1 config for next iteration
-        if [ "$ENABLE_OCUDU_O1" = "true" ] && [ -f "$config_file" ]; then
-            log_info "Removing O1 config for next iteration"
-            rm -f "$config_file"
         fi
 
         log_info "CU-UP exited cleanly, restarting..."
@@ -285,6 +308,7 @@ main() {
 PRESERVE_OLD_LOGS="${PRESERVE_OLD_LOGS:-false}"
 CONFIG_CREATE_TIMEOUT="${CONFIG_CREATE_TIMEOUT:-30}"
 ENABLE_OCUDU_O1="${ENABLE_OCUDU_O1:-false}"
+O1_HEALTHCHECK_PORT="${O1_HEALTHCHECK_PORT:-5000}"
 HOSTNETWORK="${HOSTNETWORK:-false}"
 OCUDU_LOG_DIR="${OCUDU_LOG_DIR:-/var/log/ocudu}"
 USE_EXT_CORE="${USE_EXT_CORE:-false}"

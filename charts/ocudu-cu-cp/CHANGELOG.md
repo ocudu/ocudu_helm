@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.1 (2026-09-30)
+
+### Fixed
+
+- With O1 enabled, a configuration change that the O1 adapter cannot apply at runtime restarts the CU-CP inside the running container. The entrypoint replaced itself with the CU-CP, so every such change ended the container and the kubelet's restart backoff delayed the CU-CP longer each time. With O1 the CU-CP now runs as a child of the entrypoint; without O1 it still replaces it
+
 ## 1.6.0 (2026-09-09)
 
 ### Added
