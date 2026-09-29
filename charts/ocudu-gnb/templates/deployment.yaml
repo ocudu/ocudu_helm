@@ -222,6 +222,10 @@ spec:
           {{- end }}
             - name: ENABLE_OCUDU_O1
               value: '{{ default false .Values.o1.enable_ocudu_o1 }}'
+          {{- if .Values.o1.enable_ocudu_o1 }}
+            - name: O1_HEALTHCHECK_PORT
+              value: {{ .Values.o1.healthcheckPort | quote }}
+          {{- end }}
           command:
             {{- toYaml .Values.initCommand | nindent 12 }}
           args: [ "/bin/bash", "-c", "/etc/entrypoint/entrypoint-ocudu-gnb.sh /etc/config/gnb-config.yml" ]
