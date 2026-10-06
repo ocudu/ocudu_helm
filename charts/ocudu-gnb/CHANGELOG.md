@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.11.2 (2026-10-06)
+
+### Fixed
+
+- N3 can use an address reachable by an external UPF while the gNB stays on the
+  pod network. `service.externalIPs` publishes the N2/N3 Service on routed
+  addresses and `service.advertisedAddress` makes the application signal the N3
+  address to the core. When empty, the advertised address continues to default
+  to `service.loadBalancerIP`. The Service applies `externalTrafficPolicy` to
+  external IPs as well as LoadBalancers and NodePorts.
+- Enabling the N2/N3 Service without an external address no longer enables the
+  external-core override with an empty `LB_IP`.
+
 ## 3.11.1 (2026-09-30)
 
 ### Fixed

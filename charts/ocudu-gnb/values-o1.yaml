@@ -263,6 +263,13 @@ service:
   # @default -- `LoadBalancer`
   type: LoadBalancer
 
+  # -- IP addresses routed to this Service by the surrounding network
+  externalIPs: []
+
+  # -- N3 address advertised by the gNB to the core while it binds to the pod IP
+  # Defaults to loadBalancerIP when empty
+  advertisedAddress: ""
+
   # -- LoadBalancer IP address (optional, cluster-dependent)
   # Leave empty for automatic assignment
   # Example: "10.0.0.100"

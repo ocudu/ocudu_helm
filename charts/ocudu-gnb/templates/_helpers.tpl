@@ -165,13 +165,13 @@ Create the image path for the passed in image field of o1-adapter image
 {{- end -}}
 
 {{/*
-Check if N2 or N3 are defined. If defined, use external core.
+Check whether N3 has an address that must be advertised to an external core.
 */}}
 {{- define "useExtCore" -}}
 {{- with .Values.service -}}
-  {{- if and .enabled .ports -}}
+  {{- if and .enabled .ports (or .advertisedAddress .loadBalancerIP) -}}
     {{- $p := .ports -}}
-    {{- if or (and (hasKey $p "n2") (index $p "n2" "enabled")) (and (hasKey $p "n3") (index $p "n3" "enabled")) -}}
+    {{- if and (hasKey $p "n3") (index $p "n3" "enabled") -}}
       "true"
     {{- else -}}
       "false"

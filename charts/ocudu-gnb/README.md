@@ -123,6 +123,7 @@ service:
   enabled: true
   type: LoadBalancer
   loadBalancerIP: "10.0.0.100"  # Optional, cluster-dependent
+  advertisedAddress: "10.0.0.100"  # Defaults to loadBalancerIP when empty
   loadBalancerClass: "metallb"  # Optional, for multiple LB providers
   externalTrafficPolicy: Local  # Preserves source IP
   sessionAffinity: None
@@ -189,6 +190,8 @@ Find images at: [Docker Hub - softwareradiosystems](https://hub.docker.com/u/sof
 | `networkPolicy.enabled` | bool | `false` | Enable NetworkPolicy (only works with hostNetwork: false) |
 | `service.enabled` | bool | `false` | Enable LoadBalancer service for N2/N3 interfaces |
 | `service.type` | string | `"LoadBalancer"` | Service type: `LoadBalancer`, `NodePort`, or `ClusterIP` |
+| `service.externalIPs` | list | `[]` | IP addresses routed to the N2/N3 Service by the surrounding network |
+| `service.advertisedAddress` | string | `""` | N3 address advertised to the core; defaults to `loadBalancerIP` |
 | `service.loadBalancerIP` | string | `""` | LoadBalancer IP address (optional, cluster-dependent) |
 | `service.loadBalancerClass` | string | `""` | LoadBalancer class (optional, for multiple LB providers) |
 | `service.externalTrafficPolicy` | string | `"Cluster"` | External traffic policy: `Cluster` or `Local` |

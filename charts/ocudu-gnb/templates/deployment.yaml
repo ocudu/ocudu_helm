@@ -204,9 +204,9 @@ spec:
             - name: EXPECTED_CPUS
               value: {{ . | quote }}
           {{- end }}
-          {{- if and .Values.service .Values.service.type (eq .Values.service.type "LoadBalancer") }}
+          {{- with (default .Values.service.loadBalancerIP .Values.service.advertisedAddress) }}
             - name: LB_IP
-              value: {{ .Values.service.loadBalancerIP | quote }}
+              value: {{ . | quote }}
           {{- end }}
           {{- if and .Values.sriovConfig .Values.sriovConfig.enabled }}
             - name: RESOURCE_EXTENDED
