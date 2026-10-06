@@ -59,6 +59,8 @@ workload that should not run overlapping old/new pods.
 |-----------|------|---------|-------------|
 | `network.hostNetwork` | bool | `false` | Enable host network mode |
 | `n3Service.enabled` | bool | `true` | Enable N3 (GTP-U) Service |
+| `n3Service.externalIPs` | list | `[]` | Addresses routed to the N3 Service by the surrounding network |
+| `n3Service.advertisedAddress` | string | `""` | N3 address advertised to the core while CU-UP binds to its pod IP |
 | `e1Service.enabled` | bool | `false` | Enable E1 (E1AP) Service |
 | `f1uService.enabled` | bool | `true` | Enable F1-U (GTP-U) Service |
 | `networkPolicy.enabled` | bool | `false` | Enable NetworkPolicy (only effective when `hostNetwork: false`) |

@@ -171,6 +171,14 @@ spec:
                   fieldPath: status.podIP
             - name: HOSTNETWORK
               value: '{{ .Values.network.hostNetwork }}'
+            {{- with .Values.n3Service.advertisedAddress }}
+            # Keep the socket on the pod address, but signal the address through
+            # which the core can reach the N3 Service.
+            - name: USE_EXT_CORE
+              value: "true"
+            - name: LB_IP
+              value: {{ . | quote }}
+            {{- end }}
             - name: OCUDU_LOG_DIR
               value: {{ .Values.persistence.mountPath | quote }}
             - name: OCUDU_WORK_DIR

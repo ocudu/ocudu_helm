@@ -12,15 +12,21 @@ metadata:
     app.kubernetes.io/component: n3
 spec:
   type: {{ .Values.n3Service.type | default "ClusterIP" }}
+  {{- with .Values.n3Service.externalIPs }}
+  externalIPs:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- if or .Values.n3Service.externalIPs (eq (.Values.n3Service.type | default "ClusterIP") "NodePort") (eq (.Values.n3Service.type | default "ClusterIP") "LoadBalancer") }}
+  {{- with .Values.n3Service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ . }}
+  {{- end }}
+  {{- end }}
   {{- if eq (.Values.n3Service.type | default "ClusterIP") "LoadBalancer" }}
   {{- if .Values.n3Service.loadBalancerIP }}
   loadBalancerIP: {{ .Values.n3Service.loadBalancerIP }}
   {{- end }}
   {{- if .Values.n3Service.loadBalancerClass }}
   loadBalancerClass: {{ .Values.n3Service.loadBalancerClass }}
-  {{- end }}
-  {{- with .Values.n3Service.externalTrafficPolicy }}
-  externalTrafficPolicy: {{ . }}
   {{- end }}
   {{- end }}
   {{- with .Values.n3Service.sessionAffinity }}
