@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.9.2 (2026-10-06)
+
+### Fixed
+
+- N3 can use an address reachable by an external UPF while the CU stays on the
+  pod network. `n3Service.externalIPs` publishes UDP/2152 on that address and
+  `n3Service.advertisedAddress` makes the application signal it to the core while
+  continuing to bind the socket to its pod IP. The Service applies
+  `externalTrafficPolicy` to external IPs as well as LoadBalancers and NodePorts.
+
 ## 1.9.1 (2026-09-30)
 
 ### Fixed

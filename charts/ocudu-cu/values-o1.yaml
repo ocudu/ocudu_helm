@@ -182,6 +182,10 @@ n3Service:
   # -- Service type (ClusterIP, NodePort, or LoadBalancer)
   # @default -- `ClusterIP`
   type: ClusterIP
+  # -- IP addresses routed to this Service by the surrounding network
+  externalIPs: []
+  # -- Address advertised by the CU to the core while it binds to the pod IP
+  advertisedAddress: ""
   # -- LoadBalancer IP address (optional)
   loadBalancerIP: ""
   # -- LoadBalancer class (optional)
