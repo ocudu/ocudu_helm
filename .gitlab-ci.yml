@@ -169,6 +169,7 @@ ocudu-gnb chart:
     - changes:
         paths:
           - .gitlab/ci/helm_utils.yml
+          - .gitlab/cnti/ocudu-gnb/**/*
           - charts/ocudu-gnb/**/*
   trigger:
     strategy: mirror

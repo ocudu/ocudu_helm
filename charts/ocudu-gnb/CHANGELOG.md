@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.12.2 (2026-10-10)
+
+### Added
+
+- The chart pipeline runs the essential tests of the CNTi Test Suite against
+  the chart in gNB test mode on a kind cluster, through the suite's GitLab
+  CI/CD component. The README shows the result as a badge; the values the job
+  uses live under `.gitlab/cnti/ocudu-gnb/`.
+
 ## 3.12.1 (2026-10-09)
 
 ### Changed

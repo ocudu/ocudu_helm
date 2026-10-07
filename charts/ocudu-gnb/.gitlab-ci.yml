@@ -3,10 +3,25 @@
 
 include:
   - local: .gitlab/ci/helm_utils.yml
+  # CNTi Test Suite essential tests of the chart: install it on a kind cluster
+  # on the runner in gNB test mode and run the essential tests.
+  - component: $CI_SERVER_FQDN/lfn-cnti/testsuite-component/cnti-testsuite@1.1.0
+    inputs:
+      stage: static
+      version: v2.2.0
+      cnf_config: .gitlab/cnti/ocudu-gnb/cnti-testsuite.yaml
+      install_timeout: "900"
 
 stages:
   - static
   - publish
+
+# The component's job has no rules of its own, and a job without rules does
+# not run in merge request pipelines. Run it on merge requests and on main.
+cnti-testsuite:
+  rules:
+    - if: $ON_MR
+    - if: $ON_DEFAULT_BRANCH
 
 helm lint:
   extends: .helm lint

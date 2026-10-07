@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# CNTi Test Suite configuration for the ocudu-gnb chart in this repository:
+# the gNB in test mode (ru_dummy and test_mode.test_ue, no core, no RU), so
+# the whole stack except the fronthaul runs on a plain Kubernetes cluster.
+# Used by the cnti-testsuite job of charts/ocudu-gnb/.gitlab-ci.yml.
+---
+config_version: "v2"
+deployments:
+  helm_dirs:
+    - name: ocudu-gnb
+      helm_directory: ../../../charts/ocudu-gnb
+      helm_values: -f .gitlab/cnti/ocudu-gnb/values.yaml
