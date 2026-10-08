@@ -6,12 +6,14 @@
 
 - Remove `metricsService.powercap.enabled`; `PERFMON` is already in the default `securityContext`
 - Update the README, `docs/security.md` and `docs/network-modes.md`: describe the required capabilities and drop the Baseline Pod Security claims
+- Note in `docs/o1.md` that `hostKeySecret` needs a netconf-server image with `--ssh-hostkey-dir`
 
 ### Fixed
 
 - `values-o1.yaml`: add `PERFMON`, which the `gnb` binary requires
 - Update default image to `images/gnb-dpdk:ubuntu-24.04-avx512-20261007_2e9f5671`; the previous tag was removed from the registry
 - `values-o1.yaml`: update the gNB, O1 adapter and netconf-server images and adapt `o1Config` to the current netconf YANG models
+- O1 adapter no longer exits when `o1.netconfServer.ssh.hostKeySecret` is set
 
 ## 3.11.3 (2026-10-07)
 

@@ -12,6 +12,7 @@
 
 - Set the default image tag to `ubuntu-24.04-avx2-20261007_2e9f5671`; the appVersion `26.04` is not a published tag
 - Default config: move the E1 addresses under `cu_up.e1ap.gateways`, which current CU-UP builds require
+- O1 adapter no longer exits when `o1.netconfServer.ssh.hostKeySecret` is set
 
 ## 1.6.3 (2026-10-07)
 

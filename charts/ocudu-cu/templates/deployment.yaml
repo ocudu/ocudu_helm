@@ -216,6 +216,13 @@ spec:
           imagePullPolicy: {{ (.Values.o1).o1Adapter.image.pullPolicy }}
           resources:
             {{- toYaml (.Values.o1).o1Adapter.resources | nindent 12 }}
+          {{- if ((.Values.o1).netconfServer.ssh).hostKeySecret }}
+          env:
+            # Verifying the host key makes the adapter read an ssh_config, which looks up
+            # the login name; the pod's uid has no passwd entry in the adapter image.
+            - name: LOGNAME
+              value: o1-adapter
+          {{- end }}
           {{- if $adapterFileLog }}
           # Tee the adapter's output onto the shared log volume. The adapter timestamps
           # its own lines, so they are copied verbatim. Handing the flags to the shell as
