@@ -10,6 +10,7 @@
 ### Fixed
 
 - `values-o1.yaml`: add `PERFMON`, which the `gnb` binary requires
+- Update default image to `images/gnb-dpdk:ubuntu-24.04-avx512-20261007_2e9f5671`; the previous tag was removed from the registry
 
 ## 3.11.3 (2026-10-07)
 

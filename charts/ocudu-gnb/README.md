@@ -168,7 +168,9 @@ Select the appropriate container image based on your CPU:
 - **OS**: Ubuntu 24.04
 - **CPU Flags**: AVX512, AVX2, NEON
 
-Find images at: [Docker Hub - softwareradiosystems](https://hub.docker.com/u/softwareradiosystems)
+Find images at: [GitLab container registry](https://gitlab.com/ocudu/ocudu/container_registry/).
+The default is `registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk`, tagged
+`ubuntu-24.04-<avx512|avx2|neon>-<date>_<commit>`.
 
 ## Configuration
 
@@ -177,8 +179,8 @@ Find images at: [Docker Hub - softwareradiosystems](https://hub.docker.com/u/sof
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `replicaCount` | int | `1` | Number of pod replicas (must be 1 for stateful gNB) |
-| `image.repository` | string | `"softwareradiosystems/ocudu-gnb"` | Container image repository |
-| `image.tag` | string | Chart appVersion | Image tag |
+| `image.repository` | string | `"registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk"` | Container image repository |
+| `image.tag` | string | `"ubuntu-24.04-avx512-20261007_2e9f5671"` | Image tag |
 | `image.pullPolicy` | string | `"IfNotPresent"` | Image pull policy |
 | `extraLabels` | object | `{}` | Extra labels applied to the Deployment and Pod template |
 | `initCommand` | list | `["/usr/bin/catatonit", "-d", "--"]` | Init process command used as container PID 1 |
