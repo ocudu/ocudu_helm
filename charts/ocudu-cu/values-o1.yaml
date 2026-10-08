@@ -87,7 +87,6 @@ securityContext:
     add:
       - SYS_NICE
       - IPC_LOCK
-      - PERFMON
 
 # -- Resource requests and limits
 resources: {}

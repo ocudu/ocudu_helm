@@ -5,6 +5,7 @@
 ### Changed
 
 - Remove `metricsService.powercap.enabled`; the `ocu` binary does not use `PERFMON`
+- `values-o1.yaml`: drop `PERFMON`, matching `values.yaml`
 
 ## 1.9.3 (2026-10-07)
 
