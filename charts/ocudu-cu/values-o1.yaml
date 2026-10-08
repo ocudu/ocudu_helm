@@ -362,7 +362,7 @@ o1:
     image:
       repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_o1_adapter/o1_adapter_nightly_amd64
       pullPolicy: IfNotPresent
-      tag: "20260706_bd8b634b"
+      tag: "20260921_d4c1ca25"
     resources: {}
     securityContext: {}
     # -- Persist the o1 adapter container's stdout/stderr to a log file.
@@ -396,7 +396,7 @@ o1:
     image:
       repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_netconf/netconf_nightly_amd64
       pullPolicy: IfNotPresent
-      tag: "20260702_ddf3a238"
+      tag: "20260928_ea6ad1e7"
     tls:
       # -- Enable NETCONF-over-TLS endpoint on port 6513 (alongside the default SSH endpoint on o1Port)
       enabled: false
@@ -462,6 +462,29 @@ o1Config:
               <mnc>01</mnc>
             </pLMNTarget>
           </qceIdMappingInfoList>
+          <mappingSetIDBackhaulAddressList>
+            <idx>0</idx>
+            <setId>0</setId>
+            <backhaulAddress>
+              <gNBId>1</gNBId>
+              <tAI>
+                <plmnId>
+                  <mcc>001</mcc>
+                  <mnc>01</mnc>
+                </plmnId>
+                <tac>0007</tac>
+              </tAI>
+            </backhaulAddress>
+          </mappingSetIDBackhaulAddressList>
+          <tceIDMappingInfoList>
+            <idx>0</idx>
+            <tceIPAddress>0.0.0.0</tceIPAddress>
+            <tceID>0</tceID>
+            <pLMNTarget>
+              <mcc>001</mcc>
+              <mnc>01</mnc>
+            </pLMNTarget>
+          </tceIDMappingInfoList>
         </attributes>
 
         <EP_NgC xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-ep">

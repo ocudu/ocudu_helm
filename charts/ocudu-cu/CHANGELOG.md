@@ -6,6 +6,7 @@
 
 - Remove `metricsService.powercap.enabled`; the `ocu` binary does not use `PERFMON`
 - `values-o1.yaml`: drop `PERFMON`, matching `values.yaml`
+- `values-o1.yaml`: update the O1 adapter and netconf-server images and adapt `o1Config` to the current netconf YANG models
 
 ## 1.9.3 (2026-10-07)
 

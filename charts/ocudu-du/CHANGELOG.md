@@ -5,6 +5,7 @@
 ### Changed
 
 - Remove `metricsService.powercap.enabled`; `PERFMON` is already in the default `securityContext`
+- `values-o1.yaml`: update the O1 adapter and netconf-server images and adapt `o1Config` to the current netconf YANG models
 
 ## 1.10.2 (2026-10-07)
 

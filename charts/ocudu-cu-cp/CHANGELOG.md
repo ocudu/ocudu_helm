@@ -6,6 +6,7 @@
 
 - Remove the unused `metricsService.powercap.enabled`
 - README and `values.yaml`: correct which capabilities `ocucp` needs
+- `values-o1.yaml`: update the O1 adapter and netconf-server images and adapt `o1Config` to the current netconf YANG models
 
 ## 1.6.2 (2026-10-07)
 

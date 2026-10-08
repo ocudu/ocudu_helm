@@ -9,14 +9,13 @@ replicaCount: 1
 # -- Container image configuration
 image:
   # -- Container image repository
-  # See https://gitlab.com/ocudu/ocudu_elements/ocudu_helm/container_registry for available images
-  repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-gnb
+  # See https://gitlab.com/ocudu/ocudu/container_registry/ for available images
+  repository: registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk
   # -- Image pull policy
   pullPolicy: IfNotPresent
-  # -- Image tag
-  # Format: release_<arch>-<commit>__<date>
-  # @default -- Chart appVersion
-  tag: release_avx512-11c9bbabb6__2025-09-15
+  # -- Image tag, `ubuntu-24.04-<avx512|avx2|neon>-<date>_<commit>`. Pick the CPU variant
+  # the node supports. Always quote in values files.
+  tag: "ubuntu-24.04-avx512-20261007_2e9f5671"
 
 # -- Image pull secrets for private registries
 # @default -- See values.yaml
@@ -327,7 +326,7 @@ o1:
     image:
       repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_o1_adapter/o1_adapter_nightly_amd64
       pullPolicy: IfNotPresent
-      tag: "20260706_bd8b634b"
+      tag: "20260921_d4c1ca25"
     resources: {}
     securityContext: {}
     # -- Persist the o1 adapter container's stdout/stderr to a log file.
@@ -361,7 +360,7 @@ o1:
     image:
       repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_netconf/netconf_nightly_amd64
       pullPolicy: IfNotPresent
-      tag: "20260702_ddf3a238"
+      tag: "20260928_ea6ad1e7"
     tls:
       # -- Enable NETCONF-over-TLS endpoint on port 6513 (alongside the default SSH endpoint on o1Port)
       enabled: false
@@ -431,6 +430,29 @@ o1Config:
                 <mnc>01</mnc>
               </pLMNTarget>
             </qceIdMappingInfoList>
+            <mappingSetIDBackhaulAddressList>
+              <idx>0</idx>
+              <setId>0</setId>
+              <backhaulAddress>
+                <gNBId>1</gNBId>
+                <tAI>
+                  <plmnId>
+                    <mcc>001</mcc>
+                    <mnc>01</mnc>
+                  </plmnId>
+                  <tac>0007</tac>
+                </tAI>
+              </backhaulAddress>
+            </mappingSetIDBackhaulAddressList>
+            <tceIDMappingInfoList>
+              <idx>0</idx>
+              <tceIPAddress>0.0.0.0</tceIPAddress>
+              <tceID>0</tceID>
+              <pLMNTarget>
+                <mcc>001</mcc>
+                <mnc>01</mnc>
+              </pLMNTarget>
+            </tceIDMappingInfoList>
           </attributes>
 
           <RRMPolicyRatio xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-rrmpolicy">
@@ -466,6 +488,7 @@ o1Config:
         <id>cuup1</id>
         <attributes>
           <priorityLabel>1</priorityLabel>
+          <gNBCUUPId>1</gNBCUUPId>
           <gNBId>1</gNBId>
           <gNBIdLength>24</gNBIdLength>
           <pLMNInfoList>
@@ -495,8 +518,8 @@ o1Config:
       <GNBDUFunction xmlns="urn:3gpp:sa5:_3gpp-nr-nrm-gnbdufunction">
         <id>du1</id>
         <attributes>
-          <gNBId>411</gNBId>
-          <gNBIdLength>23</gNBIdLength>
+          <gNBId>1</gNBId>
+          <gNBIdLength>24</gNBIdLength>
           <gNBDUId>3</gNBDUId>
           <priorityLabel>1</priorityLabel>
         </attributes>
@@ -544,13 +567,13 @@ o1Config:
             </pLMNInfoList>
             <nPNIdentityList>
               <idx>0</idx>
-              <plmnid>
+              <plmnId>
                 <mcc>001</mcc>
                 <mnc>01</mnc>
-              </plmnid>
-              <cAGIdList>unused</cAGIdList>
-              <nIDList>unused</nIDList>
+              </plmnId>
             </nPNIdentityList>
+            <redCapAccessCriteriaRef>RedCapAccessCriteria=unused</redCapAccessCriteriaRef>
+            <nTNTAClist>7</nTNTAClist>
             <nRPCI>1</nRPCI>
             <nRTAC>7</nRTAC>
             <arfcnDL>632192</arfcnDL>
@@ -683,15 +706,12 @@ o1Config:
             <enable_log>false</enable_log>
             <periodicity>
               <du_report_period>1000</du_report_period>
-              <cu_up_report_period>1000</cu_up_report_period>
-              <cu_cp_report_period>1000</cu_cp_report_period>
             </periodicity>
             <layers>
               <enable_ru>true</enable_ru>
               <enable_sched>true</enable_sched>
               <enable_rlc>false</enable_rlc>
               <enable_mac>false</enable_mac>
-              <enable_pdcp>false</enable_pdcp>
               <enable_du_low>false</enable_du_low>
             </layers>
           </ocudu_metrics_extensions>
