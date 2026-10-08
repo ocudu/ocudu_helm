@@ -6,12 +6,12 @@ image:
   # -- Container image repository
   # See https://gitlab.com/ocudu/ocudu/container_registry for available images
   repository: registry.gitlab.com/ocudu/ocudu/images/du-dpdk
-  # repository: repository: registry.gitlab.com/ocudu/ocudu/images/du-uhd
+  # repository: registry.gitlab.com/ocudu/ocudu/images/du-uhd
   # -- Image pull policy
   pullPolicy: IfNotPresent
-  # -- Image tag. Always quote in values files — tags like 20260529_abc123e1 are parsed as floats by YAML.
-  # @default -- Chart appVersion
-  tag: ""
+  # -- Image tag, `ubuntu-24.04-<avx512|avx2|neon>-<date>_<commit>`. Pick the CPU variant
+  # the node supports. Always quote in values files.
+  tag: "ubuntu-24.04-avx512-20261007_2e9f5671"
 
 # -- Image pull secrets for private registries
 imagePullSecrets: []

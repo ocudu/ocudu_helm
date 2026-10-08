@@ -8,6 +8,10 @@
 - README and `values.yaml`: correct which capabilities `ocucp` needs
 - `values-o1.yaml`: update the O1 adapter and netconf-server images and adapt `o1Config` to the current netconf YANG models
 
+### Fixed
+
+- Set the default image tag to `ubuntu-24.04-avx2-20261007_2e9f5671`; the appVersion `26.04` is not a published tag
+
 ## 1.6.2 (2026-10-07)
 
 ### Fixed

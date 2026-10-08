@@ -7,9 +7,9 @@ image:
   repository: registry.gitlab.com/ocudu/ocudu/images/cu-up
   # -- Image pull policy
   pullPolicy: IfNotPresent
-  # -- Image tag. Always quote in values files — tags like ubuntu-24.04-avx2-20260624_2b3cf68e are parsed as floats by YAML.
-  # @default -- Chart appVersion
-  tag: ""
+  # -- Image tag, `ubuntu-24.04-<avx512|avx2|neon>-<date>_<commit>`. Pick the CPU variant
+  # the node supports. Always quote in values files.
+  tag: "ubuntu-24.04-avx2-20261007_2e9f5671"
 
 # -- Image pull secrets for private registries
 imagePullSecrets: []
@@ -375,8 +375,9 @@ config:
   cu-up-config.yml: |-
     cu_up:
       e1ap:
-        addrs: 127.0.20.1
-        bind_addrs: 127.0.20.2
+        gateways:
+          - addrs: 127.0.20.1
+            bind_addrs: 127.0.20.2
       ngu:
         socket:
           - bind_addr: 127.0.0.1

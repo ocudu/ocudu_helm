@@ -8,6 +8,10 @@
 - `values-o1.yaml`: drop `PERFMON`, matching `values.yaml`
 - `values-o1.yaml`: update the O1 adapter and netconf-server images and adapt `o1Config` to the current netconf YANG models
 
+### Fixed
+
+- Set the default image tag to `ubuntu-24.04-avx2-20261007_2e9f5671`; the appVersion `26.04` is not a published tag
+
 ## 1.9.3 (2026-10-07)
 
 ### Fixed

@@ -112,8 +112,9 @@ config:
   cu-up-config.yml: |-
     cu_up:
       e1ap:
-        addrs: ocudu-cu-cp-e1
-        bind_addrs: 0.0.0.0
+        gateways:
+          - addrs: ocudu-cu-cp-e1
+            bind_addrs: 0.0.0.0
       ngu:
         socket:
           - bind_addr: 0.0.0.0
