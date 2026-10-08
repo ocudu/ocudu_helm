@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.4 (2026-10-09)
+
+### Changed
+
+- Remove `metricsService.powercap.enabled`; the `ocu` binary does not use `PERFMON`
+
 ## 1.9.3 (2026-10-07)
 
 ### Fixed

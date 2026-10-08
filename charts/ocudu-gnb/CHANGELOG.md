@@ -2,6 +2,10 @@
 
 ## 3.11.4 (2026-10-09)
 
+### Changed
+
+- Remove `metricsService.powercap.enabled`; `PERFMON` is already in the default `securityContext`
+
 ### Fixed
 
 - `values-o1.yaml`: add `PERFMON`, which the `gnb` binary requires

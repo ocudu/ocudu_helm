@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.10.3 (2026-10-09)
+
+### Changed
+
+- Remove `metricsService.powercap.enabled`; `PERFMON` is already in the default `securityContext`
+
 ## 1.10.2 (2026-10-07)
 
 ### Fixed

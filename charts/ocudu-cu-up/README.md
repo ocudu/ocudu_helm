@@ -65,7 +65,6 @@ workload that should not run overlapping old/new pods.
 | `f1uService.enabled` | bool | `true` | Enable F1-U (GTP-U) Service |
 | `networkPolicy.enabled` | bool | `false` | Enable NetworkPolicy (only effective when `hostNetwork: false`) |
 | `metricsService.enabled` | bool | `false` | Enable the metrics/remote-control WebSocket endpoint |
-| `metricsService.powercap.enabled` | bool | `false` | No effect on capabilities — `PERFMON` is always granted |
 | `persistence.enabled` | bool | `false` | Enable persistent storage for logs (otherwise `emptyDir`) |
 | `persistence.type` | string | `"pvc"` | Storage type: `pvc` or `hostPath` |
 | `replicaCount` | int | `1` | Number of CU-UP replicas |

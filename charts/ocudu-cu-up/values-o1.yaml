@@ -123,10 +123,6 @@ affinity: {}
 metricsService:
   # -- Enable metrics service
   enabled: false
-  # -- Enable power consumption metrics via RAPL
-  # @default -- `false`
-  powercap:
-    enabled: false
   # -- Service type (ClusterIP, NodePort, or LoadBalancer)
   # @default -- `ClusterIP`
   type: ClusterIP

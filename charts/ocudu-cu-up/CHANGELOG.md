@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.4 (2026-10-09)
+
+### Changed
+
+- Remove the unused `metricsService.powercap.enabled`
+
 ## 1.6.3 (2026-10-07)
 
 ### Fixed
