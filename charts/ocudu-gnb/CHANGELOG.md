@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.11.4 (2026-10-09)
+
+### Fixed
+
+- `values-o1.yaml`: add `PERFMON`, which the `gnb` binary requires
+
 ## 3.11.3 (2026-10-07)
 
 ### Fixed
