@@ -5,6 +5,7 @@
 ### Changed
 
 - Remove the unused `metricsService.powercap.enabled`
+- README and `values.yaml`: correct which capabilities `ocucp` needs
 
 ## 1.6.2 (2026-10-07)
 

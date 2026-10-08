@@ -26,16 +26,17 @@ resources:
   requests:
     intel.com/intel_sriov_netdevice: "1"
 
-# Security context for SR-IOV Device Plugin enabled
+# Security context for SR-IOV Device Plugin enabled (chart default).
+# See security.md for why each capability is needed.
 securityContext:
-  allowPrivilegeEscalation: false
+  allowPrivilegeEscalation: true
+  privileged: false
   capabilities:
+    drop: ["ALL"]
     add:
-      - IPC_LOCK
-      - SYS_ADMIN
-      - SYS_RAWIO
-      - NET_RAW
       - SYS_NICE
+      - IPC_LOCK
+      - PERFMON
 ```
 
 ### Characteristics

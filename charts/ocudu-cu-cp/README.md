@@ -151,14 +151,15 @@ securityContext:
     add: [SYS_NICE, IPC_LOCK, PERFMON]
 ```
 
-**These capabilities are functional requirements of `ocucp`**, not an artifact of
-how the image is packaged: `SYS_NICE` for real-time thread priorities,
-`IPC_LOCK` for locked memory, `PERFMON` for the performance and RAPL counters.
-Removing them does not harden the workload, it breaks it.
+Only `SYS_NICE` is something `ocucp` itself needs: it runs its worker pool and its
+I/O thread at `SCHED_FIFO` priority. Without it, `ocucp` prints
+`Scheduling priority of thread "..." not changed` and runs those threads at normal
+priority. `ocucp` uses no DPDK and locks no memory, so it never uses `IPC_LOCK`.
+It uses `PERFMON` only to read the RAPL power metric, and runs without it.
 
-They are additionally baked into the binary as *file* capabilities
-(`setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+ep`), which is what forces
-`allowPrivilegeEscalation: true`. Two kernel rules apply:
+All three are still required, because the image bakes them into the binary as
+*file* capabilities (`setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+ep`). The same
+file capabilities force `allowPrivilegeEscalation: true`. Two kernel rules apply:
 
 - with the `+ep` bits set, every capability in the file's permitted set must also
   be in the container's bounding set, or `execve()` fails with `EPERM` — dropping

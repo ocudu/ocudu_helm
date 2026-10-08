@@ -129,14 +129,14 @@ initCommand:
   - --
 
 # -- Container-level security context
-# The three added capabilities are functional requirements of the ocuup binary,
-# not an artifact of how they are granted: SYS_NICE for real-time thread
-# priorities, IPC_LOCK for locked memory, PERFMON for the performance and RAPL
-# counters. Dropping them does not harden the workload, it breaks it.
+# ocuup itself only needs SYS_NICE, for the SCHED_FIFO priority of its worker
+# pool and I/O thread; without it, it warns and runs them at normal priority. It
+# uses no DPDK and locks no memory (IPC_LOCK), and reads PERFMON only for the
+# RAPL power metric.
 #
-# They are additionally baked into /usr/local/bin/ocuup as file capabilities
-# (setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+ep), which makes both settings
-# below load-bearing: with the `+ep` bits set the kernel fails the exec with
+# All three are still required: the image bakes them into /usr/local/bin/ocuup
+# as file capabilities (setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+ep), which
+# makes both settings below load-bearing: with the `+ep` bits set the kernel fails the exec with
 # EPERM unless every one of those capabilities is in the container's bounding
 # set, and NO_NEW_PRIVS (allowPrivilegeEscalation: false) makes the kernel
 # ignore file capabilities altogether.

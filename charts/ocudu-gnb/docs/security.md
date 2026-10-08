@@ -21,22 +21,39 @@ Kubernetes Pod Security Standards (PSS) define security policies at three levels
 
 | Security Level | Compatible | Notes |
 |---------------|-----------|-------|
-| **Privileged** | ✅ Yes | Fully compatible with all deployment modes |
-| **Baseline** | ✅ Yes | Compatible with SR-IOV mode (non-privileged) |
-| **Restricted** | ❌ No | Requires capabilities not allowed by Restricted PSS |
+| **Privileged** | ✅ Yes | Required by every deployment mode, including the non-privileged SR-IOV default |
+| **Baseline** | ❌ No | Baseline allows a fixed list of capabilities that does not include `SYS_NICE`, `IPC_LOCK` or `PERFMON` |
+| **Restricted** | ❌ No | Restricted allows no added capability except `NET_BIND_SERVICE` and requires `allowPrivilegeEscalation: false` |
 
-### Why Not Restricted?
+### Required Capabilities
 
-The OCUDU gNB requires two Linux capabilities for real-time DPDK operation:
+The default security context adds three Linux capabilities:
 
-- `SYS_NICE` — `sched_setscheduler(SCHED_FIFO)` on ru_timing / tx / rx threads
-- `IPC_LOCK` — `mlock()` on DPDK hugepages
+- `SYS_NICE`: the gNB runs its fronthaul timing, fronthaul I/O and worker threads at `SCHED_FIFO`
+  real-time priority. Without it the gNB starts, prints
+  `Scheduling priority of thread "..." not changed`, and misses its fronthaul deadlines
+  (`Real-time timing worker woke up late`, `dropped late downlink resource grid`).
+- `IPC_LOCK`: DPDK maps its hugepage memory for DMA through VFIO. The kernel counts that pinned
+  memory, at least one 1 GiB hugepage, against the container's locked-memory limit
+  (`RLIMIT_MEMLOCK`) unless the process holds `IPC_LOCK`. Kubernetes cannot set this limit; a
+  container inherits it from the container runtime, and a runtime started by systemd inherits
+  systemd's default of 8 MiB unless its unit raises it. Without the capability DPDK stops with
+  `EAL: Cannot set up DMA remapping, error 12 (Cannot allocate memory)`, and the kernel logs
+  `vfio_pin_pages_remote: RLIMIT_MEMLOCK (8388608) exceeded`. Only nodes whose container
+  runtime runs with an unlimited locked-memory limit work without it.
+- `PERFMON`: the gNB reads the CPU energy counters (RAPL) with `perf_event_open()` for its power
+  metrics. The gNB runs without it; only the power metric is missing.
+
+The image carries all three as file capabilities on `/usr/local/bin/gnb` with the effective bit
+set. With that bit set, the kernel refuses to start the binary (`EPERM`) unless the container's
+capabilities include every one of them, so none can be left out of `capabilities.add`.
 
 ### Recommended Configuration
 
-**For Production (Baseline PSS):**
+**For production:**
 
-Use SR-IOV mode with the minimum-privilege shape (chart default from 3.6.0 onward):
+Use SR-IOV mode with the minimum-privilege shape (chart default from 3.6.0 onward), in a
+namespace that enforces the Privileged level:
 
 ```yaml
 network:
@@ -59,17 +76,20 @@ securityContext:
     add:
       - SYS_NICE
       - IPC_LOCK
+      - PERFMON
 ```
 
 ### Prerequisites for the minimum-privilege default
 
 The chart default only works end-to-end when two infra conditions are met. Without them the gNB pod will start but fail at DPDK init or silently fail to transmit.
 
-1. **Image must have file capabilities baked into the `gnb` binary.** The chart-default pod runs as uid=1000. Linux drops inherited capabilities on `execve()` to a non-root uid unless the binary itself declares them via xattrs. The OCUDU Dockerfile should include:
+1. **Image must have file capabilities baked into the `gnb` binary.** The chart-default pod runs as uid=1000. Linux drops inherited capabilities on `execve()` to a non-root uid unless the binary itself declares them via xattrs. The OCUDU Dockerfile includes:
    ```dockerfile
-   RUN setcap cap_sys_nice,cap_ipc_lock+ep /usr/local/bin/gnb
+   RUN setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+ep /usr/local/bin/gnb
    ```
-   Verify in the built image with `getcap /usr/local/bin/gnb` → expect `cap_sys_nice,cap_ipc_lock=ep`.
+   Verify in the built image with `getcap /usr/local/bin/gnb` → expect `cap_ipc_lock,cap_sys_nice,cap_perfmon=ep`.
+
+   File capabilities only apply while `allowPrivilegeEscalation` is `true`. Setting it to `false` sets `no_new_privs`, and the kernel then ignores file capabilities, so the gNB runs with none of the three.
 
    The image must also make DPDK/UHD/ROHC libs findable without `LD_LIBRARY_PATH` (setcap triggers ld.so secure mode which strips that env var). Add:
    ```dockerfile
@@ -199,20 +219,21 @@ securityContext:
   capabilities:
     drop: ["ALL"]
     add:
-      - SYS_NICE      # SCHED_FIFO on ru_timing / tx-rx threads
-      - IPC_LOCK      # mlock() on DPDK hugepages
+      - SYS_NICE      # SCHED_FIFO real-time threads
+      - IPC_LOCK      # DPDK DMA memory pinned through VFIO
+      - PERFMON       # RAPL power metric; required by the image's file capabilities
 ```
 
 **Advantages:**
-- ✅ Non-root (uid 1000), drops ALL and adds only the two required caps
+- ✅ Non-root (uid 1000), drops ALL and adds only the three capabilities above
 - ✅ No privileged mode
-- ✅ Compatible with Pod Security Baseline
 - ✅ NetworkPolicy support
 
 **Requirements:**
 - vfio-pci driver loaded; IOMMU enabled in BIOS
 - SR-IOV Device Plugin configured
-- **Image has** `setcap cap_sys_nice,cap_ipc_lock+ep /usr/local/bin/gnb`
+- A namespace that enforces the Privileged Pod Security level (see [Required Capabilities](#required-capabilities))
+- **Image has** `setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+ep /usr/local/bin/gnb`
 - **Node's containerd has** `device_ownership_from_security_context = true`
 
 See the "Prerequisites for the minimum-privilege default" section above for details on the last two items. See [network-modes.md](network-modes.md) and [sriov-setup.md](sriov-setup.md) for network/SR-IOV setup.
@@ -305,9 +326,9 @@ Controls how unhealthy pods are handled during eviction:
 
 ### Pod Security Standards Labels
 
-Apply PSS labels to your namespace based on the deployment mode:
-
-#### For Privileged Mode (hostNetwork: true)
+Both deployment modes need a namespace that enforces the Privileged level: host network mode
+runs a privileged container, and SR-IOV mode adds capabilities that Baseline rejects (see
+[Required Capabilities](#required-capabilities)).
 
 ```bash
 kubectl create namespace ocudu
@@ -315,17 +336,6 @@ kubectl label namespace ocudu \
   pod-security.kubernetes.io/enforce=privileged \
   pod-security.kubernetes.io/audit=privileged \
   pod-security.kubernetes.io/warn=privileged \
-  --overwrite
-```
-
-#### For Baseline Mode (SR-IOV, hostNetwork: false)
-
-```bash
-kubectl create namespace ocudu
-kubectl label namespace ocudu \
-  pod-security.kubernetes.io/enforce=baseline \
-  pod-security.kubernetes.io/audit=baseline \
-  pod-security.kubernetes.io/warn=baseline \
   --overwrite
 ```
 
@@ -363,7 +373,8 @@ network:
 sriovConfig:
   enabled: true
 securityContext:
-  allowPrivilegeEscalation: false
+  allowPrivilegeEscalation: true   # file capabilities need it
+  privileged: false
 ```
 
 ### 3. Enable Pod Disruption Budget
@@ -401,11 +412,11 @@ resources:
 
 ### 6. Use Namespace Isolation
 
-Deploy in dedicated namespace with appropriate PSS labels:
+Deploy in a dedicated namespace, so the Privileged level the gNB needs applies to nothing else:
 
 ```bash
 kubectl create namespace ocudu
-kubectl label namespace ocudu pod-security.kubernetes.io/enforce=baseline
+kubectl label namespace ocudu pod-security.kubernetes.io/enforce=privileged
 ```
 
 ### 7. Regular Security Audits

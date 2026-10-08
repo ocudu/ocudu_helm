@@ -5,6 +5,7 @@
 ### Changed
 
 - Remove `metricsService.powercap.enabled`; `PERFMON` is already in the default `securityContext`
+- Update the README, `docs/security.md` and `docs/network-modes.md`: describe the required capabilities and drop the Baseline Pod Security claims
 
 ### Fixed
 
