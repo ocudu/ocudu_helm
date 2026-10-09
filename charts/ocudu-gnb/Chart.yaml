@@ -28,4 +28,4 @@ annotations:
   artifacthub.io/prerelease: "false"
 type: application
 version: 3.12.1
-appVersion: "26.04"
+appVersion: "26.10"

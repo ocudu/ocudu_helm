@@ -2,6 +2,10 @@
 
 ## 3.12.1 (2026-10-09)
 
+### Changed
+
+- Set `appVersion` to the OCUDU release `26.10`
+
 ### Fixed
 
 - `values-o1.yaml`: the non-root netconf-server could not bind port 830; set the pod sysctl `net.ipv4.ip_unprivileged_port_start` to `0`

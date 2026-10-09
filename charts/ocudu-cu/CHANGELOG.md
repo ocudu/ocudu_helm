@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.10.1 (2026-10-09)
+
+### Changed
+
+- Set `appVersion` to the OCUDU release `26.10`
+
 ## 1.10.0 (2026-10-09)
 
 ### Changed
