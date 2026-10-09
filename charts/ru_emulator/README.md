@@ -43,7 +43,7 @@ Before installing, ensure your environment meets these requirements:
 
 **From OCI registry**:
 ```bash
-helm install ru-emulator oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ru-emulator --version 2.0.0
+helm install ru-emulator oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ru-emulator --version 2.5.1
 ```
 
 **From local chart**:
@@ -81,7 +81,9 @@ The command removes all Kubernetes components associated with the chart.
 
 ## Log Persistence
 
-The RU emulator can persist console output to a log file. By default, logs are written to `/tmp/ru_em.log` inside the container and can be persisted via hostPath or PVC.
+The RU emulator writes its log to `config.log.filename` (`/tmp/ru_em.log`), which can be persisted via hostPath or PVC. With `preserveOldLogs: true` (default), each start writes to a new `<timestamp>/` folder in that directory, linked as `current`, together with the console output in `ru_emulator.stdout`.
+
+With the default non-root security context, the hostPath directory must be writable by uid 1000.
 
 Example (hostPath):
 ```yaml
@@ -116,12 +118,13 @@ If `preserveOldLogs` is `false`, logs are truncated at start.
 | `sriovConfig.enabled` | bool | `false` | Enable SR-IOV device plugin integration |
 | `sriovConfig.extendedResourceName` | string | `"intel.com/intel_sriov_netdevice"` | SR-IOV resource name from device plugin |
 | `sriovConfig.vfCount` | int | `1` | Number of SR-IOV VFs to request |
+| `config.dpdk.eal_args` | string | unset | DPDK EAL arguments; required in SR-IOV mode |
 | `config.ru_emu.cells` | list | See values.yaml | Cell configuration (interfaces, MAC addresses, VLAN) |
 | `config.log.filename` | string | `"/tmp/ru_em.log"` | Log file path inside the container |
 | `persistence.enabled` | bool | `true` | Enable persistent storage for logs |
 | `persistence.type` | string | `"hostPath"` | Storage type: `pvc` or `hostPath` |
 | `persistence.mountPath` | string | `"/tmp"` | Mount path for logs in the container |
-| `persistence.preserveOldLogs` | bool | `true` | Append to existing log file if true |
+| `persistence.preserveOldLogs` | bool | `true` | Write each run to a new timestamped folder if true |
 | `replicaCount` | int | `1` | Number of emulated RU instances |
 | `resources` | object | `{}` | CPU/memory limits and requests |
 | `nodeSelector` | object | `{}` | Node selector for pod assignment |
@@ -136,7 +139,7 @@ For the full list of available parameters, see [`values.yaml`](values.yaml).
 
 ### hostNetwork Mode (Testing/Development — fallback)
 
-Use this when you dont have the SR-IOV Device Plugin install in your cluster. Override the chart's non-root default:
+Use this when you don't have the SR-IOV Device Plugin installed in your cluster. Without a `dpdk` section the emulator uses raw sockets, so it runs as root. Override the chart's non-root default:
 
 ```yaml
 # Image defaults to OCUDU; override image.repository only if using a different build.
@@ -158,7 +161,10 @@ config:
 
 replicaCount: 1
 
-podSecurityContext: {}
+podSecurityContext:
+  runAsNonRoot: false
+  runAsUser: 0
+  runAsGroup: 0
 securityContext:
   privileged: true
   capabilities:
@@ -176,10 +182,10 @@ nodeSelector:
   kubernetes.io/hostname: worker-node-1
 ```
 
-### SR-IOV Mode (Production — chart default)
+### SR-IOV Mode (Production)
 
-The chart ships with the minimum-privilege shape as the default. A values file
-mainly needs to toggle network mode and provide cell config.
+The chart's default security context is the minimum-privilege shape for this mode. A values
+file mainly needs to toggle network mode and provide the DPDK and cell config.
 
 ```yaml
 # Image defaults to OCUDU; override image.repository only if using a different build.
@@ -193,6 +199,8 @@ sriovConfig:
   vfCount: 1
 
 config:
+  dpdk:
+    eal_args: "--lcores (0-1)@(0-3)"   # entrypoint substitutes the pod's CPUs
   ru_emu:
     cells:
     - bandwidth: 100
@@ -243,7 +251,7 @@ The RU emulator supports two deployment modes:
 - `network.hostNetwork: true`
 - `sriovConfig.enabled: false`
 - Direct access to physical network interfaces
-- Requires `privileged: true`
+- Requires `privileged: true` and root
 - Simpler setup, suitable for testing
 
 **2. SR-IOV Mode**
@@ -260,17 +268,21 @@ When SR-IOV is enabled, the entrypoint script automatically:
 
 1. **Detects VF PCI Address**: Reads from environment variable set by SR-IOV device plugin
    - Example: `PCIDEVICE_INTEL_COM_INTEL_SRIOV_NETDEVICE=0000:01:10.0`
-2. **Extracts MAC Address**: Queries `dmesg` for the VF's MAC address
-3. **Updates Configuration**: Replaces `network_interface` and `ru_mac_addr` in config file
-4. **Launches Emulator**: Starts with auto-configured network settings
+2. **Pins DPDK Cores**: Rewrites the CPU list in `dpdk.eal_args` to the pod's CPUs; needs exclusive CPUs (Guaranteed QoS with an integer CPU count, static CPU manager policy)
+3. **Extracts MAC Address**: Reads the VF's MAC from sysfs or the PF's `ip link`, with `dmesg` as a last resort
+4. **Updates Configuration**: Replaces `network_interface` and `ru_mac_addr` of the first cell
+5. **Launches Emulator**: Starts with auto-configured network settings
 
 This eliminates manual configuration of PCI addresses and MAC addresses.
 
 ### Why These Capabilities
 
-**SR-IOV Mode (chart default)** — minimum verified set:
-- `SYS_NICE`: `sched_setscheduler(SCHED_FIFO)` on DPDK timing / tx-rx threads
-- `IPC_LOCK`: `mlock()` on DPDK hugepages
+**SR-IOV Mode (default security context)** — minimum set:
+- `SYS_NICE`: `SCHED_FIFO` on DPDK timing / tx-rx threads
+- `IPC_LOCK`: DMA memory DPDK pins through VFIO, which otherwise counts against the locked-memory limit
+
+The image sets both as file capabilities with the effective bit, so the binary does not start
+unless the container has both.
 
 Device access (VFIO group node permissions) is handled by containerd's
 `device_ownership_from_security_context = true` flag, not by a capability. The

@@ -6,6 +6,11 @@
 
 - Update default image to `images/ru-emulator-dpdk:ubuntu-24.04-avx512-20261008_ae7c4172`
 
+### Fixed
+
+- README: the SR-IOV and hostNetwork examples did not start
+- README and `values.yaml`: correct the SR-IOV auto-detection, capability and log persistence descriptions
+
 ## 2.5.0 (2026-07-29)
 
 ### Added

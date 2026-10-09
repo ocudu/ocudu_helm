@@ -239,7 +239,7 @@ persistence:
   # @default -- `/tmp`
   mountPath: "/tmp"
 
-  # -- Preserve logs from previous runs (append mode)
-  # When true, logs are appended; when false, logs are overwritten
+  # -- Preserve logs from previous runs
+  # When true, each run writes to a new timestamped folder; when false, logs are overwritten
   # @default -- `true`
   preserveOldLogs: true
