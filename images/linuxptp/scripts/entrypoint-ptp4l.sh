@@ -13,66 +13,6 @@ STATUS_INTERVAL=60
 HEALTH_FILE=/tmp/ptp4l-healthy
 ALIVE_FILE=/tmp/ptp4l-alive
 ALIVE_MAX_MISSES=3
-GM_ALLOWLIST_PREF_START=38000
-GM_ALLOWLIST_DROP_PREF=38099
-
-gm_allowlist_enabled() {
-  [[ "${PTP4L_GM_ALLOWLIST_ENABLED:-false}" == "true" ]]
-}
-
-cleanup_gm_allowlist() {
-  gm_allowlist_enabled || return 0
-
-  local iface="${PTP4L_GM_ALLOWLIST_INTERFACE:-}"
-  [[ -n "$iface" ]] || return 0
-
-  local pref
-  for ((pref = GM_ALLOWLIST_PREF_START; pref <= GM_ALLOWLIST_DROP_PREF; pref++)); do
-    tc filter del dev "$iface" ingress pref "$pref" 2>/dev/null || true
-  done
-}
-
-apply_gm_allowlist() {
-  gm_allowlist_enabled || return 0
-
-  local mode="${PTP4L_GM_ALLOWLIST_MODE:-tc}"
-  local iface="${PTP4L_GM_ALLOWLIST_INTERFACE:-}"
-  local ethertype="${PTP4L_GM_ALLOWLIST_PTP_ETHERTYPE:-0x88f7}"
-  local allowed_macs="${PTP4L_GM_ALLOWLIST_ALLOWED_SOURCE_MACS:-}"
-
-  if [[ "$mode" != "tc" ]]; then
-    echo "Unsupported PTP GM allow-list mode: $mode" >&2
-    exit 1
-  fi
-
-  if [[ -z "$iface" || -z "$allowed_macs" ]]; then
-    echo "PTP GM allow-list requires interface and allowed source MACs" >&2
-    exit 1
-  fi
-
-  if ! command -v tc >/dev/null 2>&1; then
-    echo "PTP GM allow-list requires tc, but tc was not found" >&2
-    exit 1
-  fi
-
-  tc qdisc add dev "$iface" clsact 2>/dev/null || true
-  cleanup_gm_allowlist
-
-  local -a macs
-  IFS=',' read -r -a macs <<< "$allowed_macs"
-
-  local index=0
-  local mac
-  for mac in "${macs[@]}"; do
-    [[ -n "$mac" ]] || continue
-    tc filter add dev "$iface" ingress pref "$((GM_ALLOWLIST_PREF_START + index))" \
-      protocol "$ethertype" flower src_mac "$mac" action pass
-    index=$((index + 1))
-  done
-
-  tc filter add dev "$iface" ingress pref "$GM_ALLOWLIST_DROP_PREF" \
-    protocol "$ethertype" flower action drop
-}
 
 stop_process() {
   local pid="${1:-}"
@@ -87,7 +27,6 @@ cleanup() {
   stop_process "${ptp4l_pid:-}"
   stop_process "${monitor_pid:-}"
   rm -f "$HEALTH_FILE" "$ALIVE_FILE"
-  cleanup_gm_allowlist
   exit "$rc"
 }
 
@@ -211,8 +150,6 @@ monitor() {
     sleep "$POLL_INTERVAL"
   done
 }
-
-apply_gm_allowlist
 
 monitor &
 monitor_pid=$!

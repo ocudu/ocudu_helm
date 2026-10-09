@@ -25,7 +25,7 @@ COPY --from=builder /linuxptp-agent/linuxptp/ts2phc /usr/local/bin/
 COPY scripts/ /usr/local/bin/
 
 RUN chmod +x /usr/local/bin/entrypoint-ptp4l.sh && \
-    apt update && apt install -y musl-dev bc ntpdate iproute2 libnettle8t64 && \
+    apt update && apt install -y musl-dev bc ntpdate libnettle8t64 && \
     apt clean && \
     rm -rf /var/lib/apt/lists/* && \
     ldconfig && \

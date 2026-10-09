@@ -6,7 +6,6 @@
 set -euo pipefail
 
 command -v ptp4l >/dev/null
-command -v tc >/dev/null
 
 ptp4l -v
 
@@ -53,5 +52,3 @@ else
   echo "FAIL: ptp4l failed with Authentication TLV configuration (rc=$rc)"
   exit 1
 fi
-
-echo "PASS: tc available"
