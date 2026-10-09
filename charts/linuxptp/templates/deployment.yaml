@@ -4,16 +4,27 @@
 {{- if and .Values.ptp4l.authentication.enabled (not .Values.ptp4l.authentication.existingSecret) }}
 {{- fail "ptp4l.authentication.existingSecret must be set when ptp4l.authentication.enabled=true" }}
 {{- end }}
-{{- if and .Values.ptp4l.grandmasterAllowList.enabled (empty .Values.ptp4l.grandmasterAllowList.allowedSourceMacs) }}
-{{- fail "ptp4l.grandmasterAllowList.allowedSourceMacs must contain at least one MAC address when enabled" }}
+{{- if and .Values.ptp4l.authentication.enabled (ne (int .Values.ptp4l.authentication.ptpMinorVersion) 1) }}
+{{- fail "ptp4l.authentication.ptpMinorVersion must be 1: Authentication TLV requires PTPv2.1" }}
 {{- end }}
-{{- if and .Values.ptp4l.grandmasterAllowList.enabled (ne (.Values.config.network_transport | default "UDPv4") "L2") }}
-{{- fail "ptp4l.grandmasterAllowList requires config.network_transport=L2: the tc filters match the L2 PTP ethertype and provide no protection for UDP transports" }}
+{{- if and .Values.ptp4l.authentication.enabled (ne (toString (.Values.config.ignore_source_id | default 0)) "0") }}
+{{- fail "config.ignore_source_id must be 0 when ptp4l.authentication.enabled=true" }}
 {{- end }}
-{{- if and .Values.ptp4l.grandmasterAllowList.enabled (gt (len .Values.ptp4l.grandmasterAllowList.allowedSourceMacs) 99) }}
-{{- fail "ptp4l.grandmasterAllowList.allowedSourceMacs supports at most 99 entries (tc filter preferences 38000-38098; 38099 is reserved for the drop rule)" }}
+{{- if and .Values.ptp4l.authentication.enabled (or (lt (int .Values.ptp4l.authentication.spp) 0) (gt (int .Values.ptp4l.authentication.spp) 255)) }}
+{{- fail "ptp4l.authentication.spp must be between 0 and 255" }}
 {{- end }}
-{{- $gmAllowListInterface := default ((split ";" .Values.interfaceNameList)._0) .Values.ptp4l.grandmasterAllowList.interface }}
+{{- if and .Values.ptp4l.authentication.enabled (lt (int .Values.ptp4l.authentication.activeKeyId) 1) }}
+{{- fail "ptp4l.authentication.activeKeyId must be 1 or higher" }}
+{{- end }}
+{{- if and .Values.ptp4l.authentication.enabled (has (.Values.config.time_stamping | default "hardware") (list "onestep" "p2p1step")) }}
+{{- fail "ptp4l.authentication does not support one-step time stamping (config.time_stamping)" }}
+{{- end }}
+{{- if and .Values.ptp4l.authentication.enabled (ne (dir .Values.ptp4l.authentication.saFile) (clean .Values.ptp4l.authentication.mountPath)) }}
+{{- fail "ptp4l.authentication.saFile must be a file in ptp4l.authentication.mountPath" }}
+{{- end }}
+{{- if lt (int .Values.ptp4l.meanPathDelayLimitNs) 0 }}
+{{- fail "ptp4l.meanPathDelayLimitNs must not be negative" }}
+{{- end }}
 
 apiVersion: apps/v1
 kind: DaemonSet
@@ -96,18 +107,6 @@ spec:
             {{- if .Values.ptp4l.meanPathDelayLimitNs }}
             - name: PTP4L_MEAN_PATH_DELAY_LIMIT
               value: "{{ int .Values.ptp4l.meanPathDelayLimitNs }}"
-            {{- end }}
-            {{- if .Values.ptp4l.grandmasterAllowList.enabled }}
-            - name: PTP4L_GM_ALLOWLIST_ENABLED
-              value: "true"
-            - name: PTP4L_GM_ALLOWLIST_MODE
-              value: {{ .Values.ptp4l.grandmasterAllowList.mode | quote }}
-            - name: PTP4L_GM_ALLOWLIST_INTERFACE
-              value: {{ $gmAllowListInterface | quote }}
-            - name: PTP4L_GM_ALLOWLIST_PTP_ETHERTYPE
-              value: {{ .Values.ptp4l.grandmasterAllowList.ptpEthertype | quote }}
-            - name: PTP4L_GM_ALLOWLIST_ALLOWED_SOURCE_MACS
-              value: {{ join "," .Values.ptp4l.grandmasterAllowList.allowedSourceMacs | quote }}
             {{- end }}
           volumeMounts:
             - name: config-volume
