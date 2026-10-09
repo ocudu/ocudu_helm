@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.5.0 (2026-10-09)
+
+### Added
+- `ptp4l.meanPathDelayLimitNs` to mark ptp4l unhealthy when the path delay rises
+- ptp4l log lines for port state, parent, grandmaster and timeout events
+- Hardened client values profile `values-hardened.yaml`, linted in CI
+- Render-time checks for enabled authentication settings
+
+### Changed
+- Liveness checks that the PTP processes respond; loss of synchronization only makes the pod NotReady
+- Containers exit when their PTP process stops
+- G.8275 local priorities are rendered and timing settings are documented in `values.yaml`
+
+### Removed
+- GM allow-list (`ptp4l.grandmasterAllowList`) and `tc` from the image: tc ingress filters do not stop ptp4l from receiving PTP frames
+
+### Fixed
+- Expired leap-second list, which stopped ts2phc from synchronizing
+- ts2phc health check that never passed
+- Empty readiness probe `failureThreshold`
+
 ## 2.4.0 (2026-06-16)
 
 ### Added
