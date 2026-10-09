@@ -358,7 +358,7 @@ o1:
     image:
       repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_o1_adapter/o1_adapter_nightly_amd64
       pullPolicy: IfNotPresent
-      tag: "20260921_d4c1ca25"
+      tag: "20261008_d7c82cd8"
     resources: {}
     securityContext: {}
     # -- Persist the o1 adapter container's stdout/stderr to a log file.
@@ -392,7 +392,7 @@ o1:
     image:
       repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_netconf/netconf_nightly_amd64
       pullPolicy: IfNotPresent
-      tag: "20260928_ea6ad1e7"
+      tag: "20261008_452af662"
     tls:
       # -- Enable NETCONF-over-TLS endpoint on port 6513 (alongside the default SSH endpoint on o1Port)
       enabled: false
