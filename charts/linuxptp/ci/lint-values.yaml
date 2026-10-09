@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# Minimal values for CI linting with values-hardened.yaml. Fills the fields the
+# profile leaves empty so that helm template does not trigger the fail guards.
+ptp4l:
+  meanPathDelayLimitNs: 10000
+  authentication:
+    existingSecret: linuxptp-sa

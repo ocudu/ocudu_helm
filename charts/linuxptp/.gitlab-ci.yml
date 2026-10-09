@@ -13,6 +13,12 @@ helm lint:
   variables:
     CHART_PATH: charts/linuxptp
 
+helm lint hardened:
+  extends: .helm lint
+  variables:
+    CHART_PATH: charts/linuxptp
+    LINT_VALUES_FILE: charts/linuxptp/values-hardened.yaml -f charts/linuxptp/ci/lint-values.yaml
+
 helm version check:
   extends: .helm version check
   variables:
@@ -26,6 +32,7 @@ helm publish-dev:
     CHART_NAME: linuxptp
   needs:
     - job: helm lint
+    - job: helm lint hardened
     - job: helm version check
 
 helm publish-prod:
