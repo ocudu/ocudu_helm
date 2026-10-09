@@ -31,7 +31,7 @@ Before installing, ensure your environment meets these requirements:
 
 **Basic installation** (single interface):
 ```bash
-helm install linuxptp-ocudu oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/linuxptp --version 2.4.0 \
+helm install linuxptp-ocudu oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/linuxptp --version 2.5.0 \
   --set interfaceNameList="ens3f0np0"
 ```
 
@@ -54,18 +54,24 @@ helm install linuxptp ./ \
 Check PTP synchronization status:
 ```bash
 # Check pod status
-kubectl get pods -l app.kubernetes.io/name=linuxptp
+kubectl get pods -l app.kubernetes.io/name=linuxptp-chart
 
 # View PTP logs
-kubectl logs -l app.kubernetes.io/name=linuxptp -c linuxptp-chart-ptp4l
+kubectl logs -l app.kubernetes.io/name=linuxptp-chart -c linuxptp-ptp4l
 
 # Check synchronization (look for "rms" values in nanoseconds)
-kubectl logs -l app.kubernetes.io/name=linuxptp -c linuxptp-chart-ptp4l | grep rms
+kubectl logs -l app.kubernetes.io/name=linuxptp-chart -c linuxptp-ptp4l | grep rms
 ```
 
 Successful synchronization shows low RMS values:
 ```
 ptp4l[123.456]: rms 25 max 45 freq +1234 +/- 12 delay 150 +/- 10
+```
+
+The ptp4l container also logs port state, parent, grandmaster and timeout
+events, and a status line every 60 seconds:
+```
+ptp4l monitor: status SLAVE offset -3.0 ns path delay 512.0 ns parent 001122.fffe.334455-1 grandmaster 001122.fffe.334466 class 6 announce timeouts 0 sync timeouts 0
 ```
 
 ## Uninstalling the Chart
@@ -85,7 +91,7 @@ The command removes all Kubernetes components associated with the chart.
 |-----------|------|---------|-------------|
 | `interfaceNameList` | string | `"ens3f1np1"` | **REQUIRED**: Semicolon-separated list of PTP-capable network interfaces |
 | `image.repository` | string | `"registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/linuxptp"` | Container image repository |
-| `image.tag` | string | `"v4.4_2.2.0"` | Image tag (default: chart appVersion) |
+| `image.tag` | string | `"v4.4_2.3.0"` | Image tag (default: chart appVersion) |
 | `nodeSelector` | object | `{}` | **RECOMMENDED**: Target nodes with PTP-capable NICs |
 | `tolerations` | list | See values.yaml | Tolerations for scheduling (allows master nodes) |
 | `resources` | object | `{}` | CPU/memory limits and requests |
@@ -95,8 +101,8 @@ The command removes all Kubernetes components associated with the chart.
 | `config.ts2phc.enabled` | bool | `false` | Enable GNSS synchronization via ts2phc |
 | `ptp4l.authentication.enabled` | bool | `false` | Enable LinuxPTP Authentication TLV configuration |
 | `ptp4l.authentication.existingSecret` | string | `""` | Existing Secret containing the LinuxPTP SA file |
-| `ptp4l.grandmasterAllowList.enabled` | bool | `false` | Enable source-MAC allow-listing for L2 PTP packets |
-| `ptp4l.grandmasterAllowList.allowedSourceMacs` | list | `[]` | Legitimate GM source MAC addresses |
+| `ptp4l.offsetLimitNs` | int | `25` | Offset limit of the synchronization check |
+| `ptp4l.meanPathDelayLimitNs` | int | `0` | Mean path delay limit of the synchronization check (0 = off) |
 | `ntp.enabled` | bool | `false` | Sync to NTP before starting PTP |
 
 ### Complete Parameter List
@@ -184,50 +190,55 @@ If you override `ptp4l.authentication.saFile` or `mountPath`, note that they
 are coupled: the Secret key is mounted at `<mountPath>/<basename of saFile>`,
 so `saFile` must point to a path inside `mountPath`.
 
-### With GM Source MAC Allow-Listing
-```yaml
-ptp4l:
-  grandmasterAllowList:
-    enabled: true
-    allowedSourceMacs:
-      - "00:11:22:33:44:55"
-```
+**Keys**: generate a 256-bit key with `openssl rand -hex 32` and share it with
+the other PTP nodes out of band. Keep SA files out of version control.
 
-GM allow-listing drops L2 PTP packets from unknown source MAC addresses before
-`ptp4l` sees them. It is not cryptographic authentication and can be bypassed by
-MAC spoofing.
+ptp4l reads the SA file only at start. After changing the Secret, restart the
+pods with `kubectl rollout restart daemonset/linuxptp-chart`. To rotate a key
+without losing sync, add the new key under a new key ID on all nodes and
+restart, then set `activeKeyId` to the new ID on all nodes, then remove the
+old key.
 
-**Which MAC to allow-list**: the filters match the source MAC of the frames
-arriving on the interface. In topologies with boundary clocks (e.g. G.8275.1)
-that is the MAC of the *nearest* PTP node, not the grandmaster's own MAC.
-Capture the address actually seen on the wire before enabling:
+### With VLAN-Tagged PTP
+
+Create the VLAN subinterface on the host (for example `ens3f0np0.100`) and
+use it in `interfaceNameList`. Check hardware timestamping on it with
+`ethtool -T ens3f0np0.100`.
+
+### Hardened Client Profile
+
+`values-hardened.yaml` enables authentication and stricter client settings
+(`clientOnly`, `clock_class_threshold 7`, `syncReceiptTimeout 3`, a bounded
+`max_frequency`).
+Pass it before your own values file, which sets the fields the profile leaves
+empty:
 
 ```bash
-tcpdump -i <interface> -c 3 -e ether proto 0x88f7
+helm install linuxptp ./ -f values-hardened.yaml -f my-values.yaml
 ```
 
-Allow-listing the wrong MAC drops *all* PTP traffic and the pod will fail its
-startup probe.
+```yaml
+# my-values.yaml
+interfaceNameList: "ens3f0np0"
+ptp4l:
+  # Above the path delay shown in the ptp4l status line
+  meanPathDelayLimitNs: 1000
+  authentication:
+    existingSecret: linuxptp-sa
+```
+
+The profile only rejects PTP traffic. When the legitimate master is lost, the
+pod becomes NotReady.
 
 **Limitations**:
-- Requires `config.network_transport: L2` (enforced at render time); UDP
-  transports are not matched by the filters.
-- VLAN-tagged PTP frames are not matched either — the pass and drop rules
-  only apply to untagged `0x88f7` traffic.
-
-**Filter lifecycle**: the chart owns `tc` filter preferences 38000-38099 on
-the interface's `clsact` ingress (do not place other filters in this range).
-Filters are removed on graceful shutdown (SIGTERM) and re-applied
-idempotently on container start. After a non-graceful termination
-(SIGKILL/OOM/forced pod deletion) the filters — including the drop rule —
-remain on the host interface. Remove them manually if no replacement pod
-takes over:
-
-```bash
-for p in $(seq 38000 38099); do
-  tc filter del dev <interface> ingress pref $p 2>/dev/null
-done
-```
+- Authentication requires the directly connected PTP node to support it.
+  Without it, any PTP node on the network can become the master.
+- No setting keeps the clock synchronized when the PTP path is cut.
+- Authentication does not stop removal or delay of valid packets. Removal is
+  detected by the receipt timeouts, added delay by `meanPathDelayLimitNs`.
+- PTP packets are not filtered or rate limited on the host. Filter and police
+  PTP on the switch port.
+- `clock_class_threshold 7` also ignores a boundary clock in holdover.
 
 ## Architecture & Design
 
@@ -249,12 +260,32 @@ done
 - **One pod per node**: PTP synchronization is node-specific
 - **Multiple containers**: ptp4l, phc2sys, and optionally ts2phc
 
+### Probes and Detection
+
+- **Liveness**: the process still responds (ptp4l answers management
+  requests, phc2sys and ts2phc keep logging). A failure restarts the container.
+- **Startup and readiness**: the clock is synchronized. For ptp4l: port in
+  SLAVE state, offset within `ptp4l.offsetLimitNs` and, if set, mean path delay
+  within `ptp4l.meanPathDelayLimitNs`. Loss of synchronization makes the pod
+  NotReady without a restart. A node that never synchronizes restarts its
+  containers when the startup probe gives up (5 minutes).
+- A container exits when its PTP process stops.
+
+Detection times with the default values:
+
+| Event | Setting | Time |
+|-------|---------|------|
+| No Announce | `announceReceiptTimeout` × 2^`logAnnounceInterval` | 375-500 ms |
+| No Sync | `syncReceiptTimeout` × 2^`logSyncInterval` | off (190 ms with the hardened profile) |
+| Offset or path delay above the limit | `ptp4l.offsetLimitNs`, `ptp4l.meanPathDelayLimitNs` | next check (2 s) |
+| Pod NotReady | readiness `failureThreshold` × `periodSeconds` | up to 15 s after the check fails |
+
 ## Troubleshooting
 
 ### Pod not starting
 ```bash
 # Check events
-kubectl describe pod -l app.kubernetes.io/name=linuxptp
+kubectl describe pod -l app.kubernetes.io/name=linuxptp-chart
 
 # Common issues:
 # - Node doesn't have PTP-capable NIC
@@ -268,7 +299,7 @@ kubectl describe pod -l app.kubernetes.io/name=linuxptp
 kubectl exec -it <pod> -- ethtool -T <interface>
 
 # Check PTP messages are being received
-kubectl logs <pod> -c linuxptp-chart-ptp4l | grep "selected best master"
+kubectl logs <pod> -c linuxptp-ptp4l | grep "selected best master"
 
 # Common issues:
 # - No PTP grandmaster on network
@@ -279,7 +310,7 @@ kubectl logs <pod> -c linuxptp-chart-ptp4l | grep "selected best master"
 ### Poor synchronization accuracy
 ```bash
 # Check RMS values (should be <100ns for good sync)
-kubectl logs <pod> -c linuxptp-chart-ptp4l | grep rms
+kubectl logs <pod> -c linuxptp-ptp4l | grep rms
 
 # Common causes:
 # - Network congestion or jitter
