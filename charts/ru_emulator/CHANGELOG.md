@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.5.1 (2026-10-09)
+
+### Changed
+
+- Update default image to `images/ru-emulator-dpdk:ubuntu-24.04-avx512-20261008_ae7c4172`
+
 ## 2.5.0 (2026-07-29)
 
 ### Added

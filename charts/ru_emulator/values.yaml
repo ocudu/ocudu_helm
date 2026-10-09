@@ -9,12 +9,12 @@ replicaCount: 1
 # -- Container image configuration
 image:
   # -- Container image repository
-  repository: registry.gitlab.com/ocudu/ocudu/ocudu_nightly_avx512
+  repository: registry.gitlab.com/ocudu/ocudu/images/ru-emulator-dpdk
   # -- Image pull policy
   pullPolicy: IfNotPresent
-  # -- Image tag (overrides Chart appVersion if set)
-  # @default -- Chart appVersion
-  tag: 20260601_1a976144
+  # -- Image tag, `ubuntu-24.04-<avx512|avx2|neon>-<date>_<commit>`. Pick the CPU variant
+  # the node supports. Always quote in values files.
+  tag: "ubuntu-24.04-avx512-20261008_ae7c4172"
 
 # -- Image pull secrets for private registries
 # @default -- `[]` (no pull secrets)

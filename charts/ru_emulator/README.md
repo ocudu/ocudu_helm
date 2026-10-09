@@ -13,7 +13,7 @@ A Helm chart for deploying the OCUDU Radio Unit (O-RU) emulator
 
 This chart deploys an O-RU (Open Radio Unit) emulator that communicates with DU units via the OpenFronthaul protocol. It simulates a real Radio Unit for testing and development purposes.
 
-> **ℹ️ Image source**: The OCUDU nightly built images ship the `ru_emulator` binary as part of their build. The chart defaults to that image.
+> **ℹ️ Image source**: The chart defaults to the OCUDU `ru-emulator-dpdk` image, which ships the `ru_emulator` binary.
 
 **Capabilities**:
 - OpenFronthaul protocol support
@@ -105,8 +105,8 @@ If `preserveOldLogs` is `false`, logs are truncated at start.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `image.repository` | string | `"registry.gitlab.com/ocudu/ocudu/ocudu_nightly_avx512"` | Container image repository (OCUDU image ships `ru_emulator`) |
-| `image.tag` | string | Chart appVersion | Image tag |
+| `image.repository` | string | `"registry.gitlab.com/ocudu/ocudu/images/ru-emulator-dpdk"` | Container image repository (OCUDU image ships `ru_emulator`) |
+| `image.tag` | string | `"ubuntu-24.04-avx512-20261008_ae7c4172"` | Image tag |
 | `image.pullPolicy` | string | `"IfNotPresent"` | Image pull policy |
 | `extraLabels` | object | `{}` | Extra labels applied to the Deployment and Pod template |
 | `network.hostNetwork` | bool | `true` | Enable host network (set to `false` for SR-IOV mode) |
