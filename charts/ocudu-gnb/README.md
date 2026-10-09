@@ -147,7 +147,7 @@ metricsService:
   externalTrafficPolicy: Cluster
   port: 8001
 
-# O1 Service - Expose NETCONF to external ONAP SMO
+# O1 Service - Expose NETCONF to external ONAP SMO (start from values-o1.yaml)
 o1:
   enable_ocudu_o1: true
   netconfServer:

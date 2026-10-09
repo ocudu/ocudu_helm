@@ -81,6 +81,7 @@ securityContext:
 - ✅ Simple setup, direct hardware access
 - ✅ No SR-IOV device plugin needed
 - ✅ Works immediately on bare-metal
+- ⚠️ O1: Kubernetes rejects the `values-o1.yaml` sysctl; the non-root netconf-server can bind port 830 only if the node's `net.ipv4.ip_unprivileged_port_start` allows it
 - ⚠️ NetworkPolicy does NOT apply (bypasses pod networking)
 - ⚠️ Less network isolation
 

@@ -15,6 +15,7 @@
 - Update default image to `images/gnb-dpdk:ubuntu-24.04-avx512-20261007_2e9f5671`; the previous tag was removed from the registry
 - `values-o1.yaml`: update the gNB, O1 adapter and netconf-server images and adapt `o1Config` to the current netconf YANG models
 - O1 adapter no longer exits when `o1.netconfServer.ssh.hostKeySecret` is set
+- `values-o1.yaml`: the non-root netconf-server could not bind port 830; set the pod sysctl `net.ipv4.ip_unprivileged_port_start` to `0`
 
 ## 3.11.3 (2026-10-07)
 

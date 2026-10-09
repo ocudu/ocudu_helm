@@ -238,6 +238,8 @@ securityContext:
 
 See the "Prerequisites for the minimum-privilege default" section above for details on the last two items. See [network-modes.md](network-modes.md) and [sriov-setup.md](sriov-setup.md) for network/SR-IOV setup.
 
+With O1, the o1-adapter and netconf-server sidecars also run as uid 1000; `values-o1.yaml` adds the pod sysctl `net.ipv4.ip_unprivileged_port_start: "0"` so the netconf-server can bind port 830 (see [o1.md](o1.md)).
+
 ### Mode 2: Host Network (Fallback)
 
 **Use when**: `hostNetwork: true` and `sriovConfig.enabled: false`

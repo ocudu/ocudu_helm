@@ -92,12 +92,17 @@ podDisruptionBudget:
 podAnnotations: {}
 
 # -- Pod-level security context. Runs the container as a non-root user by default.
+# The sysctl lets the non-root netconf-server listen on o1Port (830). Kubernetes rejects
+# net.* sysctls with hostNetwork: true.
 # @default -- see below
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 1000
   runAsGroup: 1000
   fsGroup: 1000
+  sysctls:
+    - name: net.ipv4.ip_unprivileged_port_start
+      value: "0"
 
 # -- Container-level security context.
 #
