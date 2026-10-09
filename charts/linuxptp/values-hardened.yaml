@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# Hardened PTP client profile. Pass it before your own values file:
+#   helm install linuxptp ./ -f values-hardened.yaml -f my-values.yaml
+# The chart does not render until the empty Secret below is set in my-values.yaml.
+
+config:
+  # Never become master
+  clientOnly: "1"
+  # Accept only masters traceable to a locked (6) or holdover (7) grandmaster
+  clock_class_threshold: "7"
+  # Drop the master after 3 missed Sync messages
+  syncReceiptTimeout: "3"
+  # Never step the clock after the first update
+  step_threshold: "0.0"
+  # Frequency correction limit in ppb (500 ppm). phc2sys uses it too
+  max_frequency: "500000"
+
+ptp4l:
+  # Set above the measured meanPathDelay to detect added delay
+  meanPathDelayLimitNs: 0
+
+  authentication:
+    enabled: true
+    # Secret with the SA file, see README
+    existingSecret: ""
