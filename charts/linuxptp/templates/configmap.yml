@@ -30,6 +30,7 @@ data:
     dscp_general            {{ .Values.config.dscp_general | default 0 }}
     dataset_comparison      {{ .Values.config.dataset_comparison | default "ieee1588" }}
     maxStepsRemoved         {{ .Values.config.maxStepsRemoved | default 255 }}
+    G.8275.defaultDS.localPriority  {{ index .Values.config "G.8275.defaultDS.localPriority" | default 128 }}
     #
     # Port Data Set
     #
@@ -51,6 +52,7 @@ data:
     inhibit_announce        {{ .Values.config.inhibit_announce | default 0 }}
     inhibit_delay_req       {{ .Values.config.inhibit_delay_req | default 0 }}
     ignore_source_id        {{ .Values.config.ignore_source_id | default 0 }}
+    G.8275.portDS.localPriority     {{ index .Values.config "G.8275.portDS.localPriority" | default 128 }}
     #
     # Run time options
     #

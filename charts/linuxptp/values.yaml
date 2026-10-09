@@ -251,16 +251,47 @@ ntp:
 # Refer to the official GitHub repo for more info: https://github.com/richardcochran/linuxptp
 config:
   dataset_comparison: "G.8275.x"
+  # -- G.8275 BMCA tie-breaker of the local clock (1-255)
   G.8275.defaultDS.localPriority: "128"
   maxStepsRemoved: "255"
   logAnnounceInterval: "-3"
   logSyncInterval: "-4"
   logMinDelayReqInterval: "-4"
   serverOnly: "0"
+  # -- G.8275 BMCA tie-breaker for Announce messages received on the port (1-255)
   G.8275.portDS.localPriority: "128"
   ptp_dst_mac: "01:1B:19:00:00:00"
   network_transport: "L2"
   domainNumber: "24"
+  # The settings below are shown with their default values
+  # -- 1 makes the local clock client-only, so it never becomes master
+  clientOnly: "0"
+  # -- Ignore Announce messages with a clockClass above this value
+  clock_class_threshold: "248"
+  # -- Missed Announce messages before the master is dropped
+  announceReceiptTimeout: "3"
+  # -- Missed Sync messages before the master is dropped. 0 disables the check
+  syncReceiptTimeout: "0"
+  # -- Time before a port fault is reset, as a power of two in seconds (4 = 16 s)
+  fault_reset_interval: "4"
+  # -- Path delay filter: moving_median or moving_average
+  delay_filter: "moving_median"
+  # -- Path delay filter length in samples
+  delay_filter_length: "10"
+  # -- Path asymmetry in nanoseconds, positive when master-to-client is longer
+  delayAsymmetry: "0"
+  # -- Upper limit for the peer delay in nanoseconds (P2P only)
+  neighborPropDelayThresh: "20000000"
+  # -- Largest offset in seconds corrected by frequency instead of a step.
+  # 0.0 never steps the clock after start
+  step_threshold: "0.0"
+  # -- Same as step_threshold, for the first update only
+  first_step_threshold: "0.00002"
+  # -- Maximum frequency adjustment in ppb
+  max_frequency: "900000000"
+  # -- Maximum frequency offset to the system clock in ppb before the servo is
+  # reset. 0 disables the check
+  sanity_freq_limit: "200000000"
   ts2phc:
     enabled: false
     use_syslog: 0
