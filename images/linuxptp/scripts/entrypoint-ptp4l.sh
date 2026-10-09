@@ -70,18 +70,24 @@ apply_gm_allowlist() {
     protocol "$ethertype" flower action drop
 }
 
-cleanup() {
-  echo "Received SIGTERM, stopping ptp4l..."
-  [[ -n "${monitor_pid:-}" ]] && kill -TERM "$monitor_pid" 2>/dev/null || true
-  [[ -n "${ptp4l_pid:-}" ]] && kill -TERM "$ptp4l_pid" 2>/dev/null || true
-  wait "${monitor_pid:-}" 2>/dev/null || true
-  wait "${ptp4l_pid:-}" 2>/dev/null || true
-  rm -f "$HEALTH_FILE"
-  cleanup_gm_allowlist
-  exit 0
+stop_process() {
+  local pid="${1:-}"
+  [[ -n "$pid" ]] || return 0
+  kill -TERM "$pid" 2>/dev/null || true
+  wait "$pid" 2>/dev/null || true
 }
 
-trap cleanup SIGTERM SIGINT
+cleanup() {
+  local rc="${1:-0}"
+  trap - SIGTERM SIGINT
+  stop_process "${ptp4l_pid:-}"
+  stop_process "${monitor_pid:-}"
+  rm -f "$HEALTH_FILE"
+  cleanup_gm_allowlist
+  exit "$rc"
+}
+
+trap 'echo "Received SIGTERM, stopping ptp4l..."; cleanup 0' SIGTERM SIGINT
 
 monitor() {
   while true; do
@@ -122,5 +128,4 @@ wait "$ptp4l_pid"
 ptp4l_rc=$?
 set -e
 
-cleanup_gm_allowlist
-exit "$ptp4l_rc"
+cleanup "$ptp4l_rc"
