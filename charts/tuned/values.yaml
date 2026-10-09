@@ -4,9 +4,8 @@
 # -- Container image configuration
 image:
   # -- Container image repository
-  repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/tuned
-  # -- Image tag
-  # @default -- Chart appVersion
+  repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/tuned-agent
+  # -- Image tag, `<tuned version>_<image version>`
   tag: "v2.21.0_1.0.0"
   # -- Image pull policy
   pullPolicy: IfNotPresent

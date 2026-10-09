@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1 (2026-10-09)
+
+### Fixed
+- Default `image.repository` to `registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/tuned-agent`, where the image is published
+
 ## 1.2.0 (2026-06-01)
 
 ### Changed

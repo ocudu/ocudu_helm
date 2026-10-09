@@ -78,8 +78,8 @@ The command removes all Kubernetes components associated with the chart.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `image.repository` | string | `"softwareradiosystems/tuned"` | Container image repository |
-| `image.tag` | string | `"v2.21.0_1.0.0"` | Image tag (overrides Chart appVersion) |
+| `image.repository` | string | `"registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/tuned-agent"` | Container image repository |
+| `image.tag` | string | `"v2.21.0_1.0.0"` | Image tag |
 | `image.pullPolicy` | string | `"IfNotPresent"` | Image pull policy |
 | `profileName` | string | `"ocudu-tuned"` | Name of the tuned profile |
 | `profileContent` | string | See values.yaml | Tuned profile configuration |
