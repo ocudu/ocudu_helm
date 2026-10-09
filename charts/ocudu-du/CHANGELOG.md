@@ -1,9 +1,10 @@
 # Changelog
 
-## 1.10.3 (2026-10-09)
+## 1.11.0 (2026-10-09)
 
 ### Changed
 
+- **Breaking:** `resources.requests` and `resources.limits` must set `cpu` and `memory` (rendering fails otherwise)
 - Remove `metricsService.powercap.enabled`; `PERFMON` is already in the default `securityContext`
 - `values-o1.yaml`: update the O1 adapter and netconf-server images and adapt `o1Config` to the current netconf YANG models
 

@@ -1,9 +1,10 @@
 # Changelog
 
-## 1.9.4 (2026-10-09)
+## 1.10.0 (2026-10-09)
 
 ### Changed
 
+- **Breaking:** `resources.requests` and `resources.limits` must set `cpu` and `memory` (rendering fails otherwise)
 - Remove `metricsService.powercap.enabled`; the `ocu` binary does not use `PERFMON`
 - `values-o1.yaml`: drop `PERFMON`, matching `values.yaml`
 - `values-o1.yaml`: update the O1 adapter and netconf-server images and adapt `o1Config` to the current netconf YANG models

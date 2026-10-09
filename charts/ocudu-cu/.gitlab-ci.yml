@@ -12,6 +12,7 @@ helm lint:
   extends: .helm lint
   variables:
     CHART_PATH: charts/ocudu-cu
+    LINT_VALUES_FILE: charts/ocudu-cu/ci/lint-values.yaml
 
 helm version check:
   extends: .helm version check

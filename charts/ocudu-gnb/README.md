@@ -41,16 +41,16 @@ See [Network Modes](docs/network-modes.md) for detailed deployment mode comparis
 # Add the Helm repository (if using remote repo)
 # OCI registry - no need to add repo
 
-# Install with default values (SR-IOV mode)
-helm install ocudu-gnb oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-gnb --version 3.0.0
-
-# Or install with custom values
+# Install; my-values.yaml must set resources (see below)
 helm install ocudu-gnb oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-gnb --version 3.0.0 -f my-values.yaml
 
 # Local installation
 cd charts/ocudu-gnb
-helm install ocudu-gnb ./
+helm install ocudu-gnb ./ -f my-values.yaml
 ```
+
+`resources.requests` and `resources.limits` must both set `cpu` and `memory`; the chart does not
+render without them. Equal requests and limits give the pod Guaranteed QoS.
 
 After installation, Helm will display **post-install notes** with:
 - Deployment configuration summary
@@ -218,8 +218,8 @@ The default is `registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk`, tagged
 | `persistence.pvc.storageClassName` | string | `""` | StorageClass for PVC (empty = default) |
 | `persistence.pvc.size` | string | `"10Gi"` | PVC storage size |
 | `persistence.hostPath.path` | string | `"/mnt/debugging-logs"` | Host path for logs |
-| `resources.limits` | object | `{}` | Resource limits (CPU, memory, hugepages) |
-| `resources.requests` | object | `{}` | Resource requests (CPU, memory, hugepages) |
+| `resources.limits` | object | `{}` | Resource limits (CPU, memory, hugepages); `cpu` and `memory` are required |
+| `resources.requests` | object | `{}` | Resource requests (CPU, memory, hugepages); `cpu` and `memory` are required |
 | `nodeSelector` | object | `{}` | Node selector for pod assignment |
 | `tolerations` | list | `[]` | Tolerations for pod assignment |
 | `affinity` | object | `{}` | Affinity rules for pod assignment |
@@ -240,10 +240,7 @@ The gNB configuration file `gnb-config.yml` is defined in `values.yaml`. Refer t
 ## Upgrading
 
 ```bash
-# Upgrade to latest version
-helm upgrade ocudu-gnb oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-gnb --version 3.0.0
-
-# Upgrade with new values
+# Upgrade; pass the values file used for the install
 helm upgrade ocudu-gnb oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-gnb --version 3.0.0 -f my-values.yaml
 ```
 

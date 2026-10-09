@@ -135,7 +135,7 @@ securityContext:
       - SYS_NICE
       - IPC_LOCK
 
-# -- Resource requests and limits
+# -- Resource requests and limits. Required: requests and limits must each set cpu and memory.
 resources: {}
 
 # -- Network configuration

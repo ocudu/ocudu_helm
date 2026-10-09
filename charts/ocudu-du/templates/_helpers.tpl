@@ -163,3 +163,15 @@ Create the image path for the passed in image field of o1-adapter image
 {{- printf "%s:%s" .repository (.tag | toString) -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Fail unless resources.requests and resources.limits both set cpu and memory.
+*/}}
+{{- define "ocudu-du.requireResources" -}}
+{{- $resources := .Values.resources | default dict -}}
+{{- range $kind := list "requests" "limits" -}}
+{{- range $name := list "cpu" "memory" -}}
+{{- $_ := required (printf "resources.%s.%s is required (set cpu and memory in both resources.requests and resources.limits)" $kind $name) (get (get $resources $kind | default dict) $name) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

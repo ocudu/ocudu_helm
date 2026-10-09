@@ -149,3 +149,15 @@ flag — this is a single source of truth for the templates, not a tunable.
 See the o1Port note in values-o1.yaml.
 */}}
 {{- define "ocudu-cu-up.o1.tlsPort" -}}6513{{- end -}}
+
+{{/*
+Fail unless resources.requests and resources.limits both set cpu and memory.
+*/}}
+{{- define "ocudu-cu-up.requireResources" -}}
+{{- $resources := .Values.resources | default dict -}}
+{{- range $kind := list "requests" "limits" -}}
+{{- range $name := list "cpu" "memory" -}}
+{{- $_ := required (printf "resources.%s.%s is required (set cpu and memory in both resources.requests and resources.limits)" $kind $name) (get (get $resources $kind | default dict) $name) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

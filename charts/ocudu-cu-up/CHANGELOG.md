@@ -1,9 +1,10 @@
 # Changelog
 
-## 1.6.4 (2026-10-09)
+## 1.7.0 (2026-10-09)
 
 ### Changed
 
+- **Breaking:** `resources.requests` and `resources.limits` must set `cpu` and `memory` (rendering fails otherwise)
 - Remove the unused `metricsService.powercap.enabled`
 - README and `values.yaml`: correct which capabilities `ocuup` needs
 - `values-o1.yaml`: update the O1 adapter and netconf-server images

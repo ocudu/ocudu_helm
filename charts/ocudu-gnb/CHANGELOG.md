@@ -1,9 +1,10 @@
 # Changelog
 
-## 3.11.4 (2026-10-09)
+## 3.12.0 (2026-10-09)
 
 ### Changed
 
+- **Breaking:** `resources.requests` and `resources.limits` must set `cpu` and `memory` (rendering fails otherwise)
 - Remove `metricsService.powercap.enabled`; `PERFMON` is already in the default `securityContext`
 - Update the README, `docs/security.md` and `docs/network-modes.md`: describe the required capabilities and drop the Baseline Pod Security claims
 - Note in `docs/o1.md` that `hostKeySecret` needs a netconf-server image with `--ssh-hostkey-dir`

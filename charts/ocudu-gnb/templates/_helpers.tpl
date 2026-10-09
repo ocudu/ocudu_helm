@@ -183,3 +183,15 @@ Check whether N3 has an address that must be advertised to an external core.
   "false"
 {{- end -}}
 {{- end -}}
+
+{{/*
+Fail unless resources.requests and resources.limits both set cpu and memory.
+*/}}
+{{- define "ocudu-gnb.requireResources" -}}
+{{- $resources := .Values.resources | default dict -}}
+{{- range $kind := list "requests" "limits" -}}
+{{- range $name := list "cpu" "memory" -}}
+{{- $_ := required (printf "resources.%s.%s is required (set cpu and memory in both resources.requests and resources.limits)" $kind $name) (get (get $resources $kind | default dict) $name) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

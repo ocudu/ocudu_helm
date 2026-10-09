@@ -147,7 +147,7 @@ securityContext:
       - IPC_LOCK
       - PERFMON
 
-# -- Resource requests and limits
+# -- Resource requests and limits. Required: requests and limits must each set cpu and memory.
 # Hugepages are automatically configured when defined in limits or requests.
 # The chart detects hugepages-1Gi or hugepages-2Mi and creates volumes accordingly.
 #

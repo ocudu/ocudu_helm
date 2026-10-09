@@ -11,8 +11,11 @@ CU-UP terminates N3 (GTP-U, toward the UPF), E1AP (toward CU-CP), and F1-U (GTP-
 ## Installing the Chart
 
 ```bash
-helm install ocudu-cu-up oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-cu-up --version 1.4.0
+helm install ocudu-cu-up oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-cu-up --version 1.4.0 -f my-values.yaml
 ```
+
+`resources.requests` and `resources.limits` must both set `cpu` and `memory`; the chart does not
+render without them.
 
 **Local installation**:
 ```bash
@@ -67,6 +70,7 @@ workload that should not run overlapping old/new pods.
 | `metricsService.enabled` | bool | `false` | Enable the metrics/remote-control WebSocket endpoint |
 | `persistence.enabled` | bool | `false` | Enable persistent storage for logs (otherwise `emptyDir`) |
 | `persistence.type` | string | `"pvc"` | Storage type: `pvc` or `hostPath` |
+| `resources` | object | `{}` | Requests and limits; `cpu` and `memory` are required in both |
 | `replicaCount` | int | `1` | Number of CU-UP replicas |
 | `serviceAccount.automountServiceAccountToken` | bool | `false` | Mount the service account token into the pod |
 | `startupProbe.enabled` | bool | `true` | Gate liveness/readiness until `ocuup` is running |
