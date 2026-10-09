@@ -116,14 +116,16 @@ spec:
               mountPath: {{ .Values.ptp4l.authentication.mountPath }}
               readOnly: true
             {{- end }}
-          {{- if and (.Values.livenessProbe.enabled) (ne (default "0" (.Values.config.serverOnly | toString)) "1") }}
+          {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
             exec:
               command:
               - cat
-              - /tmp/ptp4l-healthy
+              - /tmp/ptp4l-alive
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
           {{- end }}
           {{- if and (.Values.startupProbe.enabled) (ne (default "0" (.Values.config.serverOnly | toString)) "1") }}
           startupProbe:
@@ -140,8 +142,10 @@ spec:
               command:
               - cat
               - /tmp/ptp4l-healthy
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
           {{- end }}
         - name: {{ .Chart.Name }}-phc2sys
           securityContext:
@@ -177,9 +181,11 @@ spec:
             exec:
               command:
               - cat
-              - /tmp/phc2sys-healthy
+              - /tmp/phc2sys-alive
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
           {{- end }}
           {{- if .Values.startupProbe.enabled }}
           startupProbe:
@@ -196,8 +202,10 @@ spec:
               command:
               - cat
               - /tmp/phc2sys-healthy
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
           {{- end }}
         {{- if .Values.config.ts2phc.enabled }}
         - name: {{ .Chart.Name }}-ts2phc
@@ -227,9 +235,11 @@ spec:
             exec:
               command:
               - cat
-              - /tmp/ts2phc-healthy
+              - /tmp/ts2phc-alive
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
           {{- end }}
           {{- if .Values.startupProbe.enabled }}
           startupProbe:
@@ -246,8 +256,10 @@ spec:
               command:
               - cat
               - /tmp/ts2phc-healthy
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
           {{- end }}
         {{- end }}
       priorityClassName: system-node-critical

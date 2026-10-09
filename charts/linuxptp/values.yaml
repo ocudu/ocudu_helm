@@ -206,11 +206,14 @@ startupProbe:
   periodSeconds: 10
 
 # -- Liveness probe configuration
-# Checks if PTP daemon is still running
+# Checks if the PTP processes still respond. Loss of synchronization does not
+# restart them; it is reported by the readiness probe
 livenessProbe:
   enabled: true
   initialDelaySeconds: 5
   periodSeconds: 5
+  timeoutSeconds: 2
+  failureThreshold: 3
 
 # -- Readiness probe configuration
 # Checks if PTP synchronization is healthy
@@ -218,6 +221,8 @@ readinessProbe:
   enabled: true
   initialDelaySeconds: 5
   periodSeconds: 5
+  timeoutSeconds: 2
+  failureThreshold: 3
 
 # ============================================================================
 # Optional: NTP Initial Synchronization For Host On Startup 

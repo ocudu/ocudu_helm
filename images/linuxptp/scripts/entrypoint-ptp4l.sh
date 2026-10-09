@@ -9,6 +9,8 @@ UPPER_LIMIT=${PTP4L_OFFSET_LIMIT:-25}
 LOWER_LIMIT=-${UPPER_LIMIT}
 POLL_INTERVAL=2
 HEALTH_FILE=/tmp/ptp4l-healthy
+ALIVE_FILE=/tmp/ptp4l-alive
+ALIVE_MAX_MISSES=3
 GM_ALLOWLIST_PREF_START=38000
 GM_ALLOWLIST_DROP_PREF=38099
 
@@ -82,17 +84,28 @@ cleanup() {
   trap - SIGTERM SIGINT
   stop_process "${ptp4l_pid:-}"
   stop_process "${monitor_pid:-}"
-  rm -f "$HEALTH_FILE"
+  rm -f "$HEALTH_FILE" "$ALIVE_FILE"
   cleanup_gm_allowlist
   exit "$rc"
 }
 
 trap 'echo "Received SIGTERM, stopping ptp4l..."; cleanup 0' SIGTERM SIGINT
 
+# ALIVE_FILE: ptp4l answers management requests (liveness).
+# HEALTH_FILE: ptp4l is synchronized (startup and readiness).
 monitor() {
+  local misses=0
   while true; do
     state=$(pmc -u -b 0 'GET PORT_DATA_SET' -f /etc/config/linuxptp.cfg 2>/dev/null \
       | grep -oP 'portState\s+\K\w+' | head -1)
+
+    if [[ -n "$state" ]]; then
+      misses=0
+      touch "$ALIVE_FILE"
+    else
+      misses=$((misses + 1))
+      (( misses < ALIVE_MAX_MISSES )) || rm -f "$ALIVE_FILE"
+    fi
 
     if [[ "$state" != "SLAVE" ]]; then
       rm -f "$HEALTH_FILE"

@@ -9,6 +9,8 @@
 # file (/tmp/healthcheck) in case the application is running correct. It has a timeout
 # of 10 seconds of not receiving a valid NMEA messages. If the timeout is reached,
 # the health check file is removed and the applications terminates.
+# A separate file (/tmp/ts2phc-alive) is kept while ts2phc prints new lines,
+# whatever their values, and is used for liveness.
 
 ts2phc_output_file=$1
 upper_rms_limit="${2:-25}"           # max rms threshold, default 25ns
@@ -16,15 +18,26 @@ lower_rms_limit=-$upper_rms_limit    # min rms threshold
 timeout=10                           # timeout in seconds
 last_timestamp=0
 counter=0
+last_alive_timestamp=0
+alive_counter=0
 
 while true; do
     last_line=$(grep 'offset' "$ts2phc_output_file" | tail -n 1)
+
+    alive_timestamp=$(tail -n 1 "$ts2phc_output_file" | awk -F'[][]' '{print $2}' | cut -d'.' -f1)
+    if [[ $alive_timestamp =~ ^[0-9]+$ ]] && [ "$alive_timestamp" -gt "$last_alive_timestamp" ]; then
+        touch /tmp/ts2phc-alive
+        last_alive_timestamp=$alive_timestamp
+        alive_counter=0
+    else
+        ((alive_counter++))
+    fi
 
     if [[ -z $last_line ]]; then
         echo "Warning: No valid offset data found. Check if the GPS antenna is connected properly."
         ((counter++))
     elif [[ $last_line == *"s2"* ]]; then
-        timestamp=$(echo "$last_line" | awk -F'[][]' '{print $2}')
+        timestamp=$(echo "$last_line" | awk -F'[][]' '{print $2}' | cut -d'.' -f1)
         last_rms_value=$(echo "$last_line" | sed -n 's/.*offset\s*\([-0-9]*\)\s*s2.*/\1/p' | awk '{print int($1)}')
 
         # Check if both timestamp and last_rms_value are valid integers
@@ -51,6 +64,9 @@ while true; do
 
     if [ "$counter" -gt "$timeout" ]; then
         rm -f /tmp/ts2phc-healthy
+    fi
+    if [ "$alive_counter" -gt "$timeout" ]; then
+        rm -f /tmp/ts2phc-alive
     fi
     sleep 2
 done

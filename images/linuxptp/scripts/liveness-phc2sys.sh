@@ -9,6 +9,8 @@
 # file (/tmp/phc2sys-healthy) in case the application is running correct. It has a timeout
 # of 10 seconds of not receiving a valid NMEA messages. If the timeout is reached,
 # the health check file is removed and the applications terminates.
+# A separate file (/tmp/phc2sys-alive) is kept while phc2sys prints new lines,
+# whatever their values, and is used for liveness.
 
 phc2sys_output_file=$1
 upper_limit=120   # max rms
@@ -16,9 +18,20 @@ lower_limit=-120  # min rms
 timeout=10        # timeout in seconds
 last_timestamp=0
 counter=0
+last_alive_timestamp=0
+alive_counter=0
 
 while true; do
     last_line=$(tail -n 1 "$phc2sys_output_file")
+
+    alive_timestamp=$(echo "$last_line" | awk -F'[][]' '{print $2}' | cut -d'.' -f1)
+    if [[ $alive_timestamp =~ ^[0-9]+$ ]] && [ "$alive_timestamp" -gt "$last_alive_timestamp" ]; then
+        touch /tmp/phc2sys-alive
+        last_alive_timestamp=$alive_timestamp
+        alive_counter=0
+    else
+        ((alive_counter++))
+    fi
 
     if [[ -z $last_line ]]; then
         echo "Warning: No new data found in $phc2sys_output_file. Check if the system is working properly."
@@ -51,6 +64,9 @@ while true; do
     if [ "$counter" -gt "$timeout" ]; then
         echo "Timeout reached: No valid data received for $timeout seconds. Marking system as unhealthy."
         rm -f /tmp/phc2sys-healthy
+    fi
+    if [ "$alive_counter" -gt "$timeout" ]; then
+        rm -f /tmp/phc2sys-alive
     fi
     sleep 1
 done

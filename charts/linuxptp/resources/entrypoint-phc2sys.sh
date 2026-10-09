@@ -10,6 +10,7 @@ NTP_SERVER=${2}
 LOGFILE=/tmp/phc2sys.stdout
 PIPE=/tmp/phc2sys.pipe
 HEALTH_FILE=/tmp/phc2sys-healthy
+ALIVE_FILE=/tmp/phc2sys-alive
 
 stop_process() {
   local pid="${1:-}"
@@ -24,7 +25,7 @@ cleanup() {
   stop_process "${phc2sys_pid:-}"
   stop_process "${liveness_pid:-}"
   stop_process "${tee_pid:-}"
-  rm -f "$PIPE" "$HEALTH_FILE"
+  rm -f "$PIPE" "$HEALTH_FILE" "$ALIVE_FILE"
   exit "$rc"
 }
 

@@ -9,6 +9,7 @@ INTERFACE=$1
 LOGFILE=/tmp/ts2phc.stdout
 PIPE=/tmp/ts2phc.pipe
 HEALTH_FILE=/tmp/ts2phc-healthy
+ALIVE_FILE=/tmp/ts2phc-alive
 
 stop_process() {
   local pid="${1:-}"
@@ -23,7 +24,7 @@ cleanup() {
   stop_process "${ts2phc_pid:-}"
   stop_process "${liveness_pid:-}"
   stop_process "${tee_pid:-}"
-  rm -f "$PIPE" "$HEALTH_FILE"
+  rm -f "$PIPE" "$HEALTH_FILE" "$ALIVE_FILE"
   exit "$rc"
 }
 
