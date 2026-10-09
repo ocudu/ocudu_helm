@@ -93,6 +93,10 @@ spec:
           env:
             - name: PTP4L_OFFSET_LIMIT
               value: "{{ .Values.ptp4l.offsetLimitNs }}"
+            {{- if .Values.ptp4l.meanPathDelayLimitNs }}
+            - name: PTP4L_MEAN_PATH_DELAY_LIMIT
+              value: "{{ int .Values.ptp4l.meanPathDelayLimitNs }}"
+            {{- end }}
             {{- if .Values.ptp4l.grandmasterAllowList.enabled }}
             - name: PTP4L_GM_ALLOWLIST_ENABLED
               value: "true"

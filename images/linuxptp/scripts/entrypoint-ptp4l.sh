@@ -7,6 +7,7 @@ set -e
 
 UPPER_LIMIT=${PTP4L_OFFSET_LIMIT:-25}
 LOWER_LIMIT=-${UPPER_LIMIT}
+DELAY_LIMIT=${PTP4L_MEAN_PATH_DELAY_LIMIT:-0}
 POLL_INTERVAL=2
 STATUS_INTERVAL=60
 HEALTH_FILE=/tmp/ptp4l-healthy
@@ -119,7 +120,8 @@ log_increase() {
 }
 
 # ALIVE_FILE: ptp4l answers management requests (liveness).
-# HEALTH_FILE: ptp4l is synchronized (startup and readiness).
+# HEALTH_FILE: ptp4l is synchronized within the offset and path delay limits
+# (startup and readiness).
 # Port state, parent, grandmaster, receipt timeouts and health changes are
 # logged when they happen, with a status line every STATUS_INTERVAL seconds.
 # With several interfaces the first port is reported.
@@ -172,6 +174,8 @@ monitor() {
       reason="no offset"
     elif ! compare "$offset" '<=' "$UPPER_LIMIT" || ! compare "$offset" '>=' "$LOWER_LIMIT"; then
       reason="offset $offset ns outside +/-$UPPER_LIMIT ns"
+    elif compare "$DELAY_LIMIT" '>' 0 && ! compare "$delay" '<=' "$DELAY_LIMIT"; then
+      reason="path delay $delay ns above $DELAY_LIMIT ns"
     else
       reason=""
     fi

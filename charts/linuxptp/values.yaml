@@ -160,6 +160,11 @@ ptp4l:
   # @default -- `25`
   offsetLimitNs: 25
 
+  # -- Maximum allowed meanPathDelay in nanoseconds before the health file is removed.
+  # 0 disables the check. Set it above the normal path delay to detect added delay
+  # @default -- `0`
+  meanPathDelayLimitNs: 0
+
   # -- IEEE 1588-2019 / PTPv2.1 Authentication TLV support
   authentication:
     # -- Enable LinuxPTP Authentication TLV configuration for ptp4l
