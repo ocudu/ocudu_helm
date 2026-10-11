@@ -44,9 +44,11 @@ The default security context adds three Linux capabilities:
 - `PERFMON`: the gNB reads the CPU energy counters (RAPL) with `perf_event_open()` for its power
   metrics. The gNB runs without it; only the power metric is missing.
 
-The image carries all three as file capabilities on `/usr/local/bin/gnb` with the effective bit
-set. With that bit set, the kernel refuses to start the binary (`EPERM`) unless the container's
-capabilities include every one of them, so none can be left out of `capabilities.add`.
+The image carries all three as permitted-only file capabilities on `/usr/local/bin/gnb` (no
+effective bit). The gNB starts with whichever of them the container grants and raises them at
+startup, so a capability left out of `capabilities.add` only disables what depends on it, as
+described above. Older images set the effective bit (`getcap` shows `=ep`); with those, the
+kernel refuses to start the binary (`EPERM`) unless the container grants all three.
 
 ### Recommended Configuration
 
@@ -85,9 +87,9 @@ The chart default only works end-to-end when two infra conditions are met. Witho
 
 1. **Image must have file capabilities baked into the `gnb` binary.** The chart-default pod runs as uid=1000. Linux drops inherited capabilities on `execve()` to a non-root uid unless the binary itself declares them via xattrs. The OCUDU Dockerfile includes:
    ```dockerfile
-   RUN setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+ep /usr/local/bin/gnb
+   RUN setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+p /usr/local/bin/gnb
    ```
-   Verify in the built image with `getcap /usr/local/bin/gnb` → expect `cap_ipc_lock,cap_sys_nice,cap_perfmon=ep`.
+   Verify in the built image with `getcap /usr/local/bin/gnb` → expect `cap_ipc_lock,cap_sys_nice,cap_perfmon=p`.
 
    File capabilities only apply while `allowPrivilegeEscalation` is `true`. Setting it to `false` sets `no_new_privs`, and the kernel then ignores file capabilities, so the gNB runs with none of the three.
 
@@ -221,7 +223,7 @@ securityContext:
     add:
       - SYS_NICE      # SCHED_FIFO real-time threads
       - IPC_LOCK      # DPDK DMA memory pinned through VFIO
-      - PERFMON       # RAPL power metric; required by the image's file capabilities
+      - PERFMON       # RAPL power metric; optional
 ```
 
 **Advantages:**
@@ -233,7 +235,7 @@ securityContext:
 - vfio-pci driver loaded; IOMMU enabled in BIOS
 - SR-IOV Device Plugin configured
 - A namespace that enforces the Privileged Pod Security level (see [Required Capabilities](#required-capabilities))
-- **Image has** `setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+ep /usr/local/bin/gnb`
+- **Image has** `setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+p /usr/local/bin/gnb`
 - **Node's containerd has** `device_ownership_from_security_context = true`
 
 See the "Prerequisites for the minimum-privilege default" section above for details on the last two items. See [network-modes.md](network-modes.md) and [sriov-setup.md](sriov-setup.md) for network/SR-IOV setup.

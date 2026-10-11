@@ -31,7 +31,7 @@ Before installing, ensure your environment meets these requirements:
    - **hostNetwork mode**: Physical network interface for OpenFronthaul communication
    - **SR-IOV mode** (recommended for production): SR-IOV device plugin deployed in cluster
 4. **Non-root prerequisites** (for the default minimum-privilege securityContext):
-   - Image has file caps on the binary: `setcap cap_sys_nice,cap_ipc_lock+ep /usr/local/bin/ru_emulator` (OCUDU images include this by default)
+   - Image has file caps on the binary: `setcap cap_sys_nice,cap_ipc_lock+p /usr/local/bin/ru_emulator` (OCUDU images include this by default)
    - Node's containerd has `device_ownership_from_security_context = true`
    - If either condition isn't met, override `securityContext` (run as root / broader caps) or add the prerequisites to your cluster
 5. **Node Selection**: Use `nodeSelector` to target nodes with appropriate hardware
@@ -210,7 +210,7 @@ config:
       vlan_tag: 6
 
 # Minimum-privilege security context (chart default — shown for reference).
-# Requires image with setcap cap_sys_nice,cap_ipc_lock+ep /usr/local/bin/ru_emulator
+# Requires image with setcap cap_sys_nice,cap_ipc_lock+p /usr/local/bin/ru_emulator
 # and node containerd with device_ownership_from_security_context = true.
 podSecurityContext:
   runAsNonRoot: true
@@ -281,8 +281,9 @@ This eliminates manual configuration of PCI addresses and MAC addresses.
 - `SYS_NICE`: `SCHED_FIFO` on DPDK timing / tx-rx threads
 - `IPC_LOCK`: DMA memory DPDK pins through VFIO, which otherwise counts against the locked-memory limit
 
-The image sets both as file capabilities with the effective bit, so the binary does not start
-unless the container has both.
+The image sets both as permitted-only file capabilities; the binary starts with whichever of
+them the container grants and raises them at startup. Older images set the effective bit
+(`getcap` shows `=ep`) and do not start unless the container has both.
 
 Device access (VFIO group node permissions) is handled by containerd's
 `device_ownership_from_security_context = true` flag, not by a capability. The

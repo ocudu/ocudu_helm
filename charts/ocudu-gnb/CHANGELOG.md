@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.12.3 (2026-10-11)
+
+### Changed
+
+- README, `docs/security.md`, `values.yaml` and `values-o1.yaml`: describe the permitted-only file capabilities (`+p`) of current images; `gnb` starts with any subset of them
+
 ## 3.12.2 (2026-10-10)
 
 ### Added

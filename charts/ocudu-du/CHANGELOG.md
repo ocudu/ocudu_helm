@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.11.2 (2026-10-11)
+
+### Changed
+
+- `values.yaml`, `values-o1.yaml`: describe the permitted-only file capabilities (`+p`) of current images; `odu` starts with any subset of them
+
 ## 1.11.1 (2026-10-09)
 
 ### Changed

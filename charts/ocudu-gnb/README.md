@@ -28,7 +28,7 @@ Before deploying, ensure:
 3. **DPDK Driver**: Network interface bound to DPDK-compatible driver (`igb_uio` or `vfio-pci`)
 4. **Hugepages**: Configure hugepages for optimal DPDK performance (see [Hugepages Guide](docs/hugepages.md))
 5. **Non-root prerequisites** (for the default minimum-privilege securityContext to work):
-   - Image has file caps on the binary: `setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+ep /usr/local/bin/gnb`
+   - Image has file caps on the binary: `setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+p /usr/local/bin/gnb`
    - Node's containerd has `device_ownership_from_security_context = true`
    - Namespace enforces the Privileged Pod Security level: Baseline rejects `SYS_NICE`, `IPC_LOCK` and `PERFMON`
 

@@ -125,8 +125,10 @@ podSecurityContext:
 #
 # Default: minimum-privilege shape for SR-IOV Device Plugin + vfio-pci.
 # Requires the image to have file capabilities baked into /usr/local/bin/odu
-# (setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+ep) and containerd
-# `device_ownership_from_security_context = true` on the node.
+# (setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+p) and containerd
+# `device_ownership_from_security_context = true` on the node. odu starts with
+# whichever of the three the container grants; without PERFMON only the power
+# metric is missing.
 securityContext:
   allowPrivilegeEscalation: true
   privileged: false

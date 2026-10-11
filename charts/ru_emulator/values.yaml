@@ -66,7 +66,7 @@ podSecurityContext:
 #
 # REQUIREMENTS for this default to work:
 #   1. Image must have file capabilities on /usr/local/bin/ru_emulator:
-#        RUN setcap cap_sys_nice,cap_ipc_lock+ep /usr/local/bin/ru_emulator
+#        RUN setcap cap_sys_nice,cap_ipc_lock+p /usr/local/bin/ru_emulator
 #   2. Node's containerd must set `device_ownership_from_security_context = true`
 #      so VFIO device nodes are chown'd to the pod's runAsUser/runAsGroup.
 #   3. allowPrivilegeEscalation MUST be true for file caps to take effect.
