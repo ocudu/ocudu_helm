@@ -79,6 +79,9 @@ podSecurityContext:
   fsGroup: 1000
 
 # -- Container-level security context.
+# The image bakes SYS_NICE and PERFMON into /usr/local/bin/ocu as
+# permitted-only file capabilities (setcap cap_sys_nice,cap_perfmon+p); ocu
+# starts with whichever of them the container grants. See values.yaml.
 securityContext:
   allowPrivilegeEscalation: true
   privileged: false
@@ -86,7 +89,6 @@ securityContext:
     drop: ["ALL"]
     add:
       - SYS_NICE
-      - IPC_LOCK
 
 # -- Resource requests and limits. Required: requests and limits must each set cpu and memory.
 resources: {}

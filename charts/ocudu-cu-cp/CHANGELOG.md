@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.8.0 (2026-10-11)
+
+### Changed
+
+- Drop `IPC_LOCK` from the default `securityContext` in `values.yaml` and `values-o1.yaml`; `ocucp` uses no DPDK. Needs an image with permitted-only file capabilities (`getcap` shows `=p`); older images fail with `EPERM` unless `IPC_LOCK` is added back
+- README and `values.yaml`: describe the permitted-only file capabilities; remove `PERFMON` to pass the CNTI `insecure_capabilities` check
+
 ## 1.7.1 (2026-10-09)
 
 ### Changed

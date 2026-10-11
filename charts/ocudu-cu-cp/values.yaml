@@ -129,20 +129,19 @@ initCommand:
   - --
 
 # -- Container-level security context
-# ocucp itself only needs SYS_NICE, for the SCHED_FIFO priority of its worker
-# pool and I/O thread; without it, it warns and runs them at normal priority. It
-# uses no DPDK and locks no memory (IPC_LOCK), and reads PERFMON only for the
-# RAPL power metric.
+# ocucp needs SYS_NICE for the SCHED_FIFO priority of its worker pool and I/O
+# thread; without it, it warns and runs them at normal priority. It uses PERFMON
+# only to read the RAPL power metric, and runs without it.
 #
-# All three are still required: the image bakes them into /usr/local/bin/ocucp
-# as file capabilities (setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+ep), which
-# makes both settings below load-bearing: with the `+ep` bits set the kernel fails the exec with
-# EPERM unless every one of those capabilities is in the container's bounding
-# set, and NO_NEW_PRIVS (allowPrivilegeEscalation: false) makes the kernel
-# ignore file capabilities altogether.
+# The image bakes both into /usr/local/bin/ocucp as permitted-only file
+# capabilities (setcap cap_sys_nice,cap_perfmon+p). ocucp starts with whichever
+# of them the container grants, so either can be removed below. File
+# capabilities need allowPrivilegeEscalation: true; NO_NEW_PRIVS
+# (allowPrivilegeEscalation: false) makes the kernel ignore them altogether.
 #
-# PERFMON is on kubescape's insecure-capability list, so the CNTI
-# privilege_escalation and insecure_capabilities checks fail here by design.
+# PERFMON is on kubescape's insecure-capability list: remove it to pass the CNTI
+# insecure_capabilities check, at the cost of the power metric. The
+# privilege_escalation check fails regardless.
 securityContext:
   allowPrivilegeEscalation: true
   privileged: false
@@ -150,7 +149,6 @@ securityContext:
     drop: ["ALL"]
     add:
       - SYS_NICE
-      - IPC_LOCK
       - PERFMON
 
 # -- Resource requests and limits. Required: requests and limits must each set cpu and memory.

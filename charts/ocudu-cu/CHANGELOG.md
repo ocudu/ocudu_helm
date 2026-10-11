@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.11.0 (2026-10-11)
+
+### Changed
+
+- Drop `IPC_LOCK` from the default `securityContext` in `values.yaml` and `values-o1.yaml`; `ocu` uses no DPDK. Needs an image with permitted-only file capabilities (`getcap` shows `=p`); older images fail with `EPERM` unless `IPC_LOCK` is added back
+- `values.yaml`, `values-o1.yaml`: describe the file capabilities; add `PERFMON` to read the RAPL power metric
+
 ## 1.10.1 (2026-10-09)
 
 ### Changed

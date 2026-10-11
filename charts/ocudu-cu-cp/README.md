@@ -144,7 +144,7 @@ not a production one. Logs default to an `emptyDir` for that reason.
 ## Security Context and Capabilities
 
 The chart defaults are otherwise restrictive — non-root pod, every capability
-dropped except the three below, no service account token, no RBAC, no hostPath,
+dropped except the two below, no service account token, no RBAC, no hostPath,
 no privileged container — but two settings are deliberately not at their most
 restrictive value:
 
@@ -152,31 +152,32 @@ restrictive value:
 securityContext:
   allowPrivilegeEscalation: true
   capabilities:
-    add: [SYS_NICE, IPC_LOCK, PERFMON]
+    add: [SYS_NICE, PERFMON]
 ```
 
-Only `SYS_NICE` is something `ocucp` itself needs: it runs its worker pool and its
-I/O thread at `SCHED_FIFO` priority. Without it, `ocucp` prints
-`Scheduling priority of thread "..." not changed` and runs those threads at normal
-priority. `ocucp` uses no DPDK and locks no memory, so it never uses `IPC_LOCK`.
-It uses `PERFMON` only to read the RAPL power metric, and runs without it.
+`ocucp` needs `SYS_NICE` to run its worker pool and its I/O thread at `SCHED_FIFO`
+priority. Without it, `ocucp` prints `Scheduling priority of thread "..." not changed`
+and runs those threads at normal priority. It uses `PERFMON` only to read the RAPL
+power metric, and runs without it.
 
-All three are still required, because the image bakes them into the binary as
-*file* capabilities (`setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+ep`). The same
-file capabilities force `allowPrivilegeEscalation: true`. Two kernel rules apply:
+The image bakes both into the binary as permitted-only *file* capabilities
+(`setcap cap_sys_nice,cap_perfmon+p`). Two kernel rules apply:
 
-- with the `+ep` bits set, every capability in the file's permitted set must also
-  be in the container's bounding set, or `execve()` fails with `EPERM` — dropping
-  any of the three from `capabilities.add` means the container never starts;
+- without the effective bit, `execve()` succeeds with whichever of the file's
+  capabilities the container grants, and `ocucp` raises them at startup, so
+  removing either from `capabilities.add` only disables what depends on it;
 - `allowPrivilegeEscalation: false` sets `NO_NEW_PRIVS`, under which the kernel
-  ignores file capabilities entirely, so the process would start without the
-  privileges it needs.
+  ignores file capabilities entirely, so the process would start without any of
+  them.
+
+Older OCUDU images also carry `IPC_LOCK` and set the effective bit
+(`getcap /usr/local/bin/ocucp` shows `=ep`). They refuse to start (`EPERM`) unless
+the container grants all three, so add `IPC_LOCK` back when running one.
 
 `PERFMON` is on kubescape's insecure-capability list (C-0046), so the CNTI
-`privilege_escalation` and `insecure_capabilities` checks fail against this chart
-**by design**. Treat that as a known, accepted result for this workload rather
-than something to configure away; use the test suite's exception mechanism if the
-notifications need silencing.
+`insecure_capabilities` check fails while it is granted. Remove it to pass that
+check without the power metric. The `privilege_escalation` check fails regardless,
+because file capabilities need `allowPrivilegeEscalation: true`.
 
 The O1 sidecars carry their own `securityContext` values under
 `o1.o1Adapter` / `o1.netconfServer` and are unaffected by the above.

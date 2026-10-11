@@ -126,6 +126,11 @@ initCommand:
   - --
 
 # -- Container-level security context.
+# ocu needs SYS_NICE for the SCHED_FIFO priority of its threads. The image bakes
+# SYS_NICE and PERFMON into /usr/local/bin/ocu as permitted-only file
+# capabilities (setcap cap_sys_nice,cap_perfmon+p), and ocu starts with
+# whichever of them the container grants. Add PERFMON to read the RAPL power
+# metric.
 securityContext:
   allowPrivilegeEscalation: true
   privileged: false
@@ -133,7 +138,6 @@ securityContext:
     drop: ["ALL"]
     add:
       - SYS_NICE
-      - IPC_LOCK
 
 # -- Resource requests and limits. Required: requests and limits must each set cpu and memory.
 resources: {}
