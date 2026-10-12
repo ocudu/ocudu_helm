@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# Lint fixture for `ipsec.protectN2`: F1-C, E1 and N2 each in their own tunnel, the last
+# one to an AMF that runs its own IKEv2 peer. Not a deployment example.
+
+f1cService:
+  enabled: false
+e1Service:
+  enabled: false
+# Refused while N2 is protected: it would publish the N2 port on the pod address.
+n2Service:
+  enabled: false
+
+networkPolicy:
+  enabled: true
+
+ipsec:
+  enabled: true
+  protectN2: true
+  certSecret: ocudu-cu-cp-ipsec
+  localId: cu-cp.example.com
+  peers:
+    du:
+      id: du.example.com
+    cuup:
+      id: cu-up.example.com
+    amf:
+      id: amf.example.com
+      # The CU-CP opens N2, so it is the side that dials.
+      address: open5gs-amf-ipsec
+  connections:
+    f1c:
+      peer: du
+      protocol: sctp
+      local: 100.64.10.1
+      remote: 100.64.10.2
+    e1:
+      peer: cuup
+      protocol: sctp
+      local: 100.64.20.1
+      remote: 100.64.20.2
+    n2:
+      peer: amf
+      protocol: sctp
+      local: 100.64.60.1
+      remote: 100.64.60.2
+
+config:
+  cu-cp-config.yml: |-
+    cu_cp:
+      amf:
+        addrs: 100.64.60.2
+        bind_addrs: 100.64.60.1
+
+      e1ap:
+        bind_addrs: 100.64.20.1
+
+      f1ap:
+        bind_addrs: 100.64.10.1

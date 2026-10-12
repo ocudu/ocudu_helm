@@ -563,6 +563,15 @@ ipsec:
   # @default -- `{}`
   connections: {}
 
+  # -- Carry N3 in a tunnel too, to a core-side peer (the UPF) that terminates IKEv2.
+  # Add the UPF as a peer with a connection for N3, and point `cu_up.ngu.socket[].bind_addr`
+  # at its protected address. The `ngu` section is then checked like F1-U and E1, the
+  # entrypoint stops binding N3 to the pod address, and the policy allows the core the
+  # tunnel instead of plaintext UDP 2152. The UPF has to advertise its protected address,
+  # so that is where the SMF sends this side's uplink.
+  # @default -- `false`
+  protectN3: false
+
   ike:
     # -- IKE proposal. Exactly one, so there is nothing to fall back to.
     proposal: aes256gcm16-prfsha384-ecp256

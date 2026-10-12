@@ -184,8 +184,9 @@ ipsec:
 The interface name and interface id are derived from the connection name, so they are only
 worth setting where a specific value is required.
 
-**N2 is not protected.** That needs a peer on the core side which terminates IKEv2.
-The policy keeps its plaintext rule for the core and the chart claims nothing about it.
+**N2 is protected only with `ipsec.protectN2`**, against a core-side peer (AMF) that
+terminates IKEv2. Without it the policy keeps its plaintext rule for the core and the chart
+claims nothing about N2.
 
 The application has to bind the protected addresses, and the chart refuses to render if it
 does not — along with a dozen other configurations that would leave traffic unprotected.

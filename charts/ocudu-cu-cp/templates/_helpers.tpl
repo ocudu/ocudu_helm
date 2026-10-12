@@ -256,6 +256,9 @@ like success and is not. A failed install is recoverable; plaintext on the wire 
 {{- if .Values.e1Service.enabled -}}
 {{- fail "ipsec.enabled needs e1Service.enabled to be false: that service publishes an unprotected path to the E1 port on the pod address, which is the bypass this feature exists to close" -}}
 {{- end -}}
+{{- if and .Values.ipsec.protectN2 .Values.n2Service.enabled -}}
+{{- fail "ipsec.protectN2 needs n2Service.enabled to be false: that service publishes an unprotected path to the N2 port on the pod address, which is the bypass this feature exists to close" -}}
+{{- end -}}
 
 {{- if and (not .Values.networkPolicy.enabled) (not .Values.ipsec.allowWithoutNetworkPolicy) -}}
 {{- fail "ipsec.enabled needs networkPolicy.enabled to be true: without a policy the application can still address the peer directly and send in clear, and nothing inside the pod can stop it. Set ipsec.allowWithoutNetworkPolicy to true only where unprotected traffic is blocked some other way" -}}
@@ -368,8 +371,19 @@ interface it was meant to protect would be somewhere else entirely, in clear.
 {{- end -}}
 
 {{- $blob := include "ocudu-cu-cp.ipsec.configBlob" . -}}
+{{- $sections := list "f1ap" "e1ap" "xnap" -}}
+{{- if .Values.ipsec.protectN2 -}}
+{{- $sections = append $sections "amf" -}}
+{{/*
+The entrypoint no longer supplies an N2 bind address, so one has to be here. Without it the
+application binds the wildcard on its own, and the address check below never sees it.
+*/}}
+{{- if not (regexMatch "(?m)^(- )?bind_addrs?:" (include "ocudu-cu-cp.ipsec.section" (dict "blob" $blob "key" "amf"))) -}}
+{{- fail "ipsec.protectN2 needs cu_cp.amf.bind_addrs: without it the application binds N2 to the wildcard address, and N2 leaves from the pod address outside the tunnel" -}}
+{{- end -}}
+{{- end -}}
 {{- $protected := "" -}}
-{{- range $key := (list "f1ap" "e1ap" "xnap") -}}
+{{- range $key := $sections -}}
 {{- $protected = printf "%s\n%s" $protected (include "ocudu-cu-cp.ipsec.section" (dict "blob" $blob "key" $key)) -}}
 {{- end -}}
 {{/*

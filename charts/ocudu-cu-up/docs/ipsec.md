@@ -448,9 +448,12 @@ and it claims nothing about any CNI beyond the requirements listed above.
 - **O1 and IPsec cannot be combined.** In O1 mode the config comes from the datastore at
   runtime, so the chart cannot check that the application binds to the protected addresses,
   and the O1 interface could move it off them afterwards.
-- **N3 is not protected.** It needs a peer on the core side that terminates IKEv2. Until
-  there is one, the policy keeps its plaintext rule for the core and the chart makes no
-  claim about that interface.
+- **N3 is protected only with `ipsec.protectN3`.** It needs a peer on the core side (UPF)
+  that terminates IKEv2 with a certificate from the same authority. Without the flag, the
+  policy keeps its plaintext rule for the core and the chart makes no claim about that
+  interface. With it, `cu_up.ngu.socket[].bind_addr` must name the protected addresses, the
+  entrypoint no longer binds N3 to the pod address, and the core is allowed the tunnel
+  only.
 - **A kernel-bypass datapath is not protected.** Traffic that never reaches the kernel
   network stack never reaches XFRM either. This applies to F1-U carried over a bypass
   datapath, not to E1.

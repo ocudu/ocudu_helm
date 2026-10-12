@@ -260,6 +260,8 @@ spec:
                   fieldPath: status.podIP
             - name: HOSTNETWORK
               value: '{{ .Values.network.hostNetwork }}'
+            - name: IPSEC_PROTECT_N2
+              value: '{{ and .Values.ipsec.enabled .Values.ipsec.protectN2 }}'
             - name: OCUDU_LOG_DIR
               value: {{ .Values.persistence.mountPath | quote }}
             - name: OCUDU_WORK_DIR

@@ -190,7 +190,9 @@ ipsec:
 The interface name and interface id are derived from the connection name, so they are only
 worth setting where a specific value is required.
 
-**N3 is not protected.** That needs a peer on the core side which terminates IKEv2.
+**N3 is protected only with `ipsec.protectN3`**, against a core-side peer (UPF) that
+terminates IKEv2. Without it the policy keeps its plaintext rule for the core and the chart
+claims nothing about N3.
 
 **F1-U must not use the core's GTP-U port.** The policy has to leave UDP 2152 open for the
 core, and that rule names a port and an address range rather than a peer, so while F1-U

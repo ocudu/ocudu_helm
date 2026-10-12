@@ -260,6 +260,8 @@ spec:
                   fieldPath: status.podIP
             - name: HOSTNETWORK
               value: '{{ .Values.network.hostNetwork }}'
+            - name: IPSEC_PROTECT_N3
+              value: '{{ and .Values.ipsec.enabled .Values.ipsec.protectN3 }}'
             {{- with .Values.n3Service.advertisedAddress }}
             # Keep the socket on the pod address, but signal the address through
             # which the core can reach the N3 Service.

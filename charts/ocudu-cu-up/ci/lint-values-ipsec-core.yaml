@@ -1,0 +1,65 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# Lint fixture for `ipsec.protectN3`: E1, F1-U and N3 each in their own tunnel, the last
+# one to a UPF that runs its own IKEv2 peer. Not a deployment example.
+
+f1uService:
+  enabled: false
+e1Service:
+  enabled: false
+# Refused while N3 is protected: it would publish the N3 port on the pod address.
+n3Service:
+  enabled: false
+
+networkPolicy:
+  enabled: true
+
+ipsec:
+  enabled: true
+  protectN3: true
+  certSecret: ocudu-cu-up-ipsec
+  localId: cu-up.example.com
+  peers:
+    cucp:
+      id: cu-cp.example.com
+      address: ocudu-cu-cp-ipsec
+    du:
+      id: du.example.com
+    upf:
+      id: upf.example.com
+      address: open5gs-upf-ipsec
+  connections:
+    e1:
+      peer: cucp
+      protocol: sctp
+      local: 100.64.20.2
+      remote: 100.64.20.1
+    f1u:
+      peer: du
+      protocol: udp
+      local: 100.64.30.1
+      remote: 100.64.30.2
+    n3:
+      peer: upf
+      protocol: udp
+      local: 100.64.70.1
+      remote: 100.64.70.2
+
+config:
+  cu-up-config.yml: |-
+    cu_up:
+      e1ap:
+        gateways:
+          - addrs: 100.64.20.1
+            bind_addrs: 100.64.20.2
+
+      f1u:
+        bind_port: 2151
+        peer_port: 2151
+        socket:
+          - bind_addr: 100.64.30.1
+
+      ngu:
+        socket:
+          - bind_addr: 100.64.70.1

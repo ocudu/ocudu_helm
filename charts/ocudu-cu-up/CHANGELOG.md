@@ -4,6 +4,7 @@
 
 ### Added
 
+- `ipsec.protectN3`: carry N3 in a tunnel as well, to a core-side peer (UPF) that runs its own IKEv2 endpoint. Add the UPF as a peer with a connection for N3, and point `cu_up.ngu.socket[].bind_addr` at its protected addresses. The `ngu` section is then checked like the other protected sections (no wildcard, no address outside `ipsec.connections`, a bind address required), the entrypoint stops prepending the pod IP as the N3 bind address, the network policy allows the core the tunnel instead of plaintext UDP 2152, and `n3Service.enabled` is refused. Off by default. See `docs/ipsec.md`
 - The chart pipeline runs the essential tests of the CNTi Test Suite against the chart without a CU-CP on a kind cluster, through the suite's GitLab CI/CD component. The README shows the result as a badge; the values the job uses live under `.gitlab/cnti/ocudu-cu-up/`
 
 ### Changed

@@ -407,6 +407,9 @@ and it claims nothing about any CNI beyond the requirements listed above.
 - **O1 and IPsec cannot be combined.** In O1 mode the config comes from the datastore at
   runtime, so the chart cannot check that the application binds to the protected addresses,
   and the O1 interface could move it off them afterwards.
-- **N2 is not protected.** It needs a peer on the core side that terminates IKEv2. Until
-  there is one, the policy keeps its plaintext rule for the core and the chart makes no
-  claim about that interface.
+- **N2 is protected only with `ipsec.protectN2`.** It needs a peer on the core side (AMF)
+  that terminates IKEv2 with a certificate from the same authority. Without the flag, the
+  policy keeps its plaintext rule for the core and the chart makes no claim about that
+  interface. With it, `cu_cp.amf.addrs` and `cu_cp.amf.bind_addrs` must name the protected addresses, the
+  entrypoint no longer binds N2 to the pod address, and the core is allowed the tunnel
+  only.

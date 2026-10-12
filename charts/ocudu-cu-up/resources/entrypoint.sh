@@ -148,6 +148,13 @@ inject_ip_overrides() {
         return 0
     fi
 
+    # N3 binds its protected address from the config. A pod-address bind_addr placed
+    # first would win, and N3 would leave outside the tunnel.
+    if [ "${IPSEC_PROTECT_N3}" = "true" ]; then
+        log_info "IPSEC_PROTECT_N3=true, skipping IP override injection"
+        return 0
+    fi
+
     if [ -z "$POD_IP" ]; then
         log_error "POD_IP not set, cannot inject IP overrides"
         return 1
@@ -313,6 +320,7 @@ CONFIG_CREATE_TIMEOUT="${CONFIG_CREATE_TIMEOUT:-120}"
 ENABLE_OCUDU_O1="${ENABLE_OCUDU_O1:-false}"
 O1_HEALTHCHECK_PORT="${O1_HEALTHCHECK_PORT:-5000}"
 HOSTNETWORK="${HOSTNETWORK:-false}"
+IPSEC_PROTECT_N3="${IPSEC_PROTECT_N3:-false}"
 OCUDU_LOG_DIR="${OCUDU_LOG_DIR:-/var/log/ocudu}"
 USE_EXT_CORE="${USE_EXT_CORE:-false}"
 
