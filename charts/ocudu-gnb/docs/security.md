@@ -1,11 +1,11 @@
 # Security Configuration Guide
 
-This guide covers security aspects of deploying the OCUDU CU/DU Helm chart, including Pod Security Standards, RBAC, security contexts, and Pod Disruption Budgets.
+This guide covers security aspects of deploying the OCUDU CU/DU Helm chart, including Pod Security Standards, the service account, security contexts, and Pod Disruption Budgets.
 
 ## Table of Contents
 
 - [Pod Security Standards](#pod-security-standards)
-- [RBAC (Role-Based Access Control)](#rbac-role-based-access-control)
+- [Service Account](#service-account)
 - [Security Contexts](#security-contexts)
 - [Pod Disruption Budget](#pod-disruption-budget)
 - [Namespace Security](#namespace-security)
@@ -130,73 +130,35 @@ From chart 3.6.0, the main container uses `tty: true` + `stdin: true` so gNB's s
 
 ---
 
-## RBAC (Role-Based Access Control)
+## Service Account
 
-The chart creates minimal RBAC resources following the principle of least privilege.
+Nothing in the gNB pod (`entrypoint.sh`, the `gnb` binary) uses the Kubernetes API.
+The chart therefore creates a ServiceAccount of its own for the pod, named after the
+release, and:
 
-### Created Resources
+- **mounts no token**: `automountServiceAccountToken: false` on the ServiceAccount and
+  on the pod spec, so a compromised container holds no credential for the API;
+- **binds no Role**: there is no Role or RoleBinding, so the account can do nothing in
+  the API even if a token were obtained.
 
-1. **ServiceAccount**: Unique identity for the gNB pod
-2. **Role**: Namespace-scoped permissions
-3. **RoleBinding**: Links the Role to the ServiceAccount
+A dedicated account, rather than the namespace's `default`, keeps the gNB apart from
+every other pod in the namespace: a Role bound to `default` by another chart or an
+operator never applies to it, the API server's audit log attributes calls to the gNB
+alone, and policies keyed to a workload's identity (RBAC, service-mesh authorization,
+cloud IAM bindings) can target it. CIS Kubernetes Benchmark 5.1.5 asks for exactly this.
 
-### Default Permissions
-
-| Resource | Verbs | Purpose |
-|----------|-------|---------|
-| `configmaps` | `get`, `list`, `watch` | Read configuration for potential hot-reload |
-| `pods` | `get` | Read own pod information |
-
-### Enabling RBAC
-
-RBAC is enabled by default:
-
-```yaml
-rbac:
-  create: true
-```
-
-### Adding Custom Permissions
-
-Add additional rules via `rbac.extraRules`:
+`serviceAccount.annotations` adds annotations to the account, for example a cloud
+identity binding:
 
 ```yaml
-rbac:
-  create: true
-  extraRules:
-    - apiGroups: [""]
-      resources: ["secrets"]
-      verbs: ["get"]
-    - apiGroups: ["apps"]
-      resources: ["deployments"]
-      verbs: ["get", "list"]
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/gnb
 ```
 
-### Disabling RBAC
-
-To disable RBAC resource creation:
-
-```yaml
-rbac:
-  create: false
-```
-
-**Note**: The ServiceAccount will still be created if `serviceAccount.create: true`.
-
-### Troubleshooting RBAC
-
-Check what the service account can do:
-
-```bash
-# Check permissions
-kubectl auth can-i get configmaps \
-  --as=system:serviceaccount:ocudu:ocudu-gnb \
-  -n ocudu
-
-# List RBAC resources
-kubectl get role,rolebinding -n ocudu
-kubectl describe role ocudu-gnb -n ocudu
-```
+A sidecar that needs the Kubernetes API is a change to the chart, not a value: it
+would need the token mounted on that container and a Role for what it reads. Open an
+issue describing the use case.
 
 ---
 
@@ -358,14 +320,11 @@ networkPolicy:
 
 ## Security Best Practices
 
-### 1. Always Use RBAC
+### 1. Keep the Pod Off the Default Service Account
 
-Never disable RBAC in production:
-
-```yaml
-rbac:
-  create: true  # Always true for production
-```
+The chart's ServiceAccount carries no token and no Role; leave it that way. If a
+cluster policy requires every workload to name its account (CIS 5.1.5), the chart
+already complies.
 
 ### 2. Prefer Non-Privileged Mode
 
@@ -429,7 +388,7 @@ kubectl label namespace ocudu pod-security.kubernetes.io/enforce=privileged
 # Check security contexts
 kubectl get pod -n ocudu -o jsonpath='{.items[*].spec.containers[*].securityContext}'
 
-# Verify RBAC
+# Verify the gNB's service account can do nothing in the API
 kubectl auth can-i --list --as=system:serviceaccount:ocudu:ocudu-gnb -n ocudu
 
 # Check NetworkPolicies
@@ -457,20 +416,17 @@ kubectl logs <pod-name> -n ocudu
 
 **Solution**: Match security context to deployment mode (see [Security Contexts](#security-contexts)).
 
-### RBAC Permission Denied
+### "Forbidden" or "no token" Errors from a Sidecar
 
-**Symptom**: "Forbidden" errors in logs
+**Symptom**: a sidecar added to the pod reports `Forbidden` from the Kubernetes API, or
+finds no token under `/var/run/secrets/kubernetes.io/serviceaccount`.
 
-**Check**:
-```bash
-kubectl auth can-i get configmaps \
-  --as=system:serviceaccount:ocudu:ocudu-gnb -n ocudu
-```
+**Cause**: the chart mounts no token and binds no Role, because nothing it ships uses
+the API.
 
-**Solution**: Verify RBAC is enabled and service account is created:
-```bash
-kubectl get sa,role,rolebinding -n ocudu
-```
+**Solution**: a sidecar that needs the API is a chart change (a token mounted on that
+container and a Role for what it reads), not a value; open an issue describing the use
+case.
 
 ### Node Drain Blocked by PDB
 

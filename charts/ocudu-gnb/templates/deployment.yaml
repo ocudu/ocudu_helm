@@ -35,6 +35,7 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ include "ocudu-gnb.serviceAccountName" . }}
+      automountServiceAccountToken: false
       {{- with .Values.runtimeClassName }}
       runtimeClassName: {{ . | quote }}
       {{- end }}

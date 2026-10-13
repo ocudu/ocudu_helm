@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.13.0 (2026-10-16)
+
+### Changed
+
+- The gNB pod always runs as the chart's own ServiceAccount, named after the release, with **no token mounted** (`automountServiceAccountToken: false` on the ServiceAccount and the pod spec) and **no Role or RoleBinding**: nothing in the pod uses the Kubernetes API (CNTi `service_account_mapping` and `dedicated_service_account`, CIS 5.1.5 and 5.1.6)
+
+### Removed
+
+- `serviceAccount.create`, `serviceAccount.name` and `serviceAccount.automountServiceAccountToken`, and the whole `rbac` block (`rbac.create`, `rbac.extraRules`) with the Role and RoleBinding templates: the Role granted `configmaps` and `pods` access that nothing in the pod used. `serviceAccount.annotations` stays. A sidecar that needs the API is a chart change, not a value.
+
 ## 3.12.4 (2026-10-16)
 
 ### Added

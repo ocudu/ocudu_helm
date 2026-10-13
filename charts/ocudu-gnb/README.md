@@ -7,7 +7,7 @@ A Helm chart for deploying the OCUDU 5G CU/DU (gNB)
 
 ## Documentation
 
-- **[Security Guide](docs/security.md)** - Pod Security Standards, RBAC, and PDB configuration ⭐
+- **[Security Guide](docs/security.md)** - Pod Security Standards, service account, and PDB configuration ⭐
 - **[Network Modes](docs/network-modes.md)** - SR-IOV vs hostNetwork deployment modes
 - **[SR-IOV Setup](docs/sriov-setup.md)** - Complete SR-IOV configuration guide (recommended for production)
 - **[NetworkPolicy](docs/networkpolicy.md)** - Network security and traffic control
@@ -188,7 +188,7 @@ The default is `registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk`, tagged
 | `network.hostNetwork` | bool | `false` | Enable host network mode (bypasses NetworkPolicy) |
 | `sriovConfig.enabled` | bool | `true` | Enable SR-IOV device plugin |
 | `sriovConfig.extendedResourceName` | string | `"intel.com/intel_sriov_netdevice"` | SR-IOV resource name (specify resources manually in resources section) |
-| `rbac.create` | bool | `true` | Create RBAC Role and RoleBinding |
+| `serviceAccount.annotations` | object | `{}` | Annotations on the gNB pod's ServiceAccount (no token is mounted, no Role is bound) |
 | `podDisruptionBudget.enabled` | bool | `true` | Enable PodDisruptionBudget |
 | `podDisruptionBudget.unhealthyPodEvictionPolicy` | string | `"AlwaysAllow"` | Pod eviction policy |
 | `networkPolicy.enabled` | bool | `false` | Enable NetworkPolicy (only works with hostNetwork: false) |
@@ -231,7 +231,7 @@ The default is `registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk`, tagged
 | `config.gnb-config.yml` | string | See values.yaml | gNB configuration file |
 
 For complete parameter documentation, see:
-- [Security configuration](docs/security.md) - RBAC, PDB, Pod Security Standards
+- [Security configuration](docs/security.md) - service account, PDB, Pod Security Standards
 - [Network configuration](docs/network-modes.md)
 - [Storage configuration](docs/storage.md)
 - [Performance tuning](docs/hugepages.md)

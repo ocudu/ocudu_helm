@@ -44,29 +44,14 @@ configmap:
   entrypoint: { nameOverride: "" }
 
 # -- Service account configuration
+# The chart always creates a ServiceAccount for the gNB pod, named after the
+# release, so the pod never runs as the namespace's default account. Nothing in
+# the pod (entrypoint.sh, the gnb binary) uses the Kubernetes API, so the token
+# is never mounted and no Role or RoleBinding is created.
 serviceAccount:
-  # -- Create a service account
-  create: true
-  # -- Additional service account annotations
+  # -- Additional service account annotations, e.g. a cloud identity binding
   # @default -- `{}` (no annotations)
   annotations: {}
-  # -- Service account name
-  # When empty, uses the release name for uniqueness across multiple instances
-  # @default -- `<release-name>-ocudu-gnb`
-  name: ""
-
-# -- RBAC (Role-Based Access Control) configuration
-rbac:
-  # -- Create Role and RoleBinding resources
-  # Grants least-privilege permissions to the service account
-  create: true
-  # -- Additional custom RBAC rules
-  # @default -- `[]` (no additional rules)
-  extraRules: []
-  # Example: Allow reading secrets
-  # - apiGroups: [""]
-  #   resources: ["secrets"]
-  #   verbs: ["get"]
 
 # -- Pod Disruption Budget configuration
 # Ensures cluster stability during node maintenance and upgrades
