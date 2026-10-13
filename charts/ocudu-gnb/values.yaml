@@ -429,6 +429,22 @@ o1:
       # -- Fixed NodePort for the NETCONF-over-TLS endpoint (port 6513). Leave empty for auto-assignment.
       tlsNodePort: ""
 
+    ssh:
+      # -- NETCONF SSH username with password authentication (ietf-ssh-server local
+      # user, RFC 9644). Enables the SSH "password" method for clients like
+      # OpenDaylight (no keyboard-interactive support). Empty = disabled (old behavior).
+      # The image's setup_ssh_user.sh creates the user and its NACM grant from the
+      # NETCONF_SSH_USERNAME/NETCONF_SSH_PASSWORD env vars the chart maps here.
+      username: ""
+      # -- Existing Secret with key "password" holding the NETCONF user's password
+      # (production). Cleartext is stored as $0$<password>; a value starting with $
+      # (e.g. $6$... from mkpasswd -m sha-512 / openssl passwd -6) is used verbatim.
+      # Create with: kubectl create secret generic <name> --from-literal=password='...'
+      passwordSecret: ""
+      # -- Dev/test only: cleartext password the chart renders into a Secret itself.
+      # Ignored when passwordSecret is set. Username without either fails rendering.
+      password: ""
+
 # -- SR-IOV configuration
 # Required when network.hostNetwork is false (default)
 # Provides high-performance network interfaces via SR-IOV Virtual Functions (VFs)

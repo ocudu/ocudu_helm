@@ -212,6 +212,9 @@ The default is `registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk`, tagged
 | `o1.netconfServer.tls.enabled` | bool | `false` | Enable NETCONF-over-TLS endpoint on port 6513 |
 | `o1.netconfServer.tls.certSecret` | string | `""` | Secret name with `ca.crt`, `server.crt`, `server.key`; omit for auto-generated self-signed certs |
 | `o1.netconfServer.ssh.hostKeySecret` | string | `""` | Secret with `ssh_host_{ed25519,ecdsa}_key` + `known_hosts`; omit to use the host key generated in the netconf image and skip host key verification. Needs a netconf-server image that supports `--ssh-hostkey-dir` (see `docs/o1.md`) |
+| `o1.netconfServer.ssh.username` | string | `""` | NETCONF SSH user with password authentication (RFC 9644 local user) for clients like OpenDaylight; empty = disabled |
+| `o1.netconfServer.ssh.passwordSecret` | string | `""` | Existing Secret with key `password` holding the NETCONF user's password (production); cleartext becomes `$0$<pw>`, a `$...` crypt hash passes through verbatim |
+| `o1.netconfServer.ssh.password` | string | `""` | Dev/test cleartext password the chart renders into a Secret itself; ignored when `passwordSecret` is set |
 | `o1.o1Adapter.fileLog.enabled` | bool | `false` | Persist the o1 adapter output to a file under `persistence.mountPath` |
 | `o1.netconfServer.fileLog.enabled` | bool | `false` | Persist the netconf-server output to a timestamped file under `persistence.mountPath` |
 | `persistence.enabled` | bool | `true` | Enable persistent storage for logs |
