@@ -10,7 +10,7 @@ image:
   pullPolicy: IfNotPresent
   # -- Image tag, `ubuntu-24.04-<avx512|avx2|neon>-<date>_<commit>`. Pick the CPU variant
   # the node supports. Always quote in values files.
-  tag: "ubuntu-24.04-avx2-20261007_2e9f5671"
+  tag: "ubuntu-24.04-avx2-20261012_440cdbbe"
 
 # -- Image pull secrets for private registries
 imagePullSecrets: []
