@@ -1,5 +1,20 @@
 # Changelog
 
+## 3.13.0 (2026-10-14)
+
+### Added
+
+- Optional NETCONF SSH user with password authentication for clients like
+  OpenDaylight, which only implement the SSH `password` method.
+  `o1.netconfServer.ssh.{username,passwordSecret,password}` keeps an empty
+  username for the old behavior; the password lives only in a Secret — an
+  operator-provided one via `passwordSecret`, or a chart-created one from
+  `password` (dev/test) — and the chart maps
+  `NETCONF_SSH_USERNAME`/`NETCONF_SSH_PASSWORD` onto the netconf-server
+  container for the image's `setup_ssh_user.sh` to create the user and its
+  NACM grant. Requires a netconf-server image with the env-var support (the
+  `values-o1.yaml` pin has it); see `docs/o1.md`.
+
 ## 3.12.3 (2026-10-11)
 
 ### Changed
