@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.14.1 (2026-10-22)
+
+### Fixed
+
+- `values-o1.yaml`: the non-root netconf-server could not bind port 830; set the pod sysctl `net.ipv4.ip_unprivileged_port_start` to `0`
+
 ## 1.14.0 (2026-10-20)
 
 ### Changed
