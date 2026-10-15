@@ -226,6 +226,13 @@ the container grants all three, so add `IPC_LOCK` back when running one.
 check without the power metric. The `privilege_escalation` check fails regardless,
 because file capabilities need `allowPrivilegeEscalation: true`.
 
+In O1 mode ([`values-o1.yaml`](values-o1.yaml)) the pod also sets the sysctl
+`net.ipv4.ip_unprivileged_port_start: "0"` under `podSecurityContext`, so the
+non-root netconf-server (uid 1000) can bind `o1.o1Port` (830). It is a safe
+sysctl on the kubelet's default allow-list, so no `allowedUnsafeSysctls` change
+is needed. Kubernetes rejects `net.*` sysctls when `network.hostNetwork: true`,
+so that combination is not supported.
+
 The O1 sidecars carry their own `securityContext` values under
 `o1.o1Adapter` / `o1.netconfServer` and are unaffected by the above.
 
