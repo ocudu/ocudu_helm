@@ -356,9 +356,9 @@ spec:
           {{- if (.Values.o1.netconfServer.ssh).username }}
           env:
             # ietf-ssh-server local user with password authentication (RFC 9644),
-            # created by the image's setup_ssh_user.sh; ODL only implements the SSH
-            # "password" method. The password comes from the Secret via secretKeyRef,
-            # so it never appears in the pod spec.
+            # created by the image's setup_ssh_user.sh for clients that only implement
+            # the SSH "password" method. The password comes from the Secret via
+            # secretKeyRef, so it never appears in the pod spec.
             - name: NETCONF_SSH_USERNAME
               value: {{ .Values.o1.netconfServer.ssh.username | quote }}
             - name: NETCONF_SSH_PASSWORD

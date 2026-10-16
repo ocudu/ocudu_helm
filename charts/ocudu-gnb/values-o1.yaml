@@ -366,7 +366,7 @@ o1:
     image:
       repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_netconf/netconf_nightly_amd64
       pullPolicy: IfNotPresent
-      tag: "20261008_452af662"
+      tag: "20261014_39618f9e"
     tls:
       # -- Enable NETCONF-over-TLS endpoint on port 6513 (alongside the default SSH endpoint on o1Port)
       enabled: false
@@ -390,9 +390,9 @@ o1:
       hostKeySecret: ""
       # -- NETCONF SSH username with password authentication (ietf-ssh-server local
       # user, RFC 9644). The image only offers keyboard-interactive to root; clients
-      # like OpenDaylight only support the SSH "password" method and need this user.
+      # that only implement the SSH "password" method need this user.
       # Empty = disabled (old behavior). Requires a netconf-server image with the
-      # setup_ssh_user.sh env support (the pinned 20261008_452af662 has it).
+      # setup_ssh_user.sh env support (the pinned 20261014_39618f9e has it).
       username: netconf
       # -- Existing Secret with key "password" holding the NETCONF user's password
       # (production). Cleartext is rendered as $0$<password>; a value starting with $

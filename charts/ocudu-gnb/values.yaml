@@ -431,8 +431,8 @@ o1:
 
     ssh:
       # -- NETCONF SSH username with password authentication (ietf-ssh-server local
-      # user, RFC 9644). Enables the SSH "password" method for clients like
-      # OpenDaylight (no keyboard-interactive support). Empty = disabled (old behavior).
+      # user, RFC 9644). Enables the SSH "password" method for clients that only
+      # implement password authentication. Empty = disabled (old behavior).
       # The image's setup_ssh_user.sh creates the user and its NACM grant from the
       # NETCONF_SSH_USERNAME/NETCONF_SSH_PASSWORD env vars the chart maps here.
       username: ""
