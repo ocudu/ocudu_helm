@@ -50,8 +50,9 @@ cd charts/ocudu-gnb
 helm install ocudu-gnb ./ -f my-values.yaml
 ```
 
-`resources.requests` and `resources.limits` must both set `cpu` and `memory`; the chart does not
-render without them. Equal requests and limits give the pod Guaranteed QoS.
+The default `resources` request and limit 4 CPUs and 4Gi. `resources.requests` and
+`resources.limits` must both set `cpu` and `memory`; the chart does not render without them.
+Equal requests and limits give the pod Guaranteed QoS.
 
 After installation, Helm will display **post-install notes** with:
 - Deployment configuration summary
@@ -222,8 +223,8 @@ The default is `registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk`, tagged
 | `persistence.pvc.storageClassName` | string | `""` | StorageClass for PVC (empty = default) |
 | `persistence.pvc.size` | string | `"10Gi"` | PVC storage size |
 | `persistence.hostPath.path` | string | `"/mnt/debugging-logs"` | Host path for logs |
-| `resources.limits` | object | `{}` | Resource limits (CPU, memory, hugepages); `cpu` and `memory` are required |
-| `resources.requests` | object | `{}` | Resource requests (CPU, memory, hugepages); `cpu` and `memory` are required |
+| `resources.limits` | object | 4 CPUs, 4Gi | Resource limits (CPU, memory, hugepages); `cpu` and `memory` are required |
+| `resources.requests` | object | 4 CPUs, 4Gi | Resource requests (CPU, memory, hugepages); `cpu` and `memory` are required |
 | `nodeSelector` | object | `{}` | Node selector for pod assignment |
 | `tolerations` | list | `[]` | Tolerations for pod assignment |
 | `affinity` | object | `{}` | Affinity rules for pod assignment |

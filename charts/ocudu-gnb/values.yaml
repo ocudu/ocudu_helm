@@ -181,24 +181,22 @@ network:
 #     hugepages-2Mi: 2Gi
 # ```
 
-# @default -- `{}` (must be set)
+# The default 4Gi leaves room for the 2 GiB buffer pool OCUDU allocates at startup.
 resources:
   # -- Resource limits for the gNB container
   # Include hugepages-1Gi or hugepages-2Mi to automatically enable hugepage volumes
-  # @default -- `{}` (must be set)
-  limits: {}
-    # cpu: 12
-    # memory: 16Gi
+  limits:
+    cpu: 4
+    memory: 4Gi
     # hugepages-1Gi: 2Gi
     # hugepages-2Mi: 2Gi
 
   # -- Resource requests for the gNB container
   # Should match limits for guaranteed QoS and CPU pinning
   # Include hugepages-1Gi or hugepages-2Mi to automatically enable hugepage volumes
-  # @default -- `{}` (must be set)
-  requests: {}
-    # cpu: 12
-    # memory: 16Gi
+  requests:
+    cpu: 4
+    memory: 4Gi
     # hugepages-1Gi: 2Gi
     # hugepages-2Mi: 2Gi
 
@@ -621,7 +619,7 @@ config:
     cell_cfg:
       dl_arfcn: 637212
       band: 78
-      channel_bandwidth_MHz: 100
+      channel_bandwidth_MHz: 20
       common_scs: 30
       plmn: "00101"
       tac: 7

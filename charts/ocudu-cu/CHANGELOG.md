@@ -18,6 +18,10 @@
 - `docs/ipsec.md` now covers choosing the certificate authority for these tunnels. A peer is accepted on two things only — its certificate chains to the authority in `ca.crt`, and its identity matches the `id` configured for it — so an authority dedicated to these tunnels is safer than a general-purpose one that also serves other systems
 - `ipsec.resources` and `docs/ipsec.md` now say that a node pinning CPUs with the kubelet's `static` policy needs requests equal to limits on the sidecar. A container is given exclusive CPUs only while the whole pod is Guaranteed, so a sidecar with unequal requests and limits drops the pod to Burstable and takes the application container's pinning with it
 
+### Changed
+
+- Default `resources` to 2 CPUs and 4Gi in both requests and limits; OCUDU allocates a 2 GiB buffer pool at startup
+
 ### Fixed
 
 - `ipsec.readinessProbe`: the probe reported not ready for any interface that had no traffic yet, which is the normal state of F1-U with no user attached, so a pod with it enabled never became ready. It now reports ready when the IKE association is up and every interface has a child association or the policy that stands in for one

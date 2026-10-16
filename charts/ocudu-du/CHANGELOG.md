@@ -18,6 +18,10 @@
 - `docs/ipsec.md` now covers choosing the certificate authority for these tunnels. A peer is accepted on two things only — its certificate chains to the authority in `ca.crt`, and its identity matches the `id` configured for it — so an authority dedicated to these tunnels is safer than a general-purpose one that also serves other systems
 - `ipsec.resources` and `docs/ipsec.md` now say that a node pinning CPUs with the kubelet's `static` policy needs requests equal to limits on the sidecar. A container is given exclusive CPUs only while the whole pod is Guaranteed, so a sidecar with unequal requests and limits drops the pod to Burstable and takes the application container's pinning with it
 
+### Changed
+
+- Default `resources` to 4 CPUs and 4Gi in both requests and limits; OCUDU allocates a 2 GiB buffer pool at startup
+
 ### Fixed
 
 - `networkPolicy` named only `ocudu-cu` as the DU's peer, so a DU deployed against a split CU-CP and CU-UP had no rule for either and F1 was dropped. With IPsec on it was IKE that was dropped, so the tunnel never started. All three CU chart names are now allowed

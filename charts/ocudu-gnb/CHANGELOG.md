@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.14.0 (2026-10-19)
+
+### Changed
+
+- Default `resources` to 4 CPUs and 4Gi in both requests and limits; OCUDU allocates a 2 GiB buffer pool at startup
+- Default `config`: a 20 MHz cell instead of 100 MHz
+
 ## 3.13.0 (2026-10-16)
 
 ### Changed

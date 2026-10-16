@@ -140,7 +140,14 @@ securityContext:
       - SYS_NICE
 
 # -- Resource requests and limits. Required: requests and limits must each set cpu and memory.
-resources: {}
+# The default 4Gi leaves room for the 2 GiB buffer pool OCUDU allocates at startup.
+resources:
+  limits:
+    cpu: 2
+    memory: 4Gi
+  requests:
+    cpu: 2
+    memory: 4Gi
 
 # -- Network configuration
 network:

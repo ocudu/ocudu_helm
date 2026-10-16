@@ -12,7 +12,6 @@ helm lint:
   extends: .helm lint
   variables:
     CHART_PATH: charts/ocudu-cu
-    LINT_VALUES_FILE: charts/ocudu-cu/ci/lint-values.yaml
 
 # The default values leave the ipsec sidecar off, so the job above never renders any of it.
 helm lint ipsec:

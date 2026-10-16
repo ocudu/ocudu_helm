@@ -178,20 +178,21 @@ securityContext:
 #     memory: 16Gi
 #     hugepages-2Mi: 2Gi
 # ```
+# The default 4Gi leaves room for the 2 GiB buffer pool OCUDU allocates at startup.
 resources:
   # -- Resource limits for the DU container
   # Include hugepages-1Gi or hugepages-2Mi to automatically enable hugepage volumes
-  limits: {}
-    # cpu: 12
-    # memory: 16Gi
+  limits:
+    cpu: 4
+    memory: 4Gi
     # hugepages-1Gi: 2Gi
     # hugepages-2Mi: 2Gi
 
   # -- Resource requests for the DU container
   # Include hugepages-1Gi or hugepages-2Mi to automatically enable hugepage volumes
-  requests: {}
-    # cpu: 12
-    # memory: 16Gi
+  requests:
+    cpu: 4
+    memory: 4Gi
     # hugepages-1Gi: 2Gi
     # hugepages-2Mi: 2Gi
 
