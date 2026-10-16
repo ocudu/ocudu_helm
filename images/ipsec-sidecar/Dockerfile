@@ -13,6 +13,7 @@ COPY scripts/ /usr/local/bin/
 # they configure a second daemon, and two daemons sharing one network namespace would
 # compete for the same UDP ports, policies, states and routes.
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
         charon-systemd \
         strongswan-swanctl \
