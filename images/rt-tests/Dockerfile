@@ -19,7 +19,7 @@ RUN git clone git://git.kernel.org/pub/scm/utils/rt-tests/rt-tests.git && \
 FROM ubuntu:24.04
 COPY --from=builder /install /
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
-    libnuma-dev stress-ng gnuplot && \
+    libnuma1 stress-ng gnuplot && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
