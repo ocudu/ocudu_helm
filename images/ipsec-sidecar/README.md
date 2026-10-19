@@ -162,3 +162,6 @@ to close.
 The strongSwan version comes from the distribution archive, so the version in the image tag
 is an assertion rather than a checkout. `check-runtime-support.sh` verifies it during the
 build, which is what stops the tag becoming untrue the first time the archive moves.
+
+The tag is `<strongSwan version>_<image version>`. The image version is raised whenever the
+image changes without a new strongSwan, because a published tag is never rebuilt.
