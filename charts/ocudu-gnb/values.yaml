@@ -633,8 +633,8 @@ ipsec:
   image:
     # -- Container image repository
     repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ipsec-sidecar
-    # -- Image tag
-    tag: "6.0.4"
+    # -- Image tag, `<strongSwan version>_<image version>`
+    tag: "6.0.4_1.0.0"
     # -- Image pull policy
     pullPolicy: IfNotPresent
 

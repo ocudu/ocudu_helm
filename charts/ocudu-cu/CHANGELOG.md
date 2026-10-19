@@ -11,6 +11,7 @@
 
 - `ipsec`: the render-time address check read only addresses written beside their key, so a protected section that listed its bind addresses one per line — the form SCTP multi-homing uses — could name a wildcard or a pod address alongside the protected one and still render. A value written as a list item is now checked the same way as one written inline
 - `ipsec`: the core-port check treated a user-plane section the application config does not carry as one left on the default port, so protecting only the control plane was refused with a message about an interface that was not configured at all. A section that is absent is now left alone
+- `ipsec.image.tag` defaults to `6.0.4_1.0.0`; the previous default, `6.0.4`, was never published
 
 ## 1.12.0 (2026-10-16)
 
