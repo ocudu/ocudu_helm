@@ -95,6 +95,7 @@ rt-tests image:
   stage: child
   variables:
     RT_TESTS_VERSION: "v2.8"
+    CT_VERSION: "1.0.0"
   rules:
     - if: $ON_MR
       changes:
