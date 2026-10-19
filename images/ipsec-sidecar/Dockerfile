@@ -12,6 +12,9 @@ COPY scripts/ /usr/local/bin/
 # strongswan metapackage, strongswan-starter and strongswan-charon are deliberately absent:
 # they configure a second daemon, and two daemons sharing one network namespace would
 # compete for the same UDP ports, policies, states and routes.
+#
+# The base image ships Pebble as a binary no package owns, so upgrades never update it.
+# Nothing here runs it.
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
@@ -23,5 +26,6 @@ RUN apt-get update && \
         catatonit && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
+    rm -f /usr/bin/pebble && \
     chmod +x /usr/local/bin/*.sh && \
     STRONGSWAN_VERSION="${STRONGSWAN_VERSION}" /usr/local/bin/check-runtime-support.sh
