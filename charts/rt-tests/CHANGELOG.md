@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.1 (2026-10-19)
+
+### Changed
+- Default `image.tag` to `v2.8_1.0.0`, an image without the kernel headers it never used
+
 ## 2.2.0 (2026-06-01)
 
 ### Changed
