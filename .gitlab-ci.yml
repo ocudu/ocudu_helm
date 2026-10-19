@@ -52,6 +52,7 @@ ipsec-sidecar image:
     - if: $ON_MR
       changes:
         paths:
+          - .gitlab/ci/image_utils.yml
           - images/ipsec-sidecar/**/*
     - if: $ON_DEFAULT_BRANCH
       changes:
@@ -75,6 +76,7 @@ linuxptp image:
     - if: $ON_MR
       changes:
         paths:
+          - .gitlab/ci/image_utils.yml
           - images/linuxptp/**/*
     - if: $ON_DEFAULT_BRANCH
       changes:
@@ -97,6 +99,7 @@ rt-tests image:
     - if: $ON_MR
       changes:
         paths:
+          - .gitlab/ci/image_utils.yml
           - images/rt-tests/**/*
     - if: $ON_DEFAULT_BRANCH
       changes:
@@ -120,6 +123,7 @@ tuned image:
     - if: $ON_MR
       changes:
         paths:
+          - .gitlab/ci/image_utils.yml
           - images/tuned/**/*
     - if: $ON_DEFAULT_BRANCH
       changes:

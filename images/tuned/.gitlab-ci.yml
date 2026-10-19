@@ -16,6 +16,7 @@ include:
   - project: $[[ inputs.ocudu_path ]]
     ref: $[[ inputs.ocudu_ref ]]
     file: .gitlab/ci-shared/docker.yml
+  - local: .gitlab/ci/image_utils.yml
 
 stages:
   - test
@@ -39,13 +40,13 @@ variables:
     matrix:
       - PLATFORM: ["arm64", "amd64"]
 
-only-build-tuned:
+build-and-scan-tuned:
   stage: test
-  extends: .docker-builder-tuned
+  extends:
+    - .docker-builder-tuned
+    - .image scan
   rules:
     - if: $ON_MR
-  variables:
-    MODE: test
 
 build-and-publish-tuned:
   stage: publish

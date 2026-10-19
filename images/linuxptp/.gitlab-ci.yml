@@ -16,6 +16,7 @@ include:
   - project: $[[ inputs.ocudu_path ]]
     ref: $[[ inputs.ocudu_ref ]]
     file: .gitlab/ci-shared/docker.yml
+  - local: .gitlab/ci/image_utils.yml
 
 stages:
   - test
@@ -36,13 +37,13 @@ stages:
     matrix:
       - PLATFORM: ["arm64", "amd64"]
 
-only-build-linuxptp:
+build-and-scan-linuxptp:
   stage: test
-  extends: .docker-builder-linuxptp
+  extends:
+    - .docker-builder-linuxptp
+    - .image scan
   rules:
     - if: $ON_MR
-  variables:
-    MODE: test
 
 build-and-publish-linuxptp:
   stage: publish

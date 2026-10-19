@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# Build an image and run the publish job's vulnerability gate on it, without pushing it.
+# The publish job only runs after merge, so without this a vulnerability is first found on
+# the default branch. Extend it after a job that extends .docker-builder.
+.image scan:
+  script:
+    - |
+      DOCKERFILE="${DOCKERFILE:-${CONTEXT}}"
+      if [ -n "$BUILD_ARGS" ]; then
+        BUILD_ARGS="--opt build-arg:$(echo $BUILD_ARGS | sed 's/;/ --opt build-arg:/g')"
+      fi
+      rm -rf "${CI_BUILDS_DIR}/.buildkit-${CI_CONCURRENT_ID}"
+      buildctl-daemonless.sh build \
+        --progress=plain \
+        --opt platform=${PLATFORM_OS}/${PLATFORM} \
+        --frontend=dockerfile.v0 \
+        --local context="${CONTEXT}" \
+        --local dockerfile="${DOCKERFILE}" \
+        ${BUILD_ARGS} \
+        --output type=oci,dest=image.tar
+    - |
+      status=0
+      grype oci-archive:image.tar --fail-on critical --ignore-states wont-fix,not-fixed -o json > grype-report.json || status=$?
+      echo "=== Vulnerability summary ==="
+      jq -r '.matches[] | .vulnerability.severity' grype-report.json | sort | uniq -c | awk '{printf "  %s: %d\n", $2, $1}'
+      echo "  Total: $(jq '.matches | length' grype-report.json)"
+      jq -r '.matches[] | select(.vulnerability.severity == "Critical") | "  \(.vulnerability.id) \(.artifact.name) \(.artifact.version) \(.artifact.locations[0].path)"' grype-report.json
+      exit $status
