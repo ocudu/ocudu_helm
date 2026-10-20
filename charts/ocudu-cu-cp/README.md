@@ -76,11 +76,10 @@ workload that should not run overlapping old/new pods.
 | `persistence.type` | string | `"pvc"` | Storage type: `pvc` or `hostPath` |
 | `resources` | object | 1 CPU, 4Gi | Requests and limits; `cpu` and `memory` are required in both |
 | `replicaCount` | int | `1` | Number of CU-CP replicas |
-| `serviceAccount.automountServiceAccountToken` | bool | `false` | Mount the service account token into the pod |
+| `serviceAccount.annotations` | object | `{}` | Annotations on the CU-CP pod's ServiceAccount (no token is mounted, no Role is bound) |
 | `startupProbe.enabled` | bool | `true` | Gate liveness/readiness until `ocucp` is running |
 | `priorityClassName` | string | `""` | Priority class assigned to the pod |
 | `topologySpreadConstraints` | list | `[]` | Topology spread constraints for pod assignment |
-| `rbac.create` | bool | `false` | Create RBAC Role and RoleBinding |
 | `podDisruptionBudget.enabled` | bool | `true` | Enable PodDisruptionBudget |
 | `deploymentStrategy.type` | string | `"Recreate"` | Deployment update strategy |
 | `o1.enable_ocudu_o1` | bool | `false` | Enable the O1 interface (NETCONF management) |

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.11.0 (2026-10-20)
+
+### Changed
+
+- The CU-CP pod always runs as the chart's own ServiceAccount, named after the release, with **no token mounted** (`automountServiceAccountToken: false` on the ServiceAccount and the pod spec) and **no Role or RoleBinding**: nothing in the pod uses the Kubernetes API (CNTi `service_account_mapping` and `dedicated_service_account`, CIS 5.1.5 and 5.1.6)
+
+### Removed
+
+- `serviceAccount.create`, `serviceAccount.name` and `serviceAccount.automountServiceAccountToken`, and the whole `rbac` block (`rbac.create`, `rbac.extraRules`) with the Role and RoleBinding templates: the Role granted `configmaps` and `pods` access that nothing in the pod used, and `values-o1.yaml` created it without mounting the token to use it. `serviceAccount.annotations` stays. A sidecar that needs the API is a chart change, not a value.
+
 ## 1.10.0 (2026-10-19)
 
 ### Added

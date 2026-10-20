@@ -41,7 +41,7 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ include "ocudu-cu-up.serviceAccountName" . }}
-      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      automountServiceAccountToken: false
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       {{- if .Values.network.hostNetwork }}

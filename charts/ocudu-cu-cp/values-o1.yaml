@@ -30,15 +30,14 @@ configmap:
   entrypoint: { nameOverride: "" }
 
 # -- Service account configuration
+# The chart always creates a ServiceAccount for the CU-CP pod, named after the
+# release, so the pod never runs as the namespace's default account. Nothing in
+# the pod (entrypoint.sh, the ocucp binary) uses the Kubernetes API, so the token
+# is never mounted and no Role or RoleBinding is created.
 serviceAccount:
-  create: true
+  # -- Additional service account annotations, e.g. a cloud identity binding
+  # @default -- `{}` (no annotations)
   annotations: {}
-  name: ""
-
-# -- RBAC configuration
-rbac:
-  create: true
-  extraRules: []
 
 # -- Pod Disruption Budget configuration
 podDisruptionBudget:

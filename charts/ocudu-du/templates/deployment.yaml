@@ -39,7 +39,7 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ include "ocudu-du.serviceAccountName" . }}
-      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      automountServiceAccountToken: false
       {{- with .Values.runtimeClassName }}
       runtimeClassName: {{ . | quote }}
       {{- end }}

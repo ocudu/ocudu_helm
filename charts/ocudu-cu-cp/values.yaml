@@ -32,25 +32,14 @@ configmap:
   entrypoint: { nameOverride: "" }
 
 # -- Service account configuration
+# The chart always creates a ServiceAccount for the CU-CP pod, named after the
+# release, so the pod never runs as the namespace's default account. Nothing in
+# the pod (entrypoint.sh, the ocucp binary) uses the Kubernetes API, so the token
+# is never mounted and no Role or RoleBinding is created.
 serviceAccount:
-  create: true
+  # -- Additional service account annotations, e.g. a cloud identity binding
+  # @default -- `{}` (no annotations)
   annotations: {}
-  name: ""
-  # -- Mount the service account token into the pod
-  # Neither entrypoint.sh nor the ocucp binary talks to the Kubernetes API, so
-  # the token is not mounted by default. Applied to both the ServiceAccount and
-  # the pod spec (the pod-level setting takes precedence).
-  # @default -- `false`
-  automountServiceAccountToken: false
-
-# -- RBAC configuration
-# Nothing in the CU-CP pod uses the Kubernetes API, so no Role/RoleBinding is
-# created by default. Set `create: true` if extraRules or a sidecar genuinely
-# need API access — and then also allow the token to be mounted via
-# `serviceAccount.automountServiceAccountToken`.
-rbac:
-  create: false
-  extraRules: []
 
 # -- Pod Disruption Budget configuration
 podDisruptionBudget:
