@@ -150,3 +150,22 @@
       - "*.tgz"
     expire_in: 2 days
     when: always
+
+# Extended next to the CNTi Test Suite component's job: when the run fails, print
+# what the suite's own report leaves out, the pods' state and events and the logs
+# of their containers, including the last instance of one that crashed. The kind
+# cluster lives until the job ends, so it is still there in after_script.
+.cnti diagnostics:
+  after_script:
+    - |
+      if [ "$CI_JOB_STATUS" != "success" ]; then
+        export PATH="$HOME/.cnti-testsuite/bin:$PATH"
+        kubectl get nodes,pods -A -o wide
+        kubectl describe pods -n cnti-default
+        for pod in $(kubectl get pods -n cnti-default -o name); do
+          echo "----- $pod"
+          kubectl logs -n cnti-default "$pod" --all-containers --tail=200 || true
+          echo "----- $pod (previous)"
+          kubectl logs -n cnti-default "$pod" --all-containers --previous --tail=200 || true
+        done
+      fi
