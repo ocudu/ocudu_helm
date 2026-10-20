@@ -209,6 +209,7 @@ ocudu-cu chart:
     - changes:
         paths:
           - .gitlab/ci/helm_utils.yml
+          - .gitlab/cnti/ocudu-cu/**/*
           - charts/ocudu-cu/**/*
   trigger:
     strategy: mirror
@@ -221,6 +222,7 @@ ocudu-du chart:
     - changes:
         paths:
           - .gitlab/ci/helm_utils.yml
+          - .gitlab/cnti/ocudu-du/**/*
           - charts/ocudu-du/**/*
   trigger:
     strategy: mirror
@@ -233,6 +235,7 @@ ocudu-cu-cp chart:
     - changes:
         paths:
           - .gitlab/ci/helm_utils.yml
+          - .gitlab/cnti/ocudu-cu-cp/**/*
           - charts/ocudu-cu-cp/**/*
   trigger:
     strategy: mirror
@@ -245,6 +248,7 @@ ocudu-cu-up chart:
     - changes:
         paths:
           - .gitlab/ci/helm_utils.yml
+          - .gitlab/cnti/ocudu-cu-up/**/*
           - charts/ocudu-cu-up/**/*
   trigger:
     strategy: mirror

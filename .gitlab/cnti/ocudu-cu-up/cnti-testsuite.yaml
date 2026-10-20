@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# CNTi Test Suite configuration for the ocudu-cu-up chart in this repository:
+# the CU-UP without a CU-CP, which it keeps retrying over E1 in the background,
+# so it runs on a plain Kubernetes cluster.
+# Used by the cnti-testsuite-cu-up job of charts/ocudu-cu-up/.gitlab-ci.yml.
+---
+config_version: "v2"
+deployments:
+  helm_dirs:
+    - name: ocudu-cu-up
+      helm_directory: ../../../charts/ocudu-cu-up
+      helm_values: -f .gitlab/cnti/ocudu-cu-up/values.yaml

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.14.1 (2026-10-26)
+
+### Added
+
+- The chart pipeline runs the essential tests of the CNTi Test Suite against the chart in DU test mode (ru_dummy and a test UE, no CU, no RU) on a kind cluster, through the suite's GitLab CI/CD component. The values the job uses live under `.gitlab/cnti/ocudu-du/`
+
 ## 1.14.0 (2026-10-26)
 
 ### Added

@@ -1,6 +1,7 @@
 # ocudu-cu-up
 
 ![Production Ready](https://img.shields.io/badge/production-ready-green.svg)
+[![CNTi essential](https://gitlab.com/ocudu/ocudu_elements/ocudu_helm/-/jobs/artifacts/main/raw/cnti-badge.svg?job=cnti-testsuite-cu-up)](https://gitlab.com/ocudu/ocudu_elements/ocudu_helm/-/pipelines?ref=main)
 
 A Helm chart for deploying the OCUDU 5G CU-UP (Central Unit - User Plane)
 

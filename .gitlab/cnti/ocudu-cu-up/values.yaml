@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# Values for the ocudu-cu-up chart: no CU-CP on a small cluster.
+image:
+  # The CU-UP image, AVX2 build: shared CI runners do not guarantee AVX-512.
+  # The "-latest" tag moves to the newest published nightly build, so the test
+  # always runs the current image without a tag bump.
+  repository: registry.gitlab.com/ocudu/ocudu/images/cu-up
+  tag: "ubuntu-24.04-avx2-latest"
+
+# A 4-vCPU CI runner. The chart requires requests and limits; they are equal
+# here (Guaranteed QoS, as the chart recommends). The CU-UP in this mode holds about
+# 2.3 GiB and uses well under one CPU; three replicas (increase_decrease_capacity)
+# have to fit on the two 4-vCPU worker nodes of the runner's kind cluster.
+resources:
+  requests:
+    cpu: "1"
+    memory: 3Gi
+  limits:
+    cpu: "1"
+    memory: 3Gi
+
+# No CU-CP: the CU-UP retries the E1 connection in the background and keeps
+# running. The addresses stay at the application's defaults.
+config:
+  cu-up-config.yml: |-
+    log:
+      filename: stdout
+      all_level: warning

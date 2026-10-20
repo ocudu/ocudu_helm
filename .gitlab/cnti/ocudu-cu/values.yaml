@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# Values for the ocudu-cu chart: no core network on a small cluster.
+image:
+  # The CU image, AVX2 build: shared CI runners do not guarantee AVX-512.
+  # The "-latest" tag moves to the newest published nightly build, so the test
+  # always runs the current image without a tag bump.
+  repository: registry.gitlab.com/ocudu/ocudu/images/cu
+  tag: "ubuntu-24.04-avx2-latest"
+
+# A 4-vCPU CI runner. The chart requires requests and limits; they are equal
+# here (Guaranteed QoS, as the chart recommends). The CU in this mode holds about
+# 2.3 GiB and uses well under one CPU; three replicas (increase_decrease_capacity)
+# have to fit on the two 4-vCPU worker nodes of the runner's kind cluster.
+resources:
+  requests:
+    cpu: "1"
+    memory: 3Gi
+  limits:
+    cpu: "1"
+    memory: 3Gi
+
+config:
+  cu-config.yml: |-
+    cu_cp:
+      amf:
+        # No core network: the CU-CP runs standalone.
+        no_core: true
+        supported_tracking_areas:
+          - tac: 7
+            plmn_list:
+              - plmn: "00101"
+                tai_slice_support_list:
+                  - sst: 1
+
+    log:
+      filename: stdout
+      all_level: warning

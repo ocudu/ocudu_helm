@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.12.1 (2026-10-26)
+
+### Added
+
+- The chart pipeline runs the essential tests of the CNTi Test Suite against the chart without a CU-CP on a kind cluster, through the suite's GitLab CI/CD component. The README shows the result as a badge; the values the job uses live under `.gitlab/cnti/ocudu-cu-up/`
+
 ## 1.12.0 (2026-10-26)
 
 ### Added

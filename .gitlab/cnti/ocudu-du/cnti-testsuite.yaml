@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# CNTi Test Suite configuration for the ocudu-du chart in this repository: the
+# DU in test mode (ru_dummy and test_mode.test_ue), which answers its own F1
+# Setup, so no CU and no RU: it runs on a plain Kubernetes cluster.
+# Used by the cnti-testsuite-du job of charts/ocudu-du/.gitlab-ci.yml.
+---
+config_version: "v2"
+deployments:
+  helm_dirs:
+    - name: ocudu-du
+      helm_directory: ../../../charts/ocudu-du
+      helm_values: -f .gitlab/cnti/ocudu-du/values.yaml
