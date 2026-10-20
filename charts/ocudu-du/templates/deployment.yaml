@@ -443,6 +443,20 @@ spec:
               containerPort: 6513
               protocol: TCP
             {{- end }}
+          {{- if (((.Values.o1).netconfServer).ssh).username }}
+          env:
+            # ietf-ssh-server local user with password authentication (RFC 9644),
+            # created by the image's setup_ssh_user.sh for clients that only implement
+            # the SSH "password" method. The password comes from the Secret via
+            # secretKeyRef, so it never appears in the pod spec.
+            - name: NETCONF_SSH_USERNAME
+              value: {{ (.Values.o1).netconfServer.ssh.username | quote }}
+            - name: NETCONF_SSH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ocudu-du.netconfSshCredentialsSecretName" . }}
+                  key: password
+          {{- end }}
           {{- if (((.Values.o1).netconfServer).fileLog).enabled }}
           {{- $entrypointFlags := "" }}
           {{- if (.Values.o1).netconfServer.tls.enabled }}

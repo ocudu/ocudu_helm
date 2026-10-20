@@ -400,7 +400,7 @@ o1:
     image:
       repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_netconf/netconf_nightly_amd64
       pullPolicy: IfNotPresent
-      tag: "20261008_452af662"
+      tag: "20261014_39618f9e"
     tls:
       # -- Enable NETCONF-over-TLS endpoint on port 6513 (alongside the default SSH endpoint on o1Port)
       enabled: false
@@ -422,6 +422,20 @@ o1:
       # different after every rebuild - and the adapter does not verify the host key.
       # Create with: see "Provisioning the SSH host key" in docs/o1.md
       hostKeySecret: ""
+      # -- NETCONF SSH username with password authentication (ietf-ssh-server local
+      # user, RFC 9644). The image only offers keyboard-interactive to root; clients
+      # that only implement the SSH "password" method need this user.
+      # Empty = disabled (old behavior). Requires a netconf-server image with the
+      # setup_ssh_user.sh env support (the pinned 20261014_39618f9e has it).
+      username: netconf
+      # -- Existing Secret with key "password" holding the NETCONF user's password
+      # (production). Cleartext is rendered as $0$<password>; a value starting with $
+      # (e.g. $6$... from mkpasswd -m sha-512 / openssl passwd -6) is used verbatim.
+      # Create with: kubectl create secret generic <name> --from-literal=password='...'
+      passwordSecret: ""
+      # -- Dev/test only: cleartext password the chart renders into a Secret itself.
+      # Ignored when passwordSecret is set. Username without either fails rendering.
+      password: netconf
     resources: {}
     securityContext: {}
     # -- Persist the netconf-server container's stdout/stderr to a timestamped log file.
