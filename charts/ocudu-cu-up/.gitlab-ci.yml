@@ -37,6 +37,12 @@ helm lint:
   variables:
     CHART_PATH: charts/ocudu-cu-up
 
+helm lint o1:
+  extends: .helm lint
+  variables:
+    CHART_PATH: charts/ocudu-cu-up
+    LINT_VALUES_FILE: charts/ocudu-cu-up/values-o1.yaml
+
 # The default values leave the ipsec sidecar off, so the job above never renders any of it.
 helm lint ipsec:
   extends: .helm lint
@@ -63,6 +69,7 @@ helm publish-dev:
     CHART_NAME: ocudu-cu-up
   needs:
     - job: helm lint
+    - job: helm lint o1
     - job: helm lint ipsec
     - job: helm lint ipsec core
     - job: helm version check
