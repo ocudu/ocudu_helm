@@ -139,6 +139,27 @@ tuned image:
           ocudu_ref: $[[ inputs.ocudu_ref ]]
   needs: []
 
+helm-sbom image:
+  stage: child
+  rules:
+    - if: $ON_MR
+      changes:
+        paths:
+          - .gitlab/ci/image_utils.yml
+          - images/helm-sbom/**/*
+    - if: $ON_DEFAULT_BRANCH
+      changes:
+        paths:
+          - images/helm-sbom/**/*
+  trigger:
+    strategy: mirror
+    include:
+      - local: images/helm-sbom/.gitlab-ci.yml
+        inputs:
+          ocudu_path: $[[ inputs.ocudu_path ]]
+          ocudu_ref: $[[ inputs.ocudu_ref ]]
+  needs: []
+
 ################################################################################
 ## Charts
 ################################################################################

@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+spec:
+  inputs:
+    ocudu_path:
+      type: string
+      default: ocudu/ocudu
+      description: "OCUDU repository path."
+    ocudu_ref:
+      type: string
+      default: dev
+      description: "OCUDU reference branch or tag."
+---
+include:
+  - project: $[[ inputs.ocudu_path ]]
+    ref: $[[ inputs.ocudu_ref ]]
+    file: .gitlab/ci-shared/docker.yml
+  - local: .gitlab/ci/image_utils.yml
+
+stages:
+  - test
+  - publish
+
+variables:
+  CDXGEN_VERSION: "13.4.0"
+  ORAS_VERSION: "1.3.0"
+  CT_VERSION: "1.0.0"
+
+.docker-builder-helm-sbom:
+  extends: .docker-builder
+  variables:
+    CONTEXT: images/helm-sbom
+    VERSION: "${CDXGEN_VERSION}_${CT_VERSION}"
+    BUILD_ARGS: "CDXGEN_VERSION=${CDXGEN_VERSION};ORAS_VERSION=${ORAS_VERSION}"
+    NAME: helm-sbom
+    REGISTRY_URI: ${CI_REGISTRY}/${CI_PROJECT_PATH}
+    REGISTRY_ORG: ""
+
+build-and-scan-helm-sbom:
+  stage: test
+  extends:
+    - .docker-builder-helm-sbom
+    - .image scan
+  rules:
+    - if: $ON_MR
+
+build-and-publish-helm-sbom:
+  stage: publish
+  extends: .docker-builder-helm-sbom
+  rules:
+    - if: $ON_DEFAULT_BRANCH
+    - if: $ON_MR
+      when: manual
+      allow_failure: true
+  variables:
+    MODE: publish
