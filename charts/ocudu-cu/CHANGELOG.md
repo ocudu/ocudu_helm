@@ -4,7 +4,7 @@
 
 ### Added
 
-- The chart pipeline runs the essential tests of the CNTi Test Suite against the chart without a core network on a kind cluster, through the suite's GitLab CI/CD component. The values the job uses live under `.gitlab/cnti/ocudu-cu/`
+- The chart pipeline runs the essential tests of the CNTi Test Suite against the chart without a core network on a kind cluster on a runner with the SCTP kernel module, through the suite's GitLab CI/CD component. The values the job uses live under `.gitlab/cnti/ocudu-cu/`
 
 ## 1.15.0 (2026-10-26)
 

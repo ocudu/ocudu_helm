@@ -11,6 +11,9 @@ include:
       version: v2.2.0
       cnf_config: .gitlab/cnti/ocudu-cu-cp/cnti-testsuite.yaml
       install_timeout: "900"
+      # The CU-CP opens SCTP listeners (F1-C, E1) at startup and exits when the
+      # kernel has no SCTP; only the on-prem runners have the module loaded.
+      runner_tags: [on-prem-linux-amd64, sctp]
 
 stages:
   - static
