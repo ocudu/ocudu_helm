@@ -13,6 +13,7 @@ usage() {
   cat >&2 <<EOF
 Usage:
   $0 generate CHART_PATH OUTPUT_DIRECTORY [CHART_OCI_MANIFEST_DIGEST]
+  $0 add-chart-digest OUTPUT_DIRECTORY CHART_OCI_REFERENCE CHART_OCI_MANIFEST_DIGEST
   $0 validate SBOM_FILE PROFILE
 
 PROFILE is one of: default, o1, ipsec.
@@ -143,11 +144,24 @@ generate_boms() {
   package_dir="${work_dir}/package"
   mkdir -p "$package_dir"
 
-  if grep -q '^dependencies:' "${chart_path}/Chart.yaml"; then
-    helm dependency update "$chart_path"
+  if [ -n "${SBOM_CHART_PACKAGE_FILE:-}" ]; then
+    package_file=$(cd "$(dirname "$SBOM_CHART_PACKAGE_FILE")" && pwd)/$(basename "$SBOM_CHART_PACKAGE_FILE")
+    [ -f "$package_file" ] || {
+      echo "ERROR: SBOM_CHART_PACKAGE_FILE does not exist: ${package_file}" >&2
+      exit 1
+    }
+    expected_package="${chart_name}-${chart_version}.tgz"
+    if [ "$(basename "$package_file")" != "$expected_package" ]; then
+      echo "ERROR: expected package name ${expected_package}, got $(basename "$package_file")" >&2
+      exit 1
+    fi
+  else
+    if grep -q '^dependencies:' "${chart_path}/Chart.yaml"; then
+      helm dependency update "$chart_path"
+    fi
+    helm package "$chart_path" --destination "$package_dir" >/dev/null
+    package_file="${package_dir}/${chart_name}-${chart_version}.tgz"
   fi
-  helm package "$chart_path" --destination "$package_dir" >/dev/null
-  package_file="${package_dir}/${chart_name}-${chart_version}.tgz"
   [ -f "$package_file" ] || {
     echo "ERROR: expected package was not created: ${package_file}" >&2
     exit 1
@@ -168,7 +182,7 @@ generate_boms() {
     --output "$base_bom" \
     "$packaged_chart"
 
-  generated_at=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+  generated_at=${SBOM_GENERATED_AT:-$(date -u '+%Y-%m-%dT%H:%M:%SZ')}
   root_ref="pkg:helm/${chart_name}@${chart_version}"
 
   for profile in default o1 ipsec; do
@@ -261,6 +275,15 @@ generate_boms() {
     done < "$images"
 
     output="${output_dir}/${chart_name}-${chart_version}${suffix}.cdx.json"
+    serial_hash=$(printf '%s\n' "${root_ref}:${profile}:${chart_sha256}" | sha256sum | awk '{ print $1 }')
+    serial_number=$(jq -nr --arg hash "$serial_hash" '
+      "urn:uuid:" +
+      $hash[0:8] + "-" +
+      $hash[8:12] + "-" +
+      "8" + $hash[13:16] + "-" +
+      "8" + $hash[17:20] + "-" +
+      $hash[20:32]
+    ')
     jq -s \
       --arg spec "$CYCLONEDX_SPEC_VERSION" \
       --arg supplier "$SUPPLIER" \
@@ -271,6 +294,7 @@ generate_boms() {
       --arg chartSha "$chart_sha256" \
       --arg chartDigest "$chart_manifest_digest" \
       --arg profile "$profile" \
+      --arg serialNumber "$serial_number" \
       --arg rootRef "$root_ref" '
         .[0] as $base |
         (.[1:] | map(select(type == "object"))) as $images |
@@ -290,7 +314,7 @@ generate_boms() {
         {
           bomFormat: "CycloneDX",
           specVersion: $spec,
-          serialNumber: $base.serialNumber,
+          serialNumber: $serialNumber,
           version: 1,
           metadata: {
             timestamp: $generatedAt,
@@ -336,6 +360,52 @@ generate_boms() {
   echo "Generated profile SBOMs in ${output_dir}"
 }
 
+add_chart_digest() {
+  output_dir=$1
+  chart_reference=$2
+  chart_digest=$3
+
+  require_tool jq
+  require_tool cdx-validate
+  if ! printf '%s\n' "$chart_digest" | grep -Eq '^sha256:[0-9a-f]{64}$'; then
+    echo "ERROR: invalid chart OCI manifest digest: ${chart_digest}" >&2
+    exit 1
+  fi
+
+  found=false
+  for bom in "$output_dir"/*.cdx.json; do
+    [ -f "$bom" ] || continue
+    found=true
+    tmp_bom=$(mktemp)
+    jq \
+      --arg reference "$chart_reference" \
+      --arg digest "$chart_digest" '
+        .metadata.component.properties = (
+          [.metadata.component.properties[]? |
+            select(.name != "ocudu:chart-oci-reference" and
+                   .name != "ocudu:chart-oci-manifest-digest")] +
+          [
+            {name: "ocudu:chart-oci-reference", value: $reference},
+            {name: "ocudu:chart-oci-manifest-digest", value: $digest}
+          ]
+        ) |
+        .metadata.component.externalReferences = (
+          [.metadata.component.externalReferences[]? |
+            select(.type != "distribution" or
+                   (.url | startswith("oci://") | not))] +
+          [{type: "distribution", url: ("oci://" + $reference + "@" + $digest)}]
+        )
+      ' "$bom" > "$tmp_bom"
+    mv "$tmp_bom" "$bom"
+    profile=$(property_value "$bom" "ocudu:deployment-profile")
+    validate_bom "$bom" "$profile"
+  done
+  if [ "$found" != true ]; then
+    echo "ERROR: no SBOM files found in ${output_dir}" >&2
+    exit 1
+  fi
+}
+
 [ "$#" -ge 1 ] || usage
 command=$1
 shift
@@ -343,6 +413,10 @@ case "$command" in
   generate)
     [ "$#" -ge 2 ] && [ "$#" -le 3 ] || usage
     generate_boms "$@"
+    ;;
+  add-chart-digest)
+    [ "$#" -eq 3 ] || usage
+    add_chart_digest "$@"
     ;;
   validate)
     [ "$#" -eq 2 ] || usage

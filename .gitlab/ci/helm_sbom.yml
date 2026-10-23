@@ -26,3 +26,41 @@
       - sbom/*.cdx.json
     expire_in: 30 days
     when: always
+
+.helm sbom publish:
+  image:
+    name: ${CI_REGISTRY_IMAGE}/helm-sbom:13.4.0_1.0.0
+    entrypoint: ["/bin/sh", "-c"]
+  stage: publish
+  retry: 2
+  variables:
+    CHART_PATH: ${CI_PROJECT_DIR}
+    SBOM_OUTPUT_DIR: sbom
+  before_script:
+    - helm registry login -u "$CI_REGISTRY_USER" -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
+    - printf '%s' "$CI_JOB_TOKEN" | oras login "$CI_REGISTRY" --username "$CI_REGISTRY_USER" --password-stdin
+  script:
+    - .gitlab/ci/helm_sbom_publish.sh "$SBOM_RELEASE_MODE" "$CHART_PATH" "$SBOM_OUTPUT_DIR"
+  artifacts:
+    name: "${CI_JOB_NAME_SLUG}-${CI_COMMIT_SHORT_SHA}"
+    paths:
+      - sbom/*.cdx.json
+      - sbom/*.tgz
+    expire_in: 30 days
+    when: always
+
+.helm publish-dev-sbom:
+  extends: .helm sbom publish
+  variables:
+    SBOM_RELEASE_MODE: development
+  rules:
+    - if: $ON_MR
+      when: manual
+      allow_failure: true
+
+.helm publish-prod-sbom:
+  extends: .helm sbom publish
+  variables:
+    SBOM_RELEASE_MODE: production
+  rules:
+    - if: $ON_DEFAULT_BRANCH

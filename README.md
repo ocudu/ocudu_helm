@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+-->
+
 # OCUDU Kubernetes Helm Charts
 
 [![License: BSD 3-Clause Open MPI](https://img.shields.io/badge/License-BSD%203--Clause%20Open%20MPI-blue.svg)](LICENSE)
@@ -67,6 +72,10 @@ Refer to each chart's README for detailed configuration options:
 - [rt-tests](charts/rt-tests/README.md)
 - [ru_emulator](charts/ru_emulator/README.md)
 - [tuned](charts/tuned/README.md)
+
+The CU chart also publishes signed, deployment-profile
+[CycloneDX SBOMs](charts/ocudu-cu/docs/sbom.md) alongside production OCI chart
+releases.
 
 ## Container Images
 
