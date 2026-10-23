@@ -80,7 +80,7 @@ helm sbom:
     - job: helm lint ipsec core
 
 helm publish-dev:
-  extends: .helm publish-dev
+  extends: .helm publish-dev-sbom
   variables:
     CHART_PATH: charts/ocudu-cu-cp
     CHART_NAME: ocudu-cu-cp
@@ -92,7 +92,7 @@ helm publish-dev:
     - job: helm version check
 
 helm publish-prod:
-  extends: .helm publish-prod
+  extends: .helm publish-prod-sbom
   variables:
     CHART_PATH: charts/ocudu-cu-cp
     CHART_NAME: ocudu-cu-cp

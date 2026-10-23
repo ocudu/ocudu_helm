@@ -3,16 +3,17 @@ SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
 SPDX-License-Identifier: BSD-3-Clause-Open-MPI
 -->
 
-# OCUDU CU Helm profile SBOMs
+# OCUDU Helm profile SBOMs
 
-Each production `ocudu-cu` chart release publishes three CycloneDX 1.6 SBOMs as
-separate OCI attachments to the immutable chart manifest:
+Each production RAN chart release publishes three CycloneDX 1.6 SBOMs as
+separate OCI attachments to the immutable chart manifest. The supported charts
+are `ocudu-gnb`, `ocudu-cu`, `ocudu-du`, `ocudu-cu-cp`, and `ocudu-cu-up`.
 
 | Deployment profile | Filename | Included deployment images |
 | --- | --- | --- |
-| regular/default | `ocudu-cu-<version>.cdx.json` | CU |
-| O1 | `ocudu-cu-<version>-o1.cdx.json` | CU, O1 adapter, NETCONF server |
-| IPsec | `ocudu-cu-<version>-ipsec.cdx.json` | CU, IPsec sidecar |
+| regular/default | `<chart>-<version>.cdx.json` | Chart application |
+| O1 | `<chart>-<version>-o1.cdx.json` | Chart application, O1 adapter, NETCONF server |
+| IPsec | `<chart>-<version>-ipsec.cdx.json` | Chart application, IPsec sidecar |
 
 The unqualified filename always represents the regular/default deployment. O1
 and IPsec are independent profiles; an O1+IPsec combination is not supported.
@@ -26,18 +27,19 @@ and do not embed vulnerability results.
 
 Merge-request preview artifacts and development-registry attachments are
 unsigned. Production attachments contain embedded Ed25519 JSON Signature
-Format signatures made by the protected release pipeline. Version `1.14.0`
-predates this workflow and is not backfilled; signed attachments start with the
-next normal chart release.
+Format signatures made by the protected release pipeline. Existing chart
+releases, including `ocudu-cu:1.14.0`, are not backfilled; signed attachments
+start with each chart's next normal release.
 
 ## Discover and download
 
 Install ORAS 1.3.0, log in to `registry.gitlab.com` if the project is private,
-and select the chart version:
+and select the chart and version:
 
 ```sh
-repository=registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-cu
+chart=ocudu-gnb
 version=<version>
+repository="registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/${chart}"
 chart_digest=$(oras resolve "${repository}:${version}")
 
 oras discover \
@@ -67,10 +69,10 @@ tool_image=registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/helm-sbom:13.4.0_
 
 docker run --rm --volume "$PWD:/workspace" --workdir /workspace \
   "$tool_image" .gitlab/ci/helm_sbom.sh validate \
-  "sbom/ocudu-cu-<version>-o1.cdx.json" o1
+  "sbom/${chart}-<version>-o1.cdx.json" o1
 docker run --rm --volume "$PWD:/workspace" --workdir /workspace \
   "$tool_image" cdx-verify \
-  -i "sbom/ocudu-cu-<version>-o1.cdx.json" \
+  -i "sbom/${chart}-<version>-o1.cdx.json" \
   --public-key <trusted-public-key.pem>
 ```
 

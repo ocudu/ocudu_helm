@@ -73,9 +73,8 @@ Refer to each chart's README for detailed configuration options:
 - [ru_emulator](charts/ru_emulator/README.md)
 - [tuned](charts/tuned/README.md)
 
-The CU chart also publishes signed, deployment-profile
-[CycloneDX SBOMs](charts/ocudu-cu/docs/sbom.md) alongside production OCI chart
-releases.
+The RAN charts also publish signed, deployment-profile
+[CycloneDX SBOMs](HELM_SBOM.md) alongside production OCI chart releases.
 
 ## Container Images
 
