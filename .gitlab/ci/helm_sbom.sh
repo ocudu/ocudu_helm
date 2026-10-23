@@ -9,6 +9,17 @@ CDXGEN_VERSION="13.4.0"
 CYCLONEDX_SPEC_VERSION="1.6"
 SUPPLIER="Software Radio Systems Limited"
 
+OCI_REGISTRY="registry.gitlab.com"
+OCUDU_REPOSITORY="${OCI_REGISTRY}/ocudu/ocudu"
+OCUDU_ELEMENTS_REPOSITORY="${OCI_REGISTRY}/ocudu/ocudu_elements"
+OCUDU_ORAN_APPS_REPOSITORY="${OCUDU_ELEMENTS_REPOSITORY}/ocudu_oran_apps"
+OCUDU_HELM_REPOSITORY="${OCUDU_ELEMENTS_REPOSITORY}/ocudu_helm"
+
+CU_IMAGE_REPOSITORY="${OCUDU_REPOSITORY}/images/cu"
+NETCONF_IMAGE_REPOSITORY="${OCUDU_ORAN_APPS_REPOSITORY}/ocudu_netconf/netconf_nightly_amd64"
+O1_ADAPTER_IMAGE_REPOSITORY="${OCUDU_ORAN_APPS_REPOSITORY}/ocudu_o1_adapter/o1_adapter_nightly_amd64"
+IPSEC_SIDECAR_IMAGE_REPOSITORY="${OCUDU_HELM_REPOSITORY}/ipsec-sidecar"
+
 usage() {
   cat >&2 <<EOF
 Usage:
@@ -38,20 +49,18 @@ property_value() {
 expected_repositories() {
   case "$1" in
     default)
-      echo "registry.gitlab.com/ocudu/ocudu/images/cu"
+      printf '%s\n' "$CU_IMAGE_REPOSITORY"
       ;;
     o1)
-      cat <<EOF
-registry.gitlab.com/ocudu/ocudu/images/cu
-registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_netconf/netconf_nightly_amd64
-registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_o1_adapter/o1_adapter_nightly_amd64
-EOF
+      printf '%s\n' \
+        "$CU_IMAGE_REPOSITORY" \
+        "$NETCONF_IMAGE_REPOSITORY" \
+        "$O1_ADAPTER_IMAGE_REPOSITORY"
       ;;
     ipsec)
-      cat <<EOF
-registry.gitlab.com/ocudu/ocudu/images/cu
-registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ipsec-sidecar
-EOF
+      printf '%s\n' \
+        "$CU_IMAGE_REPOSITORY" \
+        "$IPSEC_SIDECAR_IMAGE_REPOSITORY"
       ;;
     *) usage ;;
   esac
