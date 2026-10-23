@@ -5,15 +5,18 @@
 
 set -eu
 
-CDXGEN_VERSION="13.4.0"
 CYCLONEDX_SPEC_VERSION="1.6"
 SUPPLIER="Software Radio Systems Limited"
 
-OCI_REGISTRY="registry.gitlab.com"
-OCUDU_REPOSITORY="${OCI_REGISTRY}/ocudu/ocudu"
-OCUDU_ELEMENTS_REPOSITORY="${OCI_REGISTRY}/ocudu/ocudu_elements"
+: "${CI_REGISTRY:?CI_REGISTRY is required}"
+: "${CI_PROJECT_NAMESPACE:?CI_PROJECT_NAMESPACE is required}"
+: "${CI_REGISTRY_IMAGE:?CI_REGISTRY_IMAGE is required}"
+: "${OCUDU_REGISTRY_URI:?OCUDU_REGISTRY_URI is required}"
+
+OCUDU_REPOSITORY="${OCUDU_REGISTRY_URI}"
+OCUDU_ELEMENTS_REPOSITORY="${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}"
 OCUDU_ORAN_APPS_REPOSITORY="${OCUDU_ELEMENTS_REPOSITORY}/ocudu_oran_apps"
-OCUDU_HELM_REPOSITORY="${OCUDU_ELEMENTS_REPOSITORY}/ocudu_helm"
+OCUDU_HELM_REPOSITORY="${CI_REGISTRY_IMAGE}"
 
 GNB_IMAGE_REPOSITORY="${OCUDU_REPOSITORY}/images/gnb-dpdk"
 CU_IMAGE_REPOSITORY="${OCUDU_REPOSITORY}/images/cu"
@@ -160,6 +163,16 @@ generate_boms() {
   for tool in helm yq jq sha256sum cdxgen cdx-validate oras; do
     require_tool "$tool"
   done
+  generator_version=$(cdxgen --version | awk '
+    match($0, /[0-9]+\.[0-9]+\.[0-9]+/) {
+      print substr($0, RSTART, RLENGTH)
+      exit
+    }
+  ')
+  if [ -z "$generator_version" ]; then
+    echo "ERROR: unable to determine the cdxgen version" >&2
+    exit 1
+  fi
 
   chart_path=$(cd "$chart_path" && pwd)
   chart_name=$(yq eval -r '.name' "${chart_path}/Chart.yaml")
@@ -321,7 +334,7 @@ generate_boms() {
       --arg spec "$CYCLONEDX_SPEC_VERSION" \
       --arg supplier "$SUPPLIER" \
       --arg generatedAt "$generated_at" \
-      --arg generatorVersion "$CDXGEN_VERSION" \
+      --arg generatorVersion "$generator_version" \
       --arg chartName "$chart_name" \
       --arg chartVersion "$chart_version" \
       --arg chartSha "$chart_sha256" \

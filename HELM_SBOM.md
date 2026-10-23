@@ -62,22 +62,23 @@ discovery mode, so both CI and consumers must use the
 ## Validate and verify
 
 The repository provides a versioned tool image containing cdxgen 13.4.0 and
-ORAS 1.3.0. Validate the expected profile with that image:
+ORAS 1.3.0. Validate the CycloneDX document with that image:
 
 ```sh
 tool_image=registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/helm-sbom:13.4.0_1.0.1
 
 docker run --rm --volume "$PWD:/workspace" --workdir /workspace \
-  "$tool_image" .gitlab/ci/helm_sbom.sh validate \
-  "sbom/${chart}-<version>-o1.cdx.json" o1
+  "$tool_image" cdx-validate --strict --fail-severity critical \
+  --no-include-manual --report json --report-file /dev/null \
+  -i "sbom/${chart}-<version>-o1.cdx.json"
 docker run --rm --volume "$PWD:/workspace" --workdir /workspace \
   "$tool_image" cdx-verify \
   -i "sbom/${chart}-<version>-o1.cdx.json" \
   --public-key <trusted-public-key.pem>
 ```
 
-Use `default` or `ipsec` as the validator profile for the other filenames.
-Obtain the trusted public key from the release owner.
+Use the corresponding filename for another deployment profile. Obtain the
+trusted public key from the release owner.
 
 ## GitLab release setup
 
