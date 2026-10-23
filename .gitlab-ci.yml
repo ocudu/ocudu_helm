@@ -145,7 +145,6 @@ helm-sbom image:
     - if: $ON_MR
       changes:
         paths:
-          - .gitlab/ci/image_utils.yml
           - images/helm-sbom/**/*
     - if: $ON_DEFAULT_BRANCH
       changes:

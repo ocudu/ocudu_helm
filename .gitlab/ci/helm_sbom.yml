@@ -3,7 +3,7 @@
 
 .helm sbom:
   image:
-    name: ${CI_REGISTRY_IMAGE}/helm-sbom:13.4.0_1.0.0
+    name: ${CI_REGISTRY_IMAGE}/helm-sbom:13.4.0_1.0.1
     entrypoint: ["/bin/sh", "-c"]
   stage: static
   retry: 2
@@ -29,7 +29,7 @@
 
 .helm sbom publish:
   image:
-    name: ${CI_REGISTRY_IMAGE}/helm-sbom:13.4.0_1.0.0
+    name: ${CI_REGISTRY_IMAGE}/helm-sbom:13.4.0_1.0.1
     entrypoint: ["/bin/sh", "-c"]
   stage: publish
   retry: 2

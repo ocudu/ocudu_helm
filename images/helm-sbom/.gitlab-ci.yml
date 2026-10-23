@@ -16,7 +16,6 @@ include:
   - project: $[[ inputs.ocudu_path ]]
     ref: $[[ inputs.ocudu_ref ]]
     file: .gitlab/ci-shared/docker.yml
-  - local: .gitlab/ci/image_utils.yml
 
 stages:
   - test
@@ -24,24 +23,21 @@ stages:
 
 variables:
   CDXGEN_VERSION: "13.4.0"
-  ORAS_VERSION: "1.3.0"
-  CT_VERSION: "1.0.0"
+  CT_VERSION: "1.0.1"
 
 .docker-builder-helm-sbom:
   extends: .docker-builder
+  artifacts: null
   variables:
     CONTEXT: images/helm-sbom
     VERSION: "${CDXGEN_VERSION}_${CT_VERSION}"
-    BUILD_ARGS: "CDXGEN_VERSION=${CDXGEN_VERSION};ORAS_VERSION=${ORAS_VERSION}"
+    BUILD_ARGS: "CDXGEN_VERSION=${CDXGEN_VERSION}"
     NAME: helm-sbom
     REGISTRY_URI: ${CI_REGISTRY}/${CI_PROJECT_PATH}
-    REGISTRY_ORG: ""
 
-build-and-scan-helm-sbom:
+build-helm-sbom:
   stage: test
-  extends:
-    - .docker-builder-helm-sbom
-    - .image scan
+  extends: .docker-builder-helm-sbom
   rules:
     - if: $ON_MR
 
@@ -53,5 +49,58 @@ build-and-publish-helm-sbom:
     - if: $ON_MR
       when: manual
       allow_failure: true
-  variables:
-    MODE: publish
+  script:
+    - |
+      image_ref="${REGISTRY_URI}/${NAME}:${VERSION}"
+      printf '%s' "${REGISTRY_AUTH_PASSWORD}" | docker login "${REGISTRY_AUTH_SERVER}" \
+        --username "${REGISTRY_AUTH_USERNAME}" --password-stdin
+
+      build_args=""
+      if [ -n "${BUILD_ARGS}" ]; then
+        build_args="--opt build-arg:$(printf '%s' "${BUILD_ARGS}" | sed 's/;/ --opt build-arg:/g')"
+      fi
+
+      if docker manifest inspect "${image_ref}" >/dev/null 2>&1; then
+        echo "Image ${image_ref} already exists; keeping the immutable image"
+      else
+        rm -rf "${CI_BUILDS_DIR}/.buildkit-${CI_CONCURRENT_ID}"
+        buildctl-daemonless.sh build \
+          --progress=plain \
+          --opt platform="${PLATFORM_OS}/${PLATFORM}" \
+          --frontend=dockerfile.v0 \
+          --local context="${CONTEXT}" \
+          --local dockerfile="${CONTEXT}" \
+          ${build_args} \
+          --output "type=image,name=${image_ref},push=true"
+      fi
+
+      image_digest="${REGISTRY_URI}/${NAME}@$(regctl image digest "${image_ref}")"
+      if cosign verify \
+        --certificate-identity-regexp "^${CI_SERVER_URL}/${CI_PROJECT_PATH}//" \
+        --certificate-oidc-issuer "${CI_SERVER_URL}" \
+        "${image_digest}" >/dev/null 2>&1; then
+        echo "Image ${image_digest} already has a keyless signature"
+      else
+        cosign sign "${image_digest}"
+      fi
+
+      if [ "${CI_COMMIT_REF_PROTECTED}" = "true" ]; then
+        [ -n "${COSIGN_PRIVATE_KEY_B64:-}" ] || { echo "COSIGN_PRIVATE_KEY_B64 is mandatory" >&2; exit 1; }
+        [ -n "${COSIGN_PASSWORD:-}" ] || { echo "COSIGN_PASSWORD is mandatory" >&2; exit 1; }
+        [ -n "${COSIGN_PUBLIC_KEY:-}" ] || { echo "COSIGN_PUBLIC_KEY is mandatory" >&2; exit 1; }
+
+        key_file=$(mktemp)
+        public_key_file=$(mktemp)
+        trap 'rm -f "${key_file}" "${public_key_file}"' EXIT
+        printf '%s' "${COSIGN_PRIVATE_KEY_B64}" | base64 --decode > "${key_file}"
+        cosign public-key --key "${key_file}" > "${public_key_file}"
+        [ "$(tr -d '[:space:]' < "${public_key_file}")" = \
+          "$(printf '%s' "${COSIGN_PUBLIC_KEY}" | tr -d '[:space:]')" ] || \
+          { echo "COSIGN_PUBLIC_KEY does not match COSIGN_PRIVATE_KEY_B64" >&2; exit 1; }
+
+        if cosign verify --key "${public_key_file}" "${image_digest}" >/dev/null 2>&1; then
+          echo "Image ${image_digest} already has a protected-key signature"
+        else
+          cosign sign --key "${key_file}" "${image_digest}"
+        fi
+      fi

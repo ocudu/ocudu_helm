@@ -63,7 +63,7 @@ The repository provides a versioned tool image containing cdxgen 13.4.0 and
 ORAS 1.3.0. Validate the expected profile with that image:
 
 ```sh
-tool_image=registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/helm-sbom:13.4.0_1.0.0
+tool_image=registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/helm-sbom:13.4.0_1.0.1
 
 docker run --rm --volume "$PWD:/workspace" --workdir /workspace \
   "$tool_image" .gitlab/ci/helm_sbom.sh validate \
