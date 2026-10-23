@@ -51,5 +51,4 @@ build-and-publish-helm-sbom:
       allow_failure: true
   variables:
     MODE: publish
-    GRYPE_SKIP: "true"
-    CONTAINER_SBOM_SKIP: "true"
+    CONTAINER_SECURITY_ANALYSIS_SKIP: "true"
