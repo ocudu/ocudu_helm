@@ -16,6 +16,7 @@ include:
       # The CU-CP opens SCTP listeners (F1-C, E1) at startup and exits when the
       # kernel has no SCTP; only the on-prem runners have the module loaded.
       runner_tags: [on-prem-linux-amd64, sctp]
+  - local: .gitlab/ci/helm_sbom.yml
 
 stages:
   - static
@@ -67,6 +68,16 @@ helm version check:
   variables:
     CHART_PATH: charts/ocudu-cu-cp
     CHART_NAME: ocudu-cu-cp
+
+helm sbom:
+  extends: .helm sbom
+  variables:
+    CHART_PATH: charts/ocudu-cu-cp
+  needs:
+    - job: helm lint
+    - job: helm lint o1
+    - job: helm lint ipsec
+    - job: helm lint ipsec core
 
 helm publish-dev:
   extends: .helm publish-dev

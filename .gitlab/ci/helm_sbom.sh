@@ -15,7 +15,11 @@ OCUDU_ELEMENTS_REPOSITORY="${OCI_REGISTRY}/ocudu/ocudu_elements"
 OCUDU_ORAN_APPS_REPOSITORY="${OCUDU_ELEMENTS_REPOSITORY}/ocudu_oran_apps"
 OCUDU_HELM_REPOSITORY="${OCUDU_ELEMENTS_REPOSITORY}/ocudu_helm"
 
+GNB_IMAGE_REPOSITORY="${OCUDU_REPOSITORY}/images/gnb-dpdk"
 CU_IMAGE_REPOSITORY="${OCUDU_REPOSITORY}/images/cu"
+DU_IMAGE_REPOSITORY="${OCUDU_REPOSITORY}/images/du-dpdk"
+CU_CP_IMAGE_REPOSITORY="${OCUDU_REPOSITORY}/images/cu-cp"
+CU_UP_IMAGE_REPOSITORY="${OCUDU_REPOSITORY}/images/cu-up"
 NETCONF_IMAGE_REPOSITORY="${OCUDU_ORAN_APPS_REPOSITORY}/ocudu_netconf/netconf_nightly_amd64"
 O1_ADAPTER_IMAGE_REPOSITORY="${OCUDU_ORAN_APPS_REPOSITORY}/ocudu_o1_adapter/o1_adapter_nightly_amd64"
 IPSEC_SIDECAR_IMAGE_REPOSITORY="${OCUDU_HELM_REPOSITORY}/ipsec-sidecar"
@@ -46,20 +50,38 @@ property_value() {
     '.metadata.component.properties[]? | select(.name == $property) | .value' "$file"
 }
 
-expected_repositories() {
+main_image_repository() {
   case "$1" in
+    ocudu-gnb) printf '%s\n' "$GNB_IMAGE_REPOSITORY" ;;
+    ocudu-cu) printf '%s\n' "$CU_IMAGE_REPOSITORY" ;;
+    ocudu-du) printf '%s\n' "$DU_IMAGE_REPOSITORY" ;;
+    ocudu-cu-cp) printf '%s\n' "$CU_CP_IMAGE_REPOSITORY" ;;
+    ocudu-cu-up) printf '%s\n' "$CU_UP_IMAGE_REPOSITORY" ;;
+    *)
+      echo "ERROR: unsupported Helm SBOM chart: $1" >&2
+      exit 1
+      ;;
+  esac
+}
+
+expected_repositories() {
+  chart_name=$1
+  profile=$2
+  main_repository=$(main_image_repository "$chart_name")
+
+  case "$profile" in
     default)
-      printf '%s\n' "$CU_IMAGE_REPOSITORY"
+      printf '%s\n' "$main_repository"
       ;;
     o1)
       printf '%s\n' \
-        "$CU_IMAGE_REPOSITORY" \
+        "$main_repository" \
         "$NETCONF_IMAGE_REPOSITORY" \
         "$O1_ADAPTER_IMAGE_REPOSITORY"
       ;;
     ipsec)
       printf '%s\n' \
-        "$CU_IMAGE_REPOSITORY" \
+        "$main_repository" \
         "$IPSEC_SIDECAR_IMAGE_REPOSITORY"
       ;;
     *) usage ;;
@@ -73,11 +95,15 @@ validate_bom() {
   require_tool jq
   require_tool cdx-validate
 
+  chart_name=$(jq -r '.metadata.component.name' "$bom")
+  main_image_repository "$chart_name" >/dev/null
+
   cdx-validate --strict --fail-severity critical --no-include-manual \
     --report json --report-file /dev/null -i "$bom"
   jq -e \
     --arg spec "$CYCLONEDX_SPEC_VERSION" \
     --arg supplier "$SUPPLIER" \
+    --arg chartName "$chart_name" \
     --arg profile "$profile" '
       .bomFormat == "CycloneDX" and
       .specVersion == $spec and
@@ -86,7 +112,8 @@ validate_bom() {
       any(.metadata.authors[]?; .name == $supplier) and
       .metadata.component.supplier.name == $supplier and
       .metadata.component.author == $supplier and
-      (.metadata.component.purl | startswith("pkg:helm/ocudu-cu@")) and
+      .metadata.component.name == $chartName and
+      (.metadata.component.purl | startswith("pkg:helm/" + $chartName + "@")) and
       (.metadata.component.hashes | length == 1) and
       .metadata.component.hashes[0].alg == "SHA-256" and
       (.metadata.component.hashes[0].content | test("^[0-9a-f]{64}$")) and
@@ -107,7 +134,7 @@ validate_bom() {
     select(.name == "ocudu:oci-repository") |
     .value
   ' "$bom" | sort -u > "$actual"
-  expected_repositories "$profile" | sort -u > "$expected"
+  expected_repositories "$chart_name" "$profile" | sort -u > "$expected"
   if ! diff -u "$expected" "$actual"; then
     rm -f "$actual" "$expected"
     echo "ERROR: unexpected container component set for ${profile}" >&2
@@ -137,10 +164,7 @@ generate_boms() {
   chart_path=$(cd "$chart_path" && pwd)
   chart_name=$(yq eval -r '.name' "${chart_path}/Chart.yaml")
   chart_version=$(yq eval -r '.version' "${chart_path}/Chart.yaml")
-  if [ "$chart_name" != "ocudu-cu" ]; then
-    echo "ERROR: profile definitions currently exist only for ocudu-cu" >&2
-    exit 1
-  fi
+  main_image_repository "$chart_name" >/dev/null
   if [ -n "$chart_manifest_digest" ] && ! printf '%s\n' "$chart_manifest_digest" | grep -Eq '^sha256:[0-9a-f]{64}$'; then
     echo "ERROR: invalid chart OCI manifest digest: ${chart_manifest_digest}" >&2
     exit 1

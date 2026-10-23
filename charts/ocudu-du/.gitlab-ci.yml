@@ -13,6 +13,7 @@ include:
       install_timeout: "900"
       # Runs on main publish the badge to the package registry under this name.
       badge_name: ocudu-du
+  - local: .gitlab/ci/helm_sbom.yml
 
 stages:
   - static
@@ -55,6 +56,15 @@ helm version check:
   variables:
     CHART_PATH: charts/ocudu-du
     CHART_NAME: ocudu-du
+
+helm sbom:
+  extends: .helm sbom
+  variables:
+    CHART_PATH: charts/ocudu-du
+  needs:
+    - job: helm lint
+    - job: helm lint o1
+    - job: helm lint ipsec
 
 helm publish-dev:
   extends: .helm publish-dev

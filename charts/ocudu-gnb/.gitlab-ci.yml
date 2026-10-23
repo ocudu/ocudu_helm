@@ -3,6 +3,7 @@
 
 include:
   - local: .gitlab/ci/helm_utils.yml
+  - local: .gitlab/ci/helm_sbom.yml
   # CNTi Test Suite essential tests of the chart: install it on a kind cluster
   # on the runner in gNB test mode and run the essential tests.
   - component: $CI_SERVER_FQDN/lfn-cnti/testsuite-component/cnti-testsuite@1.2.0
@@ -48,6 +49,15 @@ helm version check:
   variables:
     CHART_PATH: charts/ocudu-gnb
     CHART_NAME: ocudu-gnb
+
+helm sbom:
+  extends: .helm sbom
+  variables:
+    CHART_PATH: charts/ocudu-gnb
+  needs:
+    - job: helm lint
+    - job: helm lint o1
+    - job: helm lint ipsec
 
 helm publish-dev:
   extends: .helm publish-dev
