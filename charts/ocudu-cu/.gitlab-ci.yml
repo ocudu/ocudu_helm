@@ -50,6 +50,12 @@ helm lint ipsec:
     CHART_PATH: charts/ocudu-cu
     LINT_VALUES_FILE: charts/ocudu-cu/ci/lint-values-ipsec.yaml
 
+helm lint ipsec core:
+  extends: .helm lint
+  variables:
+    CHART_PATH: charts/ocudu-cu
+    LINT_VALUES_FILE: charts/ocudu-cu/ci/lint-values-ipsec-core.yaml
+
 helm version check:
   extends: .helm version check
   variables:
@@ -64,6 +70,7 @@ helm publish-dev:
   needs:
     - job: helm lint
     - job: helm lint ipsec
+    - job: helm lint ipsec core
     - job: helm version check
 
 helm publish-prod:

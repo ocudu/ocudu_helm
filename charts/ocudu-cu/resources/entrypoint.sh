@@ -141,13 +141,21 @@ update_config_paths() {
     return 0
 }
 
-# Inject POD_IP into cu_cp.amf.bind_addr and cu_up.ngu.socket[].bind_addr.
+# Inject POD_IP into cu_cp.amf.bind_addr and cu_up.ngu.socket[].bind_addr, except where
+# IPsec protects that interface.
 # When USE_EXT_CORE=true, also sets cu_up.ngu.socket[].ext_addr to LB_IP.
 inject_ip_overrides() {
     local config_file="$1"
 
     if [ "${HOSTNETWORK}" = "true" ]; then
         log_info "HOSTNETWORK=true, skipping IP override injection"
+        return 0
+    fi
+
+    # A protected interface binds its protected address from the config. A pod-address
+    # bind_addr placed first would win, and it would leave outside the tunnel.
+    if [ "${IPSEC_PROTECT_N2}" = "true" ] && [ "${IPSEC_PROTECT_N3}" = "true" ]; then
+        log_info "IPSEC_PROTECT_N2=true and IPSEC_PROTECT_N3=true, skipping IP override injection"
         return 0
     fi
 
@@ -170,15 +178,19 @@ inject_ip_overrides() {
     }
 
     {
-        echo "cu_cp:"
-        echo "  amf:"
-        echo "    bind_addr: ${POD_IP}"
-        echo "cu_up:"
-        echo "  ngu:"
-        echo "    socket:"
-        echo "      - bind_addr: ${POD_IP}"
-        if [ "${USE_EXT_CORE}" = "true" ]; then
-            echo "        ext_addr: ${LB_IP}"
+        if [ "${IPSEC_PROTECT_N2}" != "true" ]; then
+            echo "cu_cp:"
+            echo "  amf:"
+            echo "    bind_addr: ${POD_IP}"
+        fi
+        if [ "${IPSEC_PROTECT_N3}" != "true" ]; then
+            echo "cu_up:"
+            echo "  ngu:"
+            echo "    socket:"
+            echo "      - bind_addr: ${POD_IP}"
+            if [ "${USE_EXT_CORE}" = "true" ]; then
+                echo "        ext_addr: ${LB_IP}"
+            fi
         fi
     } > "$tmpfile"
 
@@ -319,6 +331,8 @@ CONFIG_CREATE_TIMEOUT="${CONFIG_CREATE_TIMEOUT:-120}"
 ENABLE_OCUDU_O1="${ENABLE_OCUDU_O1:-false}"
 O1_HEALTHCHECK_PORT="${O1_HEALTHCHECK_PORT:-5000}"
 HOSTNETWORK="${HOSTNETWORK:-false}"
+IPSEC_PROTECT_N2="${IPSEC_PROTECT_N2:-false}"
+IPSEC_PROTECT_N3="${IPSEC_PROTECT_N3:-false}"
 OCUDU_LOG_DIR="${OCUDU_LOG_DIR:-/var/log/ocudu}"
 USE_EXT_CORE="${USE_EXT_CORE:-false}"
 

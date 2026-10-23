@@ -197,7 +197,8 @@ claims nothing about N3.
 **F1-U must not use the core's GTP-U port.** The policy has to leave UDP 2152 open for the
 core, and that rule names a port and an address range rather than a peer, so while F1-U
 shares the port it also permits plaintext F1-U to the peer. Set `f1u.bind_port` and
-`peer_port` to another port on both ends; the chart refuses to render otherwise.
+`peer_port` to another port on both ends; the chart refuses to render otherwise. With
+`ipsec.protectN3` the policy opens no plaintext port to the core, so F1-U may stay on 2152.
 
 The application has to bind the protected addresses, and the chart refuses to render if it
 does not — along with a dozen other configurations that would leave traffic unprotected.

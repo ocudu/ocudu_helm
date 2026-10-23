@@ -4,6 +4,8 @@
 
 ### Added
 
+- `ipsec.protectN2` and `ipsec.protectN3`: carry N2 and N3 in tunnels as well, to core-side peers (AMF and UPF) that run their own IKEv2 endpoints. The flags are independent. A protected interface's sections (`amf` and `extra_amfs`, or `ngu`) are then checked like the other protected sections, with a bind address required, the entrypoint stops prepending the pod IP as that interface's bind address, and the network policy allows the core the tunnel instead of that interface's plaintext port. `n2Service.enabled`, `n3Service.enabled` and `n3Service.advertisedAddress` are refused while the matching flag is set, and either flag is refused without `ipsec.enabled`. With `protectN3`, F1-U and Xn-U may stay on UDP 2152. Off by default. See `docs/ipsec.md`
+- With IPsec on, a protected section that sets `bind_interface` to anything but `auto` is refused: the socket would be pinned to that device and its traffic would leave outside the tunnel
 - The chart pipeline runs the essential tests of the CNTi Test Suite against the chart without a core network on a kind cluster on a runner with the SCTP kernel module, through the suite's GitLab CI/CD component. The values the job uses live under `.gitlab/cnti/ocudu-cu/`
 
 ### Changed

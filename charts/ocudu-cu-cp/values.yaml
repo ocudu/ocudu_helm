@@ -534,9 +534,9 @@ ipsec:
 
   # -- Carry N2 in a tunnel too, to a core-side peer that terminates IKEv2.
   # Add the core as a peer with a connection for N2, and point `cu_cp.amf.addrs` and
-  # `cu_cp.amf.bind_addrs` at its protected addresses. The `amf` section is then checked
-  # like F1-C and E1, the entrypoint stops binding N2 to the pod address, and the policy
-  # allows the core the tunnel instead of plaintext SCTP 38412.
+  # `cu_cp.amf.bind_addrs` at its protected addresses. The `amf` and `extra_amfs` sections
+  # are then checked like F1-C and E1, the entrypoint stops binding N2 to the pod address,
+  # and the policy allows the core the tunnel instead of plaintext SCTP 38412.
   # @default -- `false`
   protectN2: false
 

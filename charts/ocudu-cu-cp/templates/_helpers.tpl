@@ -236,6 +236,9 @@ Every one of these is a way the tunnel can end up configured but bypassed, which
 like success and is not. A failed install is recoverable; plaintext on the wire is not.
 */}}
 {{- define "ocudu-cu-cp.ipsec.validate" -}}
+{{- if and .Values.ipsec.protectN2 (not .Values.ipsec.enabled) -}}
+{{- fail "ipsec.protectN2 needs ipsec.enabled to be true: without the sidecar there is no tunnel to carry N2, and N2 would stay in clear" -}}
+{{- end -}}
 {{- if .Values.ipsec.enabled -}}
 
 {{- if .Values.network.hostNetwork -}}
@@ -373,13 +376,21 @@ interface it was meant to protect would be somewhere else entirely, in clear.
 {{- $blob := include "ocudu-cu-cp.ipsec.configBlob" . -}}
 {{- $sections := list "f1ap" "e1ap" "xnap" -}}
 {{- if .Values.ipsec.protectN2 -}}
-{{- $sections = append $sections "amf" -}}
+{{- $sections = concat $sections (list "amf" "extra_amfs") -}}
 {{/*
-The entrypoint no longer supplies an N2 bind address, so one has to be here. Without it the
-application binds the wildcard on its own, and the address check below never sees it.
+The entrypoint no longer supplies an N2 bind address, so one has to be here, for the AMF and
+for every extra AMF. Without it the application binds its default of 127.0.0.1, and N2 to
+that AMF never comes up.
 */}}
 {{- if not (regexMatch "(?m)^(- )?bind_addrs?:" (include "ocudu-cu-cp.ipsec.section" (dict "blob" $blob "key" "amf"))) -}}
-{{- fail "ipsec.protectN2 needs cu_cp.amf.bind_addrs: without it the application binds N2 to the wildcard address, and N2 leaves from the pod address outside the tunnel" -}}
+{{- fail "ipsec.protectN2 needs cu_cp.amf.bind_addrs: the entrypoint no longer binds N2 to the pod address, so without it the application binds 127.0.0.1 and N2 never comes up" -}}
+{{- end -}}
+{{- range $name, $doc := .Values.config -}}
+{{- range $amf := dig "cu_cp" "extra_amfs" list (fromYaml (toString $doc)) -}}
+{{- if not (or (hasKey $amf "bind_addrs") (hasKey $amf "bind_addr")) -}}
+{{- fail (printf "ipsec.protectN2 needs bind_addrs in every entry of cu_cp.extra_amfs, and the one for %v has none: the application would bind 127.0.0.1 and N2 to that AMF would never come up" (default "an unnamed AMF" $amf.addrs)) -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- $protected := "" -}}
@@ -423,6 +434,13 @@ list, and any other line closes it.
   {{- $addr = trimAll "\"'" $body -}}
 {{- else -}}
   {{- $pending = false -}}
+{{- end -}}
+{{/*
+A named device pins the socket to it, so the traffic leaves through that device rather than
+the tunnel interface, whatever address it is bound to.
+*/}}
+{{- if and (eq $k "bind_interface") (ne $v "auto") -}}
+{{- fail (printf "the application config binds a protected interface to the network device %q. The socket is pinned to that device, so its traffic leaves there instead of through the tunnel. Leave bind_interface at auto" $v) -}}
 {{- end -}}
 {{- if and (ne $addr "") (not (has $addr $allowed)) -}}
 {{- if or (eq $addr "0.0.0.0") (eq $addr "::") -}}

@@ -178,7 +178,8 @@ The DU is the mirror image, with `peer.address` set to the CU's headless service
 ### 3. Point the application at the protected addresses
 
 The chart does not rewrite the application config; it checks it. Every `local` address in
-`ipsec.connections` has to appear in the `f1ap` and `f1u` sections of the config, and those
+`ipsec.connections` has to appear in the `f1ap` and `f1u` sections of the config (and in
+`amf` with `ipsec.protectN2`, `ngu` with `ipsec.protectN3`), and those
 sections must not bind a wildcard address. A wildcard leaves the application listening on
 the pod address as well, which is the path the tunnel exists to close, so the chart refuses
 to render it.
@@ -200,7 +201,8 @@ cu_up:
 ```
 
 The chart refuses to render otherwise. Set `ipsec.allowF1uOnCorePort: true` if there is no
-core to reach.
+core to reach. With `ipsec.protectN3` the policy opens no plaintext port to the core, so
+there is nothing to share and the check does not apply.
 
 ### Narrowing a tunnel to one protocol
 
@@ -322,6 +324,7 @@ shares it, the rule opened for the core also permits plaintext Xn-U straight to 
 pod address, around the tunnel. The core's port is fixed in the application and Xn-U's is
 not, so Xn-U is what moves. Both ends have to agree on the number. The chart refuses to
 render otherwise; `ipsec.allowXnuOnCorePort` overrides it only where there is no core.
+With `ipsec.protectN3` the policy opens no plaintext port to the core, and Xn-U may stay.
 
 
 **One side starts and the other waits, and both layers have to agree which.** Xn is
@@ -334,6 +337,133 @@ dialled, so leave `ipsec.readinessProbe` off there.
 Let the peer through the policy with `networkPolicy.ingress.xn` and
 `networkPolicy.egress.xn`. Both are off by default, because a rule for a peer that does not
 exist opens a port for nothing. With IPsec on they open the tunnel and nothing else.
+
+## N2 and N3
+
+The two flags are independent; set either or both. Each core-side peer is an association
+of its own.
+
+### N2
+
+N2 runs to the AMF, which is not a pod this chart controls, so it is not protected unless
+`ipsec.protectN2` is set. With it, N2 is carried in a tunnel like F1-C, to a peer on the core
+side that terminates IKEv2.
+
+```yaml
+n2Service:
+  enabled: false   # refused while N2 is protected
+
+ipsec:
+  protectN2: true
+  peers:
+    amf:
+      id: amf.example.com
+      # The CU opens N2, so it is the side that dials.
+      address: <the AMF's IKE endpoint>
+  connections:
+    n2:
+      peer: amf
+      protocol: sctp
+      local: 100.64.60.1
+      remote: 100.64.60.2
+
+config:
+  cu-config.yml: |-
+    cu_cp:
+      amf:
+        addrs: 100.64.60.2
+        bind_addrs: 100.64.60.1
+```
+
+The `amf` and `extra_amfs` sections are then checked like the other protected sections: no
+wildcard, no address outside `ipsec.connections`, and a `bind_addrs` in each entry. The
+entrypoint stops binding N2 to the pod address, and the policy allows the core the tunnel
+instead of plaintext SCTP 38412. Each extra AMF needs a connection of its own.
+
+The chart configures this side only. The core side has to run its own IKEv2 endpoint,
+reachable at `peers.<name>.address`, which:
+
+- presents a certificate from the authority in `ca.crt` of `ipsec.certSecret`, with the
+  identity in `peers.<name>.id`, and accepts `ipsec.localId` from this side;
+- uses the proposals in `ipsec.ike.proposal` and `ipsec.ike.espProposal`, since this side
+  offers exactly one of each;
+- holds the `remote` address of the connection on the AMF host, binds its N2 listener
+  to it, and routes the `local` address back into the tunnel.
+
+With strongSwan on the AMF side, and the values above, that is:
+
+```
+connections {
+  cu {
+    version = 2
+    proposals = aes256gcm16-prfsha384-ecp256
+    local {
+      auth = pubkey
+      certs = amf.crt
+      id = amf.example.com
+    }
+    remote {
+      auth = pubkey
+      id = cu.example.com
+    }
+    children {
+      n2 {
+        local_ts = 100.64.60.2/32[sctp]
+        remote_ts = 100.64.60.1/32[sctp]
+        esp_proposals = aes256gcm16-ecp256
+      }
+    }
+  }
+}
+```
+
+This side dials, so the AMF side only waits for it.
+
+### N3
+
+N3 runs to the UPF, which is not a pod this chart controls, so it is not protected unless
+`ipsec.protectN3` is set. With it, N3 is carried in a tunnel like F1-U, to a peer on the core
+side that terminates IKEv2.
+
+```yaml
+n3Service:
+  enabled: false   # refused while N3 is protected
+
+ipsec:
+  protectN3: true
+  peers:
+    upf:
+      id: upf.example.com
+      # The CU sends the first uplink packet, so it is the side that dials.
+      address: <the UPF's IKE endpoint>
+  connections:
+    n3:
+      peer: upf
+      protocol: udp
+      local: 100.64.70.1
+      remote: 100.64.70.2
+
+config:
+  cu-config.yml: |-
+    cu_up:
+      ngu:
+        socket:
+          - bind_addr: 100.64.70.1
+```
+
+The `ngu` section is then checked like the other protected sections. The entrypoint stops
+binding N3 to the pod address, and the policy allows the core the tunnel instead of
+plaintext UDP 2152. `n3Service.advertisedAddress` is refused: the protected address is the
+one advertised.
+
+**The uplink address comes from the core, not from this config.** The SMF sends the UPF's
+N3 address in NGAP, so the chart cannot check it. The UPF has to advertise its protected
+address (`remote` above). If the SMF hands out the UPF's regular N3 address instead, uplink
+leaves outside the tunnel: with `udp` the policy drops it and uplink breaks without an
+error, and with `native` it may go out in clear.
+
+The UPF side is set up the same way as the AMF side above, with the `n3` addresses and
+`udp` in place of `sctp`.
 
 ## What the chart refuses to render
 
@@ -357,8 +487,15 @@ exists to prevent.
 | `ipsec.ike.replayWindow` or a connection's `replayWindow` set to 0 | replay protection would be off, so a captured packet could be replayed and accepted |
 | `ipsec.encapsulation` set to anything but `udp` or `native` | there is no third way to carry ESP, and a typo would otherwise pick the default silently |
 | a protected address in the config that is not in `ipsec.connections`, or a wildcard bind | traffic that would never enter the tunnel. An address written as a list item is read the same as one written beside its key |
-| F1-U on the core's GTP-U port, 2152 | the policy rule that lets the core be reached also permits plaintext F1-U to the peer; override with `ipsec.allowF1uOnCorePort` |
-| Xn-U on the core's GTP-U port, 2152 | the same rule, for the other user-plane interface that shares that port; override with `ipsec.allowXnuOnCorePort` |
+| `bind_interface` set to anything but `auto` in a protected section | the socket is pinned to that device, so its traffic leaves there instead of through the tunnel |
+| F1-U on the core's GTP-U port, 2152, unless `ipsec.protectN3` | the policy rule that lets the core be reached also permits plaintext F1-U to the peer; override with `ipsec.allowF1uOnCorePort` |
+| Xn-U on the core's GTP-U port, 2152, unless `ipsec.protectN3` | the same rule, for the other user-plane interface that shares that port; override with `ipsec.allowXnuOnCorePort` |
+| `ipsec.protectN2` without `ipsec.enabled` | there is no tunnel to carry N2, so it would stay in clear |
+| `n2Service` enabled with `ipsec.protectN2` | it publishes an unprotected path to N2 on the pod address |
+| no `bind_addrs` in `cu_cp.amf`, or in an entry of `cu_cp.extra_amfs`, with `ipsec.protectN2` | the application would bind 127.0.0.1 and N2 to that AMF would never come up |
+| `ipsec.protectN3` without `ipsec.enabled` | there is no tunnel to carry N3, so it would stay in clear |
+| `n3Service` enabled, or `n3Service.advertisedAddress` set, with `ipsec.protectN3` | the service publishes an unprotected path to N3 on the pod address, and the advertised address would be ignored |
+| no `bind_addr` in `cu_up.ngu.socket[]` with `ipsec.protectN3` | the application would bind 127.0.0.1 and N3 would never come up |
 
 ## Dropping a capability
 
@@ -442,6 +579,16 @@ and it claims nothing about any CNI beyond the requirements listed above.
 - **O1 and IPsec cannot be combined.** In O1 mode the config comes from the datastore at
   runtime, so the chart cannot check that the application binds to the protected addresses,
   and the O1 interface could move it off them afterwards.
+- **N2 and N3 are protected only with `ipsec.protectN2` and `ipsec.protectN3`.** Each needs
+  a peer on the core side that terminates IKEv2 with a certificate from the same authority.
+  Without the flag, the policy keeps its plaintext port for that interface and the chart
+  makes no claim about it. See [N2 and N3](#n2-and-n3).
+- **The chart cannot check the uplink N3 address.** The SMF supplies it at runtime, in
+  NGAP. If it is not the UPF's protected address, uplink leaves outside the tunnel. See
+  [N3](#n3).
+- **Only one UPF is supported.** Every UPF the SMF may pick would have to be a peer with
+  its own connection, and the chart cannot see which UPFs the SMF knows about. Uplink to a
+  UPF that is not a peer leaves outside the tunnel.
 - **A kernel-bypass datapath is not protected.** Traffic that never reaches the kernel
   network stack never reaches XFRM either. This applies to F1-U carried over a bypass
   datapath, not to F1-C.

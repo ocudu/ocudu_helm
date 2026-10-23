@@ -236,6 +236,9 @@ Every one of these is a way the tunnel can end up configured but bypassed, which
 like success and is not. A failed install is recoverable; plaintext on the wire is not.
 */}}
 {{- define "ocudu-cu-up.ipsec.validate" -}}
+{{- if and .Values.ipsec.protectN3 (not .Values.ipsec.enabled) -}}
+{{- fail "ipsec.protectN3 needs ipsec.enabled to be true: without the sidecar there is no tunnel to carry N3, and N3 would stay in clear" -}}
+{{- end -}}
 {{- if .Values.ipsec.enabled -}}
 
 {{- if .Values.network.hostNetwork -}}
@@ -258,6 +261,9 @@ like success and is not. A failed install is recoverable; plaintext on the wire 
 {{- end -}}
 {{- if and .Values.ipsec.protectN3 .Values.n3Service.enabled -}}
 {{- fail "ipsec.protectN3 needs n3Service.enabled to be false: that service publishes an unprotected path to the N3 port on the pod address, which is the bypass this feature exists to close" -}}
+{{- end -}}
+{{- if and .Values.ipsec.protectN3 .Values.n3Service.advertisedAddress -}}
+{{- fail "ipsec.protectN3 needs n3Service.advertisedAddress to be empty: N3 is advertised on its protected address, so the advertised address would be ignored" -}}
 {{- end -}}
 
 {{- if and (not .Values.networkPolicy.enabled) (not .Values.ipsec.allowWithoutNetworkPolicy) -}}
@@ -376,10 +382,10 @@ interface it was meant to protect would be somewhere else entirely, in clear.
 {{- $sections = append $sections "ngu" -}}
 {{/*
 The entrypoint no longer supplies an N3 bind address, so one has to be here. Without it the
-application binds the wildcard on its own, and the address check below never sees it.
+application binds its default of 127.0.0.1, and N3 never comes up.
 */}}
 {{- if not (regexMatch "(?m)^(- )?bind_addr:" (include "ocudu-cu-up.ipsec.section" (dict "blob" $blob "key" "ngu"))) -}}
-{{- fail "ipsec.protectN3 needs cu_up.ngu.socket[].bind_addr: without it the application binds N3 to the wildcard address, and N3 leaves from the pod address outside the tunnel" -}}
+{{- fail "ipsec.protectN3 needs cu_up.ngu.socket[].bind_addr: the entrypoint no longer binds N3 to the pod address, so without it the application binds 127.0.0.1 and N3 never comes up" -}}
 {{- end -}}
 {{- end -}}
 {{- $protected := "" -}}
@@ -424,6 +430,13 @@ list, and any other line closes it.
 {{- else -}}
   {{- $pending = false -}}
 {{- end -}}
+{{/*
+A named device pins the socket to it, so the traffic leaves through that device rather than
+the tunnel interface, whatever address it is bound to.
+*/}}
+{{- if and (eq $k "bind_interface") (ne $v "auto") -}}
+{{- fail (printf "the application config binds a protected interface to the network device %q. The socket is pinned to that device, so its traffic leaves there instead of through the tunnel. Leave bind_interface at auto" $v) -}}
+{{- end -}}
 {{- if and (ne $addr "") (not (has $addr $allowed)) -}}
 {{- if or (eq $addr "0.0.0.0") (eq $addr "::") -}}
 {{- fail (printf "the application config still binds a protected interface to the wildcard address %s. With IPsec on, the application listens on the pod address as well as the protected one, so the tunnel can be walked around. Bind it to its address from ipsec.connections instead" $addr) -}}
@@ -451,7 +464,11 @@ move.
 An absent bind_port is the same as 2152, because that is what the application defaults to.
 A section the config does not carry at all is not checked, because that interface is not in
 use.
+
+With N3 protected the policy opens no plaintext port to the core, so there is nothing to
+share and nothing to check.
 */}}
+{{- if not .Values.ipsec.protectN3 -}}
 {{- $corePort := 2152 -}}
 {{- $planes := list
       (dict "key" "f1u" "name" "F1-U" "flag" "allowF1uOnCorePort" "allow" .Values.ipsec.allowF1uOnCorePort)
@@ -468,6 +485,7 @@ use.
 {{- end -}}
 {{- if and (eq $port $corePort) (not $plane.allow) -}}
 {{- fail (printf "the application config leaves %s on UDP %d, which is the port the policy has to open for the core. That one rule then also permits plaintext %s to the peer's pod address, around the tunnel. Set %s.bind_port to another port on both ends, or set ipsec.%s to true if there is no core to reach" $plane.name $corePort $plane.name $plane.key $plane.flag) -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}

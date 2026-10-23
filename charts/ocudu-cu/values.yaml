@@ -604,6 +604,23 @@ ipsec:
   # @default -- `{}`
   connections: {}
 
+  # -- Carry N2 in a tunnel too, to a core-side peer (the AMF) that terminates IKEv2.
+  # Add the AMF as a peer with a connection for N2, and point `cu_cp.amf.addrs` and
+  # `cu_cp.amf.bind_addrs` at its protected addresses. The `amf` and `extra_amfs` sections
+  # are then checked like F1-C, the entrypoint stops binding N2 to the pod address, and the
+  # policy allows the core the tunnel instead of plaintext SCTP 38412.
+  # @default -- `false`
+  protectN2: false
+
+  # -- Carry N3 in a tunnel too, to a core-side peer (the UPF) that terminates IKEv2.
+  # Add the UPF as a peer with a connection for N3, and point `cu_up.ngu.socket[].bind_addr`
+  # at its protected address. The `ngu` section is then checked like F1-U, the entrypoint
+  # stops binding N3 to the pod address, and the policy allows the core the tunnel instead
+  # of plaintext UDP 2152. The UPF has to advertise its protected address, so that is where
+  # the SMF sends this side's uplink.
+  # @default -- `false`
+  protectN3: false
+
   ike:
     # -- IKE proposal. Exactly one, so there is nothing to fall back to.
     proposal: aes256gcm16-prfsha384-ecp256

@@ -184,7 +184,8 @@ CU-UP does the same for its E1 connection.
 ### 3. Point the application at the protected addresses
 
 The chart does not rewrite the application config; it checks it. Every `local` address in
-`ipsec.connections` has to appear in the `f1ap` and `e1ap` sections of the config, and those
+`ipsec.connections` has to appear in the `f1ap` and `e1ap` sections of the config (and in
+`amf` with `ipsec.protectN2`), and those
 sections must not bind a wildcard address. A wildcard leaves the application listening on
 the pod address as well, which is the path the tunnel exists to close, so the chart refuses
 to render it.
@@ -302,6 +303,82 @@ Let the peer through the policy with `networkPolicy.ingress.xn` and
 `networkPolicy.egress.xn`. Both are off by default, because a rule for a peer that does not
 exist opens a port for nothing. With IPsec on they open the tunnel and nothing else.
 
+## N2
+
+N2 runs to the AMF, which is not a pod this chart controls, so it is not protected unless
+`ipsec.protectN2` is set. With it, N2 is carried in a tunnel like F1-C, to a peer on the core
+side that terminates IKEv2.
+
+```yaml
+n2Service:
+  enabled: false   # refused while N2 is protected
+
+ipsec:
+  protectN2: true
+  peers:
+    amf:
+      id: amf.example.com
+      # The CU-CP opens N2, so it is the side that dials.
+      address: <the AMF's IKE endpoint>
+  connections:
+    n2:
+      peer: amf
+      protocol: sctp
+      local: 100.64.60.1
+      remote: 100.64.60.2
+
+config:
+  cu-cp-config.yml: |-
+    cu_cp:
+      amf:
+        addrs: 100.64.60.2
+        bind_addrs: 100.64.60.1
+```
+
+The `amf` and `extra_amfs` sections are then checked like the other protected sections: no
+wildcard, no address outside `ipsec.connections`, and a `bind_addrs` in each entry. The
+entrypoint stops binding N2 to the pod address, and the policy allows the core the tunnel
+instead of plaintext SCTP 38412. Each extra AMF needs a connection of its own.
+
+The chart configures this side only. The core side has to run its own IKEv2 endpoint,
+reachable at `peers.<name>.address`, which:
+
+- presents a certificate from the authority in `ca.crt` of `ipsec.certSecret`, with the
+  identity in `peers.<name>.id`, and accepts `ipsec.localId` from this side;
+- uses the proposals in `ipsec.ike.proposal` and `ipsec.ike.espProposal`, since this side
+  offers exactly one of each;
+- holds the `remote` address of the connection on the AMF host, binds its N2 listener
+  to it, and routes the `local` address back into the tunnel.
+
+With strongSwan on the AMF side, and the values above, that is:
+
+```
+connections {
+  cu-cp {
+    version = 2
+    proposals = aes256gcm16-prfsha384-ecp256
+    local {
+      auth = pubkey
+      certs = amf.crt
+      id = amf.example.com
+    }
+    remote {
+      auth = pubkey
+      id = cu-cp.example.com
+    }
+    children {
+      n2 {
+        local_ts = 100.64.60.2/32[sctp]
+        remote_ts = 100.64.60.1/32[sctp]
+        esp_proposals = aes256gcm16-ecp256
+      }
+    }
+  }
+}
+```
+
+This side dials, so the AMF side only waits for it.
+
 ## What the chart refuses to render
 
 Each of these stops `helm install` with a message explaining why. None of them is a
@@ -324,6 +401,10 @@ exists to prevent.
 | `ipsec.ike.replayWindow` or a connection's `replayWindow` set to 0 | replay protection would be off, so a captured packet could be replayed and accepted |
 | `ipsec.encapsulation` set to anything but `udp` or `native` | there is no third way to carry ESP, and a typo would otherwise pick the default silently |
 | a protected address in the config that is not in `ipsec.connections`, or a wildcard bind | traffic that would never enter the tunnel. An address written as a list item is read the same as one written beside its key |
+| `bind_interface` set to anything but `auto` in a protected section | the socket is pinned to that device, so its traffic leaves there instead of through the tunnel |
+| `ipsec.protectN2` without `ipsec.enabled` | there is no tunnel to carry N2, so it would stay in clear |
+| `n2Service` enabled with `ipsec.protectN2` | it publishes an unprotected path to N2 on the pod address |
+| no `bind_addrs` in `cu_cp.amf`, or in an entry of `cu_cp.extra_amfs`, with `ipsec.protectN2` | the application would bind 127.0.0.1 and N2 to that AMF would never come up |
 
 ## Dropping a capability
 
@@ -410,6 +491,4 @@ and it claims nothing about any CNI beyond the requirements listed above.
 - **N2 is protected only with `ipsec.protectN2`.** It needs a peer on the core side (AMF)
   that terminates IKEv2 with a certificate from the same authority. Without the flag, the
   policy keeps its plaintext rule for the core and the chart makes no claim about that
-  interface. With it, `cu_cp.amf.addrs` and `cu_cp.amf.bind_addrs` must name the protected addresses, the
-  entrypoint no longer binds N2 to the pod address, and the core is allowed the tunnel
-  only.
+  interface. See [N2](#n2).

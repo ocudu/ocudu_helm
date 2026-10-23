@@ -4,7 +4,8 @@
 
 ### Added
 
-- `ipsec.protectN2`: carry N2 in a tunnel as well, to a core-side peer (AMF) that runs its own IKEv2 endpoint. Add the AMF as a peer with a connection for N2, and point `cu_cp.amf.addrs` and `cu_cp.amf.bind_addrs` at its protected addresses. The `amf` section is then checked like the other protected sections (no wildcard, no address outside `ipsec.connections`, a bind address required), the entrypoint stops prepending the pod IP as the N2 bind address, the network policy allows the core the tunnel instead of plaintext SCTP 38412, and `n2Service.enabled` is refused. Off by default. See `docs/ipsec.md`
+- `ipsec.protectN2`: carry N2 in a tunnel as well, to a core-side peer (AMF) that runs its own IKEv2 endpoint. Add the AMF as a peer with a connection for N2, and point `cu_cp.amf.addrs` and `cu_cp.amf.bind_addrs` at its protected addresses. The `amf` section is then checked like the other protected sections (no wildcard, no address outside `ipsec.connections`, a bind address required), and so is every entry of `extra_amfs`. The entrypoint stops prepending the pod IP as the N2 bind address, the network policy allows the core the tunnel instead of plaintext SCTP 38412, and `n2Service.enabled` is refused, as is `ipsec.protectN2` without `ipsec.enabled`. Off by default. See `docs/ipsec.md`, which now has a worked example of both sides
+- With IPsec on, a protected section that sets `bind_interface` to anything but `auto` is refused: the socket would be pinned to that device and its traffic would leave outside the tunnel
 - The chart pipeline runs the essential tests of the CNTi Test Suite against the chart without a core network on a kind cluster on a runner with the SCTP kernel module, through the suite's GitLab CI/CD component. The README shows the result as a badge; the values the job uses live under `.gitlab/cnti/ocudu-cu-cp/`
 
 ### Changed

@@ -1,4 +1,6 @@
 {{- if and .Values.networkPolicy.enabled (not .Values.network.hostNetwork) }}
+{{- $protectN2 := and .Values.ipsec.enabled .Values.ipsec.protectN2 }}
+{{- $protectN3 := and .Values.ipsec.enabled .Values.ipsec.protectN3 }}
 
 # SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
 # SPDX-License-Identifier: BSD-3-Clause-Open-MPI
@@ -21,14 +23,33 @@ spec:
 
   ingress:
     {{- if .Values.networkPolicy.ingress.fiveGCore.enabled }}
-    # Allow traffic from 5G core (N2/N3 interfaces)
+    # Allow traffic from 5G core (N2/N3 interfaces). An interface protected with ipsec.protectN2
+    # or ipsec.protectN3 is carried in the tunnel, so its plaintext port is deliberately absent.
     - from:
       {{- toYaml .Values.networkPolicy.ingress.fiveGCore.from | nindent 6 }}
+      {{- if and (or $protectN2 $protectN3) (eq .Values.ipsec.encapsulation "native") }}
+      # Native ESP is IP protocol 50, and a policy can only name TCP, UDP and SCTP, so
+      # this rule has to permit every protocol to the peer — including the plaintext
+      # ports. That is the cost of `native`, and why `udp` is the default.
+      {{- else }}
       ports:
+        {{- if not $protectN2 }}
         - protocol: SCTP
-          port: 38412  # N2 interface (NGAP)
+          port: 38412  # N2 (NGAP)
+        {{- end }}
+        {{- if not $protectN3 }}
         - protocol: UDP
-          port: 2152   # N3 interface (GTP-U)
+          port: 2152   # N3 (GTP-U)
+        {{- end }}
+        {{- if or $protectN2 $protectN3 }}
+        {{- if not .Values.ipsec.ikeOnNatTPortOnly }}
+        - protocol: UDP
+          port: 500   # IKE
+        {{- end }}
+        - protocol: UDP
+          port: 4500  # IKE, and ESP once either end is behind address translation
+        {{- end }}
+      {{- end }}
     {{- end }}
 
     {{- if .Values.networkPolicy.ingress.du.enabled }}
@@ -111,14 +132,33 @@ spec:
 
   egress:
     {{- if .Values.networkPolicy.egress.fiveGCore.enabled }}
-    # Allow traffic to 5G core (N2/N3)
+    # Allow traffic to 5G core (N2/N3). An interface protected with ipsec.protectN2
+    # or ipsec.protectN3 is carried in the tunnel, so its plaintext port is deliberately absent.
     - to:
       {{- toYaml .Values.networkPolicy.egress.fiveGCore.to | nindent 6 }}
+      {{- if and (or $protectN2 $protectN3) (eq .Values.ipsec.encapsulation "native") }}
+      # Native ESP is IP protocol 50, and a policy can only name TCP, UDP and SCTP, so
+      # this rule has to permit every protocol to the peer — including the plaintext
+      # ports. That is the cost of `native`, and why `udp` is the default.
+      {{- else }}
       ports:
+        {{- if not $protectN2 }}
         - protocol: SCTP
           port: 38412  # N2 (NGAP)
+        {{- end }}
+        {{- if not $protectN3 }}
         - protocol: UDP
           port: 2152   # N3 (GTP-U)
+        {{- end }}
+        {{- if or $protectN2 $protectN3 }}
+        {{- if not .Values.ipsec.ikeOnNatTPortOnly }}
+        - protocol: UDP
+          port: 500   # IKE
+        {{- end }}
+        - protocol: UDP
+          port: 4500  # IKE, and ESP once either end is behind address translation
+        {{- end }}
+      {{- end }}
     {{- end }}
 
     {{- if .Values.networkPolicy.egress.du.enabled }}

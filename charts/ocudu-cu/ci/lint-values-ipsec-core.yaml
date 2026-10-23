@@ -1,0 +1,78 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# Lint fixture for `ipsec.protectN2` and `ipsec.protectN3`: F1-C, F1-U, N2 and N3 each in
+# their own tunnel, the last two to an AMF and a UPF that run their own IKEv2 peers. Not a
+# deployment example.
+
+f1cService:
+  enabled: false
+f1uService:
+  enabled: false
+# Refused while N2 or N3 is protected: each would publish its port on the pod address.
+n2Service:
+  enabled: false
+n3Service:
+  enabled: false
+
+networkPolicy:
+  enabled: true
+
+ipsec:
+  enabled: true
+  protectN2: true
+  protectN3: true
+  certSecret: ocudu-cu-ipsec
+  localId: cu.example.com
+  peers:
+    du:
+      id: du.example.com
+    # The CU opens N2 and sends uplink N3, so it is the side that dials both.
+    amf:
+      id: amf.example.com
+      address: open5gs-amf-ipsec
+    upf:
+      id: upf.example.com
+      address: open5gs-upf-ipsec
+  connections:
+    f1c:
+      peer: du
+      protocol: sctp
+      local: 100.64.10.1
+      remote: 100.64.10.2
+    f1u:
+      peer: du
+      protocol: udp
+      local: 100.64.30.1
+      remote: 100.64.30.2
+    n2:
+      peer: amf
+      protocol: sctp
+      local: 100.64.60.1
+      remote: 100.64.60.2
+    n3:
+      peer: upf
+      protocol: udp
+      local: 100.64.70.1
+      remote: 100.64.70.2
+
+config:
+  cu-config.yml: |-
+    cu_cp:
+      amf:
+        addrs: 100.64.60.2
+        bind_addrs: 100.64.60.1
+
+      f1ap:
+        bind_addrs: 100.64.10.1
+
+    cu_up:
+      # With N3 protected the policy opens no plaintext port to the core, so F1-U may stay
+      # on the default GTP-U port.
+      f1u:
+        socket:
+          - bind_addr: 100.64.30.1
+
+      ngu:
+        socket:
+          - bind_addr: 100.64.70.1
