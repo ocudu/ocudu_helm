@@ -143,151 +143,142 @@ tuned image:
 ## Charts
 ################################################################################
 
-grafana-ocudu chart:
+.helm chart:
   stage: child
   rules:
-    - changes:
+    # Package changes must be validated against the immutable registry version.
+    - if: $ON_MR
+      changes:
+        paths: &helm_package_paths
+          - $CHART_PATH/Chart.yaml
+          - $CHART_PATH/values*.yaml
+          - $CHART_PATH/templates/**/*
+          - $CHART_PATH/resources/**/*
+          - $CHART_PATH/charts/**/*
+          - $CHART_PATH/crds/**/*
+          - $CHART_PATH/.helmignore
+      variables:
+        CHART_PACKAGE_CHANGED: "true"
+    # CI and documentation changes still exercise the child pipeline without requiring
+    # a chart version bump.
+    - if: $ON_MR
+      changes:
         paths:
-          - .gitlab/ci/helm_utils.yml
-          - charts/grafana-ocudu/**/*
+          - .gitlab/ci/helm_*
+          - .gitlab/cnti/$CHART_NAME/**/*
+          - $CHART_PATH/**/*
+      variables:
+        CHART_PACKAGE_CHANGED: "false"
+    # Never publish a production chart for a CI-only change.
+    - if: $ON_DEFAULT_BRANCH
+      changes:
+        paths: *helm_package_paths
+  needs: []
+
+grafana-ocudu chart:
+  extends: .helm chart
+  variables:
+    CHART_NAME: grafana-ocudu
+    CHART_PATH: charts/grafana-ocudu
   trigger:
     strategy: mirror
     include: charts/grafana-ocudu/.gitlab-ci.yml
-  needs: []
 
 rt-tests chart:
-  stage: child
-  rules:
-    - changes:
-        paths:
-          - .gitlab/ci/helm_utils.yml
-          - charts/rt-tests/**/*
+  extends: .helm chart
+  variables:
+    CHART_NAME: rt-tests
+    CHART_PATH: charts/rt-tests
   trigger:
     strategy: mirror
     include: charts/rt-tests/.gitlab-ci.yml
-  needs: []
 
 linuxptp chart:
-  stage: child
-  rules:
-    - changes:
-        paths:
-          - .gitlab/ci/helm_utils.yml
-          - charts/linuxptp/**/*
+  extends: .helm chart
+  variables:
+    CHART_NAME: linuxptp
+    CHART_PATH: charts/linuxptp
   trigger:
     strategy: mirror
     include: charts/linuxptp/.gitlab-ci.yml
-  needs: []
 
 ru_emulator chart:
-  stage: child
-  rules:
-    - changes:
-        paths:
-          - .gitlab/ci/helm_utils.yml
-          - charts/ru_emulator/**/*
+  extends: .helm chart
+  variables:
+    CHART_NAME: ru_emulator
+    CHART_PATH: charts/ru_emulator
   trigger:
     strategy: mirror
     include: charts/ru_emulator/.gitlab-ci.yml
-  needs: []
 
 ocudu-gnb chart:
-  stage: child
-  rules:
-    - changes:
-        paths:
-          - .gitlab/ci/helm_utils.yml
-          - .gitlab/cnti/ocudu-gnb/**/*
-          - charts/ocudu-gnb/**/*
+  extends: .helm chart
+  variables:
+    CHART_NAME: ocudu-gnb
+    CHART_PATH: charts/ocudu-gnb
   trigger:
     strategy: mirror
     include: charts/ocudu-gnb/.gitlab-ci.yml
-  needs: []
 
 ocudu-cu chart:
-  stage: child
-  rules:
-    - changes:
-        paths:
-          - .gitlab/ci/helm_utils.yml
-          - .gitlab/cnti/ocudu-cu/**/*
-          - charts/ocudu-cu/**/*
+  extends: .helm chart
+  variables:
+    CHART_NAME: ocudu-cu
+    CHART_PATH: charts/ocudu-cu
   trigger:
     strategy: mirror
     include: charts/ocudu-cu/.gitlab-ci.yml
-  needs: []
 
 ocudu-du chart:
-  stage: child
-  rules:
-    - changes:
-        paths:
-          - .gitlab/ci/helm_utils.yml
-          - .gitlab/cnti/ocudu-du/**/*
-          - charts/ocudu-du/**/*
+  extends: .helm chart
+  variables:
+    CHART_NAME: ocudu-du
+    CHART_PATH: charts/ocudu-du
   trigger:
     strategy: mirror
     include: charts/ocudu-du/.gitlab-ci.yml
-  needs: []
 
 ocudu-cu-cp chart:
-  stage: child
-  rules:
-    - changes:
-        paths:
-          - .gitlab/ci/helm_utils.yml
-          - .gitlab/cnti/ocudu-cu-cp/**/*
-          - charts/ocudu-cu-cp/**/*
+  extends: .helm chart
+  variables:
+    CHART_NAME: ocudu-cu-cp
+    CHART_PATH: charts/ocudu-cu-cp
   trigger:
     strategy: mirror
     include: charts/ocudu-cu-cp/.gitlab-ci.yml
-  needs: []
 
 ocudu-cu-up chart:
-  stage: child
-  rules:
-    - changes:
-        paths:
-          - .gitlab/ci/helm_utils.yml
-          - .gitlab/cnti/ocudu-cu-up/**/*
-          - charts/ocudu-cu-up/**/*
+  extends: .helm chart
+  variables:
+    CHART_NAME: ocudu-cu-up
+    CHART_PATH: charts/ocudu-cu-up
   trigger:
     strategy: mirror
     include: charts/ocudu-cu-up/.gitlab-ci.yml
-  needs: []
 
 influxdb3 chart:
-  stage: child
-  rules:
-    - changes:
-        paths:
-          - .gitlab/ci/helm_utils.yml
-          - charts/influxdb3/**/*
+  extends: .helm chart
+  variables:
+    CHART_NAME: influxdb3
+    CHART_PATH: charts/influxdb3
   trigger:
     strategy: mirror
     include: charts/influxdb3/.gitlab-ci.yml
-  needs: []
 
 tuned chart:
-  stage: child
-  rules:
-    - changes:
-        paths:
-          - .gitlab/ci/helm_utils.yml
-          - charts/tuned/**/*
+  extends: .helm chart
+  variables:
+    CHART_NAME: tuned
+    CHART_PATH: charts/tuned
   trigger:
     strategy: mirror
     include: charts/tuned/.gitlab-ci.yml
-  needs: []
 
 onap-smo-lite chart:
-  stage: child
-  rules:
-    - changes:
-        paths:
-          - .gitlab/ci/helm_utils.yml
-          - charts/onap-smo-lite/**/*
+  extends: .helm chart
+  variables:
+    CHART_NAME: onap-smo-lite
+    CHART_PATH: charts/onap-smo-lite
   trigger:
     strategy: mirror
     include: charts/onap-smo-lite/.gitlab-ci.yml
-  needs: []

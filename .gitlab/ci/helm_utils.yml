@@ -46,6 +46,11 @@
     - echo "Chart $CHART_NAME"
     - echo "Path $CHART_PATH"
     - echo "Registry $CI_REGISTRY/$CI_PROJECT_PATH"
+    - |
+      if [ "$CHART_PACKAGE_CHANGED" = "false" ]; then
+        echo "No packaged chart inputs changed; skipping the registry version check"
+        exit 0
+      fi
     - BASE_VERSION=$(yq eval '.version' ${CHART_PATH}/Chart.yaml)
     - echo "Base version from Chart.yaml $BASE_VERSION"
     - |
