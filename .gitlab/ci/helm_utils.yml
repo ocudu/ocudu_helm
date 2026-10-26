@@ -39,7 +39,7 @@
   rules:
     - if: $ON_MR
   before_script:
-    - apk add --no-cache yq
+    - apk add --no-cache yq git
     - helm registry login -u $CI_REGISTRY_USER -p $CI_JOB_TOKEN $CI_REGISTRY
   script:
     - echo "Checking chart version availability"
@@ -49,11 +49,22 @@
     - BASE_VERSION=$(yq eval '.version' ${CHART_PATH}/Chart.yaml)
     - echo "Base version from Chart.yaml $BASE_VERSION"
     - |
+      # Changes collect under "## Unreleased" in the chart's CHANGELOG.md, so an MR
+      # does not have to bump the version. An MR that does bump it must raise it to
+      # one the registry does not have yet.
+      git config --global --add safe.directory "$CI_PROJECT_DIR"
+      git fetch --depth=1 origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+      TARGET_VERSION=$(git show "FETCH_HEAD:${CHART_PATH}/Chart.yaml" 2>/dev/null | yq eval '.version' -)
+      if [ "$BASE_VERSION" = "$TARGET_VERSION" ]; then
+        echo "Version $BASE_VERSION is unchanged, nothing to check"
+        exit 0
+      fi
+    - |
       # For MR: Check if clean version exists (would conflict on merge)
       if [ -n "$CI_MERGE_REQUEST_IID" ]; then
         VERSION="$BASE_VERSION"
         echo "Checking if clean version $VERSION exists (would conflict on merge)"
-        if helm pull oci://$CI_REGISTRY/$CI_PROJECT_PATH/$CHART_NAME --version $VERSION 2>/dev/null; then
+        if helm pull oci://$CI_REGISTRY/$CI_PROJECT_PATH/$(yq eval '.name' ${CHART_PATH}/Chart.yaml) --version $VERSION 2>/dev/null; then
           echo "WARNING: Version $VERSION already exists in registry"
           echo "Please bump the version before merging"
           exit 1
@@ -129,6 +140,12 @@
       echo "Registry $CI_REGISTRY/$CI_PROJECT_PATH"
       VERSION=$(yq eval '.version' ${CHART_PATH}/Chart.yaml)
       echo "Using production version $VERSION"
+      # A merge without a version bump only adds to "## Unreleased": never
+      # overwrite the release that is already in the registry.
+      if helm pull oci://$CI_REGISTRY/$CI_PROJECT_PATH/$(yq eval '.name' ${CHART_PATH}/Chart.yaml) --version $VERSION --destination /tmp 2>/dev/null; then
+        echo "Version $VERSION is already published, nothing to release"
+        exit 0
+      fi
       if grep -q "^dependencies:" ${CHART_PATH}/Chart.yaml 2>/dev/null; then
         echo "Updating chart dependencies"
         helm dependency update ${CHART_PATH}/
