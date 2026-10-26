@@ -739,11 +739,21 @@ config:
       all_level: warning
 
     metrics:
+      # All options and defaults: https://docs.ocudu.org/user_manual/config_reference/
       autostart_stdout_metrics: false
       enable_json: false
       enable_log: false
+      enable_verbose: false
       layers:
-        enable_app_usage: true
+        enable_app_usage: true    # CPU, memory and power (feeds Grafana's power panels)
+        enable_executor: false
+        enable_sched: true
+        enable_sched_ue: true
+        enable_rlc: false
+        enable_mac: false
+        enable_du_proc: false
+        enable_du_low: false
+        enable_ru: false
 
     pcap:
       mac_enable: false

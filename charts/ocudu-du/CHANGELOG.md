@@ -6,6 +6,10 @@
 
 - Grafana's power consumption panels stayed empty: the default config never enabled `metrics.layers.enable_app_usage`, so the DU sent no `app_resource_usage` metrics. It is now on by default
 
+### Changed
+
+- The default config lists every `metrics` option and every `metrics.layers` switch the DU accepts with its default and links the OCUDU Configuration Reference, so you can see where to turn on each metric
+
 ### Added
 
 - The chart pipeline runs the essential tests of the CNTi Test Suite against the chart in DU test mode (ru_dummy and a test UE, no CU, no RU) on a kind cluster, through the suite's GitLab CI/CD component. The values the job uses live under `.gitlab/cnti/ocudu-du/`

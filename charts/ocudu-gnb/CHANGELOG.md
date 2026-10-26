@@ -18,8 +18,14 @@
 
 - Grafana's power consumption panels stayed empty: the default config never enabled `metrics.layers.enable_app_usage`, so the gNB sent no `app_resource_usage` metrics. It is now on by default, and the README shows how to send metrics to the `grafana-ocudu` chart
 
+- The README's link to the OCUDU Configuration Reference pointed at a page that does not exist. It now points at https://docs.ocudu.org/user_manual/config_reference/
+
 - The README's CNTi badge no longer breaks when a pipeline on main does not run this chart's CNTi job. The job publishes the badge to the project's package registry as `ocudu-gnb` (CNTi Test Suite component 1.2.0, `badge_name`), and the README shows it from there
 - `replicaCount` is applied: the Deployment had no `replicas` field
+
+### Changed
+
+- The default config lists every `metrics` option and every `metrics.layers` switch with its default and links the OCUDU Configuration Reference, so you can see where to turn on each metric. The README's metrics section covers all metrics, not only power
 
 ## 3.15.0 (2026-10-19)
 

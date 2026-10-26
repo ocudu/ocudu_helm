@@ -162,11 +162,15 @@ o1:
 
 > **Note**: LoadBalancer services require a LoadBalancer controller (e.g., MetalLB, cloud provider) in your cluster. Without one, services will remain in `<pending>` state. For clusters without LoadBalancer support, use `NodePort` instead.
 
-**Metrics and power consumption in Grafana** (`grafana-ocudu` chart):
+**Metrics** (`grafana-ocudu` chart):
 
-Enable `metricsService` and, in `config.gnb-config.yml`, turn on the remote
-control server and JSON metrics. The default config already sets
-`metrics.layers.enable_app_usage`, which reports CPU, memory and power.
+The gNB reports metrics per layer. `config.gnb-config.yml` lists every
+`metrics.layers` switch with its default; set a switch to `true` to report that
+layer. For what each switch reports, see the
+[OCUDU Configuration Reference](https://docs.ocudu.org/user_manual/config_reference/).
+
+To send the metrics to Grafana, enable `metricsService`, JSON metrics and the
+remote control server:
 
 ```yaml
 metricsService:
@@ -177,17 +181,20 @@ config:
     metrics:
       enable_json: true
       layers:
-        enable_app_usage: true
+        enable_app_usage: true   # CPU, memory and power
+        enable_rlc: true         # example: add a layer that is off by default
     remote_control:
       enabled: true
       bind_addr: 0.0.0.0
       port: 8001
 ```
 
-Point the `grafana-ocudu` chart's `gnbs[].wsUrl` at the metrics service. The
-power reading needs the `PERFMON` capability (granted by default, see
-[docs/security.md](docs/security.md)) and a CPU with RAPL energy counters
-(Intel, recent AMD). Without them, the power panels show 0 W.
+Point the `grafana-ocudu` chart's `gnbs[].wsUrl` at the metrics service.
+
+`enable_app_usage` reports CPU, memory and power. The power reading needs the
+`PERFMON` capability (granted by default, see [docs/security.md](docs/security.md))
+and a CPU with RAPL energy counters (Intel, recent AMD). Without them, the power
+panels show 0 W.
 
 ## Container Images
 
@@ -271,7 +278,7 @@ For complete parameter documentation, see:
 
 ### gNB Configuration
 
-The gNB configuration file `gnb-config.yml` is defined in `values.yaml`. Refer to the [OCUDU Configuration Reference](https://gitlab.com/ocudu/ocudu_elements/ocudu_helm/projects/project/en/latest/user_manuals/source/config_ref.html) for detailed configuration options.
+The gNB configuration file `gnb-config.yml` is defined in `values.yaml`. Refer to the [OCUDU Configuration Reference](https://docs.ocudu.org/user_manual/config_reference/) for detailed configuration options.
 
 ## Upgrading
 
