@@ -23,16 +23,15 @@ spec:
       {{- include "ocudu-gnb.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      {{- if or (include "ocudu-gnb.mutableConfigmaps" .) .Values.podAnnotations }}
       annotations:
-        {{- if not .Values.o1.enable_ocudu_o1 }}
+        {{- if include "ocudu-gnb.mutableConfigmaps" . }}
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yml") . | sha256sum }}
-        {{- end }}
-        {{- if .Values.ipsec.enabled }}
-        checksum/ipsec-config: {{ include (print $.Template.BasePath "/ipsec-configmap.yaml") . | sha256sum }}
         {{- end }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+      {{- end }}
       labels:
         {{- include "ocudu-gnb.selectorLabels" . | nindent 8 }}
         {{- with .Values.extraLabels }}
