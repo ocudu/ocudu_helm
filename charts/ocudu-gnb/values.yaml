@@ -362,18 +362,21 @@ service:
       nodePort: ""
 
 # -- Persistent storage configuration
-# The chart supports both PVC (with StorageClass) and hostPath storage for debugging logs
+# Disabled by default: logs go to an `emptyDir`, which keeps the pod reschedulable
+# onto any node. Enable it to keep logs across pod restarts — worth doing on a
+# gNB that is pinned to radio hardware anyway.
 persistence:
   # -- Enable persistent storage for debugging logs
   # When disabled, logs are stored in ephemeral pod storage (lost on pod restart)
-  # @default -- `true`
-  enabled: true
-  
+  # @default -- `false`
+  enabled: false
+
   # -- Storage type: "pvc" or "hostPath"
   # - "pvc": Uses PersistentVolumeClaim with dynamic provisioning (recommended for cloud)
-  # - "hostPath": Direct mount from host filesystem (recommended for bare-metal)
-  # @default -- `hostPath`
-  type: hostPath
+  # - "hostPath": Direct mount from host filesystem. Ties the pod to one node, and the
+  #   directory must be writable by uid 1000: `fsGroup` does not apply to hostPath
+  # @default -- `pvc`
+  type: pvc
   
   # -- PVC configuration (used when type is "pvc")
   pvc:
@@ -898,10 +901,6 @@ ipsec:
         - NET_BIND_SERVICE
     seccompProfile:
       type: RuntimeDefault
-
-# -- Persistent storage configuration
-# Disabled by default: logs go to an `emptyDir`, which keeps the pod reschedulable
-# onto any node. Enable it to keep logs across pod restarts.
 
 # -- gNB configuration file
 # This is the main OCUDU gNB configuration in YAML format

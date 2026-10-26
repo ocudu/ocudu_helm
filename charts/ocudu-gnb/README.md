@@ -220,8 +220,8 @@ The default is `registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk`, tagged
 | `o1.netconfServer.ssh.password` | string | `""` | Dev/test cleartext password the chart renders into a Secret itself; ignored when `passwordSecret` is set |
 | `o1.o1Adapter.fileLog.enabled` | bool | `false` | Persist the o1 adapter output to a file under `persistence.mountPath` |
 | `o1.netconfServer.fileLog.enabled` | bool | `false` | Persist the netconf-server output to a timestamped file under `persistence.mountPath` |
-| `persistence.enabled` | bool | `true` | Enable persistent storage for logs |
-| `persistence.type` | string | `"hostPath"` | Storage type: `pvc` or `hostPath` |
+| `persistence.enabled` | bool | `false` | Enable persistent storage for logs (otherwise `emptyDir`) |
+| `persistence.type` | string | `"pvc"` | Storage type: `pvc` or `hostPath` |
 | `persistence.pvc.storageClassName` | string | `""` | StorageClass for PVC (empty = default) |
 | `persistence.pvc.size` | string | `"10Gi"` | PVC storage size |
 | `persistence.hostPath.path` | string | `"/mnt/debugging-logs"` | Host path for logs |

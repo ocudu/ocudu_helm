@@ -1,6 +1,6 @@
 # Storage Configuration
 
-The chart supports two storage types for debugging logs: **PersistentVolumeClaim (PVC)** and **hostPath**. Choose based on your cluster environment.
+The chart supports two storage types for debugging logs: **PersistentVolumeClaim (PVC)** and **hostPath**. Choose based on your cluster environment. Persistence is off by default: logs go to an `emptyDir` (see [Without Persistent Storage](#without-persistent-storage-default)).
 
 ## Storage Type Comparison
 
@@ -102,18 +102,16 @@ hostPath:
   type: File
 ```
 
-## Disabling Persistent Storage
-
-For testing or when logs aren't needed:
+## Without Persistent Storage (Default)
 
 ```yaml
 persistence:
   enabled: false
 ```
 
-**⚠️ Warning**: Logs will be lost when the pod restarts.
+The log volume is then an `emptyDir` at `persistence.mountPath`, and the pod can be rescheduled onto any node.
 
-> **Note**: When `persistence.enabled: false`, the volume for debugging logs is not mounted. If your gNB config specifies `log.filename: /var/log/ocudu/debugging-logs/gnb.log`, the directory `/var/log/ocudu/debugging-logs/` won't exist. Either enable persistence or change the log path to `/var/log/ocudu/gnb.log` in your config.
+**⚠️ Warning**: An `emptyDir` survives a container restart, not the pod: logs and pcaps are lost when the pod is deleted or rescheduled.
 
 ## Common Scenarios
 
