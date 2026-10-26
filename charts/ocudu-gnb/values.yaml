@@ -126,7 +126,22 @@ securityContext:
       - IPC_LOCK
       - PERFMON
 
+# -- gNB startup probe configuration.
+# Holds off the liveness and readiness probes until gnb is running, so neither
+# needs padding on initialDelaySeconds and the pod reports Ready within one probe
+# period of the process appearing. Startup budget is
+# periodSeconds * failureThreshold (180s by default), which also covers O1 mode
+# where the entrypoint waits up to 120s for the adapter-generated config first.
+startupProbe:
+  enabled: true
+  periodSeconds: 2
+  timeoutSeconds: 1
+  failureThreshold: 90
+
 # -- gNB liveness probe configuration.
+# initialDelaySeconds stays at 90 even though startupProbe already gates this
+# probe. It costs nothing while the startup probe is enabled, and it preserves
+# the original tolerance if someone disables it.
 livenessProbe:
   enabled: true
   initialDelaySeconds: 90
@@ -136,12 +151,17 @@ livenessProbe:
   successThreshold: 1
 
 # -- gNB readiness probe configuration.
+# startupProbe gates this probe, so initialDelaySeconds is not needed. The
+# timeout and failureThreshold are deliberately not minimal: this is an exec
+# probe, and under node pressure spawning pgrep can exceed a 1s timeout. With a
+# single replica there is no second endpoint, so flapping readiness is a real
+# N2/N3 outage rather than a cosmetic blip.
 readinessProbe:
   enabled: true
-  initialDelaySeconds: 15
+  initialDelaySeconds: 0
   periodSeconds: 5
-  timeoutSeconds: 1
-  failureThreshold: 30
+  timeoutSeconds: 3
+  failureThreshold: 6
   successThreshold: 1
 
 # -- Network configuration

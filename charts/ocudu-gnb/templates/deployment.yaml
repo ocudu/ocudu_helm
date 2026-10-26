@@ -244,6 +244,15 @@ spec:
               {{- end }}
             {{- end }}
           {{- end }}
+          {{- if .Values.startupProbe.enabled }}
+          # Gates liveness/readiness until gnb is up, in both plain and O1 mode.
+          startupProbe:
+            exec:
+              command: ["pgrep", "gnb"]
+            periodSeconds: {{ .Values.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.startupProbe.failureThreshold }}
+          {{- end }}
           {{- if and .Values.o1.enable_ocudu_o1 .Values.livenessProbe.enabled }}
           # O1 mode: liveness is tied to the O1 adapter's /config-healthy endpoint.
           livenessProbe:

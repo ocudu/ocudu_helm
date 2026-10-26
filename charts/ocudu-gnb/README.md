@@ -191,6 +191,7 @@ The default is `registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk`, tagged
 | `sriovConfig.enabled` | bool | `true` | Enable SR-IOV device plugin |
 | `sriovConfig.extendedResourceName` | string | `"intel.com/intel_sriov_netdevice"` | SR-IOV resource name (specify resources manually in resources section) |
 | `serviceAccount.annotations` | object | `{}` | Annotations on the gNB pod's ServiceAccount (no token is mounted, no Role is bound) |
+| `startupProbe.enabled` | bool | `true` | Gate liveness/readiness until `gnb` is running |
 | `podDisruptionBudget.enabled` | bool | `true` | Enable PodDisruptionBudget |
 | `podDisruptionBudget.unhealthyPodEvictionPolicy` | string | `"AlwaysAllow"` | Pod eviction policy |
 | `networkPolicy.enabled` | bool | `false` | Enable NetworkPolicy (only works with hostNetwork: false) |
