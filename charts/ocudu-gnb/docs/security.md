@@ -191,6 +191,7 @@ securityContext:
 **Advantages:**
 - ✅ Non-root (uid 1000), drops ALL and adds only the three capabilities above
 - ✅ No privileged mode
+- ✅ The runtime's default seccomp profile
 - ✅ NetworkPolicy support
 
 **Requirements:**
@@ -237,7 +238,11 @@ podSecurityContext:
   runAsUser: 1000
   runAsGroup: 1000
   fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
 ```
+
+`RuntimeDefault` applies the container runtime's default seccomp profile to every container in the pod. A privileged container runs without one.
 
 **Note**: Pod-level security may conflict with privileged container requirements. Test thoroughly.
 

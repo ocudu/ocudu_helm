@@ -109,6 +109,8 @@ podSecurityContext:
   runAsUser: 1000
   runAsGroup: 1000
   fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
 
 # -- Init process command used as container PID 1.
 # Reaps zombie processes and forwards signals to the CU-UP process.
