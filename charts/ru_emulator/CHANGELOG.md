@@ -2,9 +2,14 @@
 
 ## Unreleased
 
+### Added
+
+- `deploymentStrategy`, default `Recreate`: the emulator holds its NIC or VF exclusively, so a rolling update could not start the new pod
+
 ### Changed
 
 - Default image tag `ubuntu-24.04-avx512-latest` with `image.pullPolicy: Always`; it moves to each nightly build, while dated tags are pruned from the registry
+- The ConfigMap is immutable and its name ends in a hash of its data, so a config change creates a new ConfigMap and rolls the pod, and a live edit is rejected. Roll back with `helm rollback`; `configmap.nameOverride` keeps a fixed, mutable ConfigMap
 
 ## 2.5.3 (2026-10-11)
 

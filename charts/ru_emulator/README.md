@@ -126,6 +126,7 @@ If `preserveOldLogs` is `false`, logs are truncated at start.
 | `persistence.mountPath` | string | `"/tmp"` | Mount path for logs in the container |
 | `persistence.preserveOldLogs` | bool | `true` | Write each run to a new timestamped folder if true |
 | `replicaCount` | int | `1` | Number of emulated RU instances |
+| `deploymentStrategy` | object | `{type: Recreate}` | Deployment update strategy |
 | `resources` | object | `{}` | CPU/memory limits and requests |
 | `nodeSelector` | object | `{}` | Node selector for pod assignment |
 | `tolerations` | list | `[]` | Tolerations for pod assignment |

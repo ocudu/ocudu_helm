@@ -37,18 +37,21 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 
 {{/*
-ConfigMap name (nil-safe override)
+configmap.nameOverride, or empty.
+*/}}
+{{- define "ru-emulator.configmapOverride" -}}
+{{- (.Values.configmap | default dict).nameOverride | default "" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+ConfigMap name: the override, or <fullname>-config-<8 hex of sha256(data)>, at most 63
+characters; the fullname is cut, never the hash. The ConfigMap is immutable, so a change of
+data renders a new name: Helm creates the new ConfigMap, the pod rolls to it, and Helm
+removes the old one.
 */}}
 {{- define "ru-emulator.configmapName" -}}
-{{- with .Values.configmap }}
-  {{- if .nameOverride }}
-    {{- .nameOverride | trunc 63 | trimSuffix "-" -}}
-  {{- else }}
-    {{- printf "%s-config" (include "ru-emulator.fullname" $) | trunc 63 | trimSuffix "-" -}}
-  {{- end }}
-{{- else }}
-  {{- printf "%s-config" (include "ru-emulator.fullname" .) | trunc 63 | trimSuffix "-" -}}
-{{- end }}
+{{- $base := include "ru-emulator.fullname" . | trunc 47 | trimSuffix "-" }}
+{{- include "ru-emulator.configmapOverride" . | default (printf "%s-config-%s" $base (include "ru-emulator.configData" . | sha256sum | trunc 8)) }}
 {{- end }}
 
 {{/*

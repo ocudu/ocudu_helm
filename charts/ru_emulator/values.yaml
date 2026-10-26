@@ -6,6 +6,12 @@
 # @default -- `1` (single instance)
 replicaCount: 1
 
+# -- Deployment update strategy
+# The emulator holds its NIC or VF exclusively, so the old pod has to stop before the new
+# one starts.
+deploymentStrategy:
+  type: Recreate
+
 # -- Container image configuration
 image:
   # -- Container image repository
@@ -31,6 +37,9 @@ fullnameOverride: ""
 
 # -- ConfigMap name override
 # Useful for pinning specific configuration via Terraform or GitOps
+# By default the ConfigMap is immutable and its name ends in a hash of its data, so a change
+# creates a new one and rolls the pod; roll back with `helm rollback`. An override keeps a
+# fixed, mutable ConfigMap.
 # Example:
 # ```yaml
 # configmap:
