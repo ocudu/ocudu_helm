@@ -108,8 +108,8 @@ If `preserveOldLogs` is `false`, logs are truncated at start.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `image.repository` | string | `"registry.gitlab.com/ocudu/ocudu/images/ru-emulator-dpdk"` | Container image repository (OCUDU image ships `ru_emulator`) |
-| `image.tag` | string | `"ubuntu-24.04-avx512-20261008_ae7c4172"` | Image tag |
-| `image.pullPolicy` | string | `"IfNotPresent"` | Image pull policy |
+| `image.tag` | string | `"ubuntu-24.04-avx512-latest"` | Image tag |
+| `image.pullPolicy` | string | `"Always"` | Image pull policy |
 | `extraLabels` | object | `{}` | Extra labels applied to the Deployment and Pod template |
 | `network.hostNetwork` | bool | `true` | Enable host network (set to `false` for SR-IOV mode) |
 | `podSecurityContext.runAsNonRoot` | bool | `true` | Run as non-root (uid 1000); needs the image + containerd prerequisites in the Prerequisites section |

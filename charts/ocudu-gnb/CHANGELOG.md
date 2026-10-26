@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Default image tag `ubuntu-24.04-avx512-latest` with `image.pullPolicy: Always`; it moves to each nightly build, while dated tags are pruned from the registry
+
 ### Fixed
 
 - The README's CNTi badge no longer breaks when a pipeline on main does not run this chart's CNTi job. The job publishes the badge to the project's package registry as `ocudu-gnb` (CNTi Test Suite component 1.2.0, `badge_name`), and the README shows it from there

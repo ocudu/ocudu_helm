@@ -6,11 +6,12 @@ image:
   # -- Container image repository
   # See https://gitlab.com/ocudu/ocudu/container_registry for available images
   repository: registry.gitlab.com/ocudu/ocudu/images/cu
-  # -- Image pull policy
-  pullPolicy: IfNotPresent
-  # -- Image tag, `ubuntu-24.04-<avx512|avx2|neon>-<date>_<commit>`. Pick the CPU variant
+  # -- Image pull policy. `Always`, because the default tag moves
+  pullPolicy: Always
+  # -- Image tag, `ubuntu-24.04-<avx512|avx2|neon>-latest`: the newest nightly build. Pin a
+  # `-<date>_<commit>` or `-<date>_<commit>-stable` tag in production. Pick the CPU variant
   # the node supports. Always quote in values files.
-  tag: "ubuntu-24.04-avx2-20261012_440cdbbe"
+  tag: "ubuntu-24.04-avx2-latest"
 
 # -- Image pull secrets for private registries
 imagePullSecrets: []

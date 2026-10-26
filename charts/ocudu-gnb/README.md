@@ -172,7 +172,8 @@ Select the appropriate container image based on your CPU:
 
 Find images at: [GitLab container registry](https://gitlab.com/ocudu/ocudu/container_registry/).
 The default is `registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk`, tagged
-`ubuntu-24.04-<avx512|avx2|neon>-<date>_<commit>`.
+`ubuntu-24.04-<avx512|avx2|neon>-latest`, which moves to the newest nightly build. Pin a
+`-<date>_<commit>` or `-<date>_<commit>-stable` tag in production.
 
 ## Configuration
 
@@ -182,8 +183,8 @@ The default is `registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk`, tagged
 |-----------|------|---------|-------------|
 | `replicaCount` | int | `1` | Number of pod replicas (must be 1 for stateful gNB) |
 | `image.repository` | string | `"registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk"` | Container image repository |
-| `image.tag` | string | `"ubuntu-24.04-avx512-20261007_2e9f5671"` | Image tag |
-| `image.pullPolicy` | string | `"IfNotPresent"` | Image pull policy |
+| `image.tag` | string | `"ubuntu-24.04-avx512-latest"` | Image tag |
+| `image.pullPolicy` | string | `"Always"` | Image pull policy |
 | `extraLabels` | object | `{}` | Extra labels applied to the Deployment and Pod template |
 | `initCommand` | list | `["/usr/bin/catatonit", "-d", "--"]` | Init process command used as container PID 1 |
 | `network.hostNetwork` | bool | `false` | Enable host network mode (bypasses NetworkPolicy) |

@@ -6,6 +6,10 @@
 
 - The chart pipeline runs the essential tests of the CNTi Test Suite against the chart without a core network on a kind cluster on a runner with the SCTP kernel module, through the suite's GitLab CI/CD component. The values the job uses live under `.gitlab/cnti/ocudu-cu/`
 
+### Changed
+
+- Default image tag `ubuntu-24.04-avx2-latest` with `image.pullPolicy: Always`; it moves to each nightly build, while dated tags are pruned from the registry
+
 ## 1.15.0 (2026-10-26)
 
 ### Added

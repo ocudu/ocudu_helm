@@ -6,6 +6,10 @@
 
 - The chart pipeline runs the essential tests of the CNTi Test Suite against the chart in DU test mode (ru_dummy and a test UE, no CU, no RU) on a kind cluster, through the suite's GitLab CI/CD component. The values the job uses live under `.gitlab/cnti/ocudu-du/`
 
+### Changed
+
+- Default image tag `ubuntu-24.04-avx512-latest` with `image.pullPolicy: Always`; it moves to each nightly build, while dated tags are pruned from the registry
+
 ## 1.14.0 (2026-10-26)
 
 ### Added

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Default image tag `ubuntu-24.04-avx512-latest` with `image.pullPolicy: Always`; it moves to each nightly build, while dated tags are pruned from the registry
+
 ## 2.5.3 (2026-10-11)
 
 ### Changed
