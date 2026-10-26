@@ -159,6 +159,40 @@ Fail unless resources.requests and resources.limits both set cpu and memory.
 {{- end -}}
 
 {{/*
+Fail when the application would write outside its volumes. With a read-only root
+filesystem only /tmp, /run/ocudu and persistence.mountPath are writable, so
+log.filename, trace.filename and every pcap *_filename must lie under one of them.
+"stdout" is allowed. Skipped with O1, where the O1 adapter writes the configuration.
+*/}}
+{{- define "ocudu-cu-cp.requireWritablePaths" -}}
+{{- if and .Values.securityContext.readOnlyRootFilesystem (not (.Values.o1).enable_ocudu_o1) -}}
+{{- $config := fromYaml (index .Values.config "cu-cp-config.yml" | default "") -}}
+{{- $dirs := list (clean .Values.persistence.mountPath) "/run/ocudu" "/tmp" -}}
+{{- $paths := dict -}}
+{{- range $section := list "log" "trace" -}}
+{{- $_ := set $paths (printf "%s.filename" $section) (get (get $config $section | default dict) "filename") -}}
+{{- end -}}
+{{- range $key, $path := (get $config "pcap" | default dict) -}}
+{{- if hasSuffix "_filename" $key -}}
+{{- $_ := set $paths (printf "pcap.%s" $key) $path -}}
+{{- end -}}
+{{- end -}}
+{{- range $key, $path := $paths -}}
+{{- $path = toString ($path | default "") -}}
+{{- $writable := or (eq $path "") (eq $path "stdout") -}}
+{{- range $dirs -}}
+{{- if hasPrefix (printf "%s/" .) (clean $path) -}}
+{{- $writable = true -}}
+{{- end -}}
+{{- end -}}
+{{- if not $writable -}}
+{{- fail (printf "config: %s is %q, outside the directories a read-only root filesystem leaves writable: %s" $key $path (join ", " $dirs)) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Name of the headless service that publishes this pod's outer IPsec address.
 A cluster IP service cannot be used: it forwards only the ports it declares, and it
 rewrites addresses, which breaks the peer address detection IKE relies on.

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause-Open-MPI
 
 {{- include "ocudu-du.requireResources" . }}
+{{- include "ocudu-du.requireWritablePaths" . }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
