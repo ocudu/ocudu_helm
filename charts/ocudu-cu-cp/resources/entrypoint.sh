@@ -134,7 +134,6 @@ update_config_paths() {
         log_warn "Failed to create symlink: $symlink_path"
     fi
 
-    echo "$new_folder"
     return 0
 }
 

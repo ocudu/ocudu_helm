@@ -26,6 +26,7 @@
 - The README's link to the OCUDU Configuration Reference pointed at a page that does not exist. It now points at https://docs.ocudu.org/user_manual/config_reference/
 - The README's CNTi badge no longer breaks when a pipeline on main does not run this chart's CNTi job. The job publishes the badge to the project's package registry as `ocudu-gnb` (CNTi Test Suite component 1.2.0, `badge_name`), and the README shows it from there
 - `replicaCount` is applied: the Deployment had no `replicas` field
+- With `persistence.preserveOldLogs`, the entrypoint printed the new log directory twice
 
 ## 3.15.0 (2026-10-19)
 

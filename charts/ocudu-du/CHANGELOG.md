@@ -20,6 +20,7 @@
 ### Fixed
 
 - `values-o1.yaml`: bump the o1-adapter image to `20261110_51f00a60`. The adapter runs as PID 1 and ignored SIGTERM, so every pod stop waited the full grace period for SIGKILL; it now exits on SIGTERM
+- With `persistence.preserveOldLogs`, the entrypoint printed the new log directory twice
 
 ## 1.14.0 (2026-10-26)
 
