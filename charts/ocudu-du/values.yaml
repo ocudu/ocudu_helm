@@ -764,3 +764,7 @@ config:
       f1ap_filename: /var/log/ocudu/du_f1ap.pcap
       f1u_enable: false
       f1u_filename: /var/log/ocudu/du_f1u.pcap
+      rlc_enable: false
+      rlc_filename: /var/log/ocudu/du_rlc.pcap
+      e2ap_enable: false
+      e2ap_du_filename: /var/log/ocudu/du_e2ap.pcap

@@ -727,3 +727,5 @@ config:
       f1u_filename: /var/log/ocudu/cu_up_f1u.pcap
       n3_enable: false
       n3_filename: /var/log/ocudu/cu_up_n3.pcap
+      e2ap_enable: false
+      e2ap_cu_up_filename: /var/log/ocudu/cu_up_e2ap.pcap

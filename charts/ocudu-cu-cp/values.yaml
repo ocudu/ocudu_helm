@@ -697,3 +697,7 @@ config:
       f1ap_filename: /var/log/ocudu/cu_cp_f1ap.pcap
       e1ap_enable: false
       e1ap_filename: /var/log/ocudu/cu_cp_e1ap.pcap
+      xnap_enable: false
+      xnap_filename: /var/log/ocudu/cu_cp_xnap.pcap
+      e2ap_enable: false
+      e2ap_cu_cp_filename: /var/log/ocudu/cu_cp_e2ap.pcap

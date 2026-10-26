@@ -782,3 +782,16 @@ config:
     pcap:
       ngap_enable: false
       ngap_filename: /var/log/ocudu/cu_ngap.pcap
+      xnap_enable: false
+      xnap_filename: /var/log/ocudu/cu_xnap.pcap
+      f1ap_enable: false
+      f1ap_filename: /var/log/ocudu/cu_f1ap.pcap
+      n3_enable: false
+      n3_filename: /var/log/ocudu/cu_n3.pcap
+      f1u_enable: false
+      f1u_filename: /var/log/ocudu/cu_f1u.pcap
+      e1ap_enable: false
+      e1ap_filename: /var/log/ocudu/cu_e1ap.pcap
+      e2ap_enable: false
+      e2ap_cu_cp_filename: /var/log/ocudu/cu_e2ap_cu_cp.pcap
+      e2ap_cu_up_filename: /var/log/ocudu/cu_e2ap_cu_up.pcap

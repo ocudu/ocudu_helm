@@ -996,6 +996,22 @@ config:
       mac_filename: /var/log/ocudu/gnb_mac.pcap
       ngap_enable: false
       ngap_filename: /var/log/ocudu/gnb_ngap.pcap
+      xnap_enable: false
+      xnap_filename: /var/log/ocudu/gnb_xnap.pcap
+      n3_enable: false
+      n3_filename: /var/log/ocudu/gnb_n3.pcap
+      e1ap_enable: false
+      e1ap_filename: /var/log/ocudu/gnb_e1ap.pcap
+      f1ap_enable: false
+      f1ap_filename: /var/log/ocudu/gnb_f1ap.pcap
+      f1u_enable: false
+      f1u_filename: /var/log/ocudu/gnb_f1u.pcap
+      rlc_enable: false
+      rlc_filename: /var/log/ocudu/gnb_rlc.pcap
+      e2ap_enable: false
+      e2ap_cu_cp_filename: /var/log/ocudu/gnb_e2ap_cu_cp.pcap
+      e2ap_cu_up_filename: /var/log/ocudu/gnb_e2ap_cu_up.pcap
+      e2ap_du_filename: /var/log/ocudu/gnb_e2ap_du.pcap
 
     metrics:
       # All options and defaults: https://docs.ocudu.org/user_manual/config_reference/
