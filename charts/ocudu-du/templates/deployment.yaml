@@ -132,6 +132,10 @@ spec:
         {{- end }}
         - name: ocudu-work
           emptyDir: {}
+        {{- if .Values.securityContext.readOnlyRootFilesystem }}
+        - name: ocudu-tmp
+          emptyDir: {}
+        {{- end }}
           {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-1Gi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-1Gi")) }}
         - name: hugepage-1gi
           emptyDir:
@@ -293,6 +297,12 @@ spec:
               value: {{ .Values.persistence.mountPath | quote }}
             - name: OCUDU_WORK_DIR
               value: /run/ocudu
+          {{- if .Values.securityContext.readOnlyRootFilesystem }}
+            # DPDK keeps its runtime files here. As root it would otherwise use /var/run,
+            # which is on the read-only root.
+            - name: RUNTIME_DIRECTORY
+              value: /run/ocudu
+          {{- end }}
             - name: PRESERVE_OLD_LOGS
               value: {{ .Values.persistence.preserveOldLogs | quote }}
           {{- with (index $resourceRequests "cpu") }}
@@ -326,6 +336,11 @@ spec:
               mountPath: {{ .Values.persistence.mountPath }}
             - name: ocudu-work
               mountPath: /run/ocudu
+            {{- if .Values.securityContext.readOnlyRootFilesystem }}
+            # The entrypoint's mktemp, and any scratch file the image would write.
+            - name: ocudu-tmp
+              mountPath: /tmp
+            {{- end }}
             {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-1Gi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-1Gi")) }}
             - name: hugepage-1gi
               mountPath: /hugepages-1Gi

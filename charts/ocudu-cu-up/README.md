@@ -207,10 +207,10 @@ cluster, and the full list of what the chart refuses.
 
 ## Security Context and Capabilities
 
-The chart defaults are otherwise restrictive — non-root pod, every capability
-dropped except the two below, no service account token, no RBAC, no hostPath,
-no privileged container — but two settings are deliberately not at their most
-restrictive value:
+The chart defaults are otherwise restrictive — non-root pod, read-only root
+filesystem, every capability dropped except the two below, no service account
+token, no RBAC, no hostPath, no privileged container — but two settings are
+deliberately not at their most restrictive value:
 
 ```yaml
 securityContext:
@@ -242,6 +242,10 @@ the container grants all three, so add `IPC_LOCK` back when running one.
 `insecure_capabilities` check fails while it is granted. Remove it to pass that
 check without the power metric. The `privilege_escalation` check fails regardless,
 because file capabilities need `allowPrivilegeEscalation: true`.
+
+With the read-only root filesystem, `ocuup` writes only to `/tmp`, `/run/ocudu`
+and `persistence.mountPath`, which are volumes. Point logs and pcaps at
+`persistence.mountPath`.
 
 In O1 mode ([`values-o1.yaml`](values-o1.yaml)) the pod also sets the sysctl
 `net.ipv4.ip_unprivileged_port_start: "0"` under `podSecurityContext`, so the

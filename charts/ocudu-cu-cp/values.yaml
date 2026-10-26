@@ -137,6 +137,8 @@ initCommand:
 securityContext:
   allowPrivilegeEscalation: true
   privileged: false
+  # The CU-CP writes only to /tmp, /run/ocudu and persistence.mountPath, which are volumes.
+  readOnlyRootFilesystem: true
   capabilities:
     drop: ["ALL"]
     add:

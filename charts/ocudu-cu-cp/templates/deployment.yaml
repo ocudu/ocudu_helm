@@ -133,6 +133,10 @@ spec:
         {{- end }}
         - name: ocudu-work
           emptyDir: {}
+        {{- if .Values.securityContext.readOnlyRootFilesystem }}
+        - name: ocudu-tmp
+          emptyDir: {}
+        {{- end }}
       {{- if .Values.ipsec.enabled }}
       # A sidecar init container rather than an ordinary one. The kubelet starts it before
       # the application container and stops it only after that container has gone, so the
@@ -291,6 +295,11 @@ spec:
               mountPath: {{ .Values.persistence.mountPath }}
             - name: ocudu-work
               mountPath: /run/ocudu
+            {{- if .Values.securityContext.readOnlyRootFilesystem }}
+            # The entrypoint's mktemp, and any scratch file the image would write.
+            - name: ocudu-tmp
+              mountPath: /tmp
+            {{- end }}
         {{- if (.Values.o1).enable_ocudu_o1 }}
         {{- $adapterFileLog := ((.Values.o1).o1Adapter.fileLog).enabled }}
         {{- $adapterLogFile := printf "%s/%s" .Values.persistence.mountPath (((.Values.o1).o1Adapter.fileLog).filename | default "o1-adapter.log") }}
