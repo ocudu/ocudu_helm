@@ -29,8 +29,11 @@ cnti-testsuite:
   rules:
     - when: never
 
+# The CU and CU-CP runs both land on the few on-prem runners with SCTP, and two
+# kind clusters on one host fail to come up. Run one at a time, across pipelines.
 cnti-testsuite-cu:
   extends: [cnti-testsuite, .cnti diagnostics, .cnti runner setup]
+  resource_group: cnti-sctp
   rules:
     - if: $ON_MR
     - if: $ON_DEFAULT_BRANCH
