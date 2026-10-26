@@ -230,6 +230,8 @@ The default is `registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk`, tagged
 | `nodeSelector` | object | `{}` | Node selector for pod assignment |
 | `tolerations` | list | `[]` | Tolerations for pod assignment |
 | `affinity` | object | `{}` | Affinity rules for pod assignment |
+| `topologySpreadConstraints` | list | `[]` | Topology spread constraints for pod assignment |
+| `priorityClassName` | string | `""` | Priority class assigned to the pod |
 | `o1.enable_ocudu_o1` | bool | `false` | Enable O1 interface (NETCONF management) |
 | `config.gnb-config.yml` | string | See values.yaml | gNB configuration file |
 

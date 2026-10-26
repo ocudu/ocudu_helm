@@ -241,6 +241,16 @@ tolerations: {}
 # @default -- `{}` (no affinity rules)
 affinity: {}
 
+# -- Topology spread constraints for pod assignment
+# @default -- `[]` (no constraints)
+topologySpreadConstraints: []
+
+# -- Priority class assigned to the pod
+# A high-priority class helps the gNB get rescheduled ahead of best-effort
+# workloads after a node drain or under node pressure.
+# @default -- `""` (no priority class)
+priorityClassName: ""
+
 # -- Metrics service configuration
 # Exposes gNB metrics endpoint for Telegraf collection
 metricsService:
