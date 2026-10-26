@@ -9,10 +9,13 @@
 - `values-o1.yaml`: bump the netconf-server image to `20261106_74b23eb8` and the o1-adapter image to `20261105_649984ac`. The old netconf-server image has no `enable_app_usage` leaf in its YANG, so it rejected the O1 config and started with an empty datastore
 - `metrics.layers.enable_app_usage` defaults to `true`. It reports CPU, memory, power and buffer-pool metrics once `metrics.enable_json` or `metrics.enable_log` is on. If you override `config.du-config.yml`, add `enable_app_usage: true` under `metrics.layers` to get it
 - The default config lists every `metrics.layers` switch the DU accepts with its default and links the OCUDU Configuration Reference, so you can see where to turn on each metric
+- The DU container runs with `readOnlyRootFilesystem: true` and an `emptyDir` at `/tmp`; DPDK keeps its runtime files in `/run/ocudu`. Set `securityContext.readOnlyRootFilesystem: false` to restore the old behavior
+- Default `config`: every pcap writes to `persistence.mountPath`
 
 ### Added
 
 - The chart pipeline runs the essential tests of the CNTi Test Suite against the chart in DU test mode (ru_dummy and a test UE, no CU, no RU) on a kind cluster, through the suite's GitLab CI/CD component. The values the job uses live under `.gitlab/cnti/ocudu-du/`
+- With a read-only root and O1 off, rendering fails when `log.filename`, `trace.filename` or a pcap path in `config` lies outside `/tmp`, `/run/ocudu` and `persistence.mountPath`, the only writable directories
 
 ### Fixed
 
