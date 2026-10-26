@@ -169,3 +169,26 @@
           kubectl logs -n cnti-default "$pod" --all-containers --previous --tail=200 || true
         done
       fi
+
+# Extended next to the CNTi Test Suite component's job, for the on-prem runners
+# (Kubernetes executor), which also pick up jobs tagged for the gitlab.com ones.
+# They start the job without waiting for the dind service, so kind could not
+# reach dockerd: repeat the component's before_script, then wait for dockerd.
+# The job pod also carries the runner's service account, and kubescape prefers
+# that in-cluster config over ~/.kube/config: point KUBECONFIG at the file kind
+# writes, or kubescape scans the runner's cluster instead of the kind cluster.
+.cnti runner setup:
+  before_script:
+    - if command -v apk >/dev/null; then apk add --no-cache bash curl git tar >/dev/null; fi
+    - export KUBECONFIG="$HOME/.kube/config"
+    - |
+      i=0
+      while ! docker info >/dev/null 2>&1; do
+        i=$((i+1))
+        if [ "$i" -ge 60 ]; then
+          echo "ERROR: dockerd not ready after 60s"
+          docker info
+          exit 1
+        fi
+        sleep 1
+      done

@@ -28,7 +28,7 @@ cnti-testsuite:
     - when: never
 
 cnti-testsuite-cu-cp:
-  extends: [cnti-testsuite, .cnti diagnostics]
+  extends: [cnti-testsuite, .cnti diagnostics, .cnti runner setup]
   rules:
     - if: $ON_MR
     - if: $ON_DEFAULT_BRANCH
