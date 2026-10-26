@@ -742,6 +742,8 @@ config:
       autostart_stdout_metrics: false
       enable_json: false
       enable_log: false
+      layers:
+        enable_app_usage: true
 
     pcap:
       mac_enable: false

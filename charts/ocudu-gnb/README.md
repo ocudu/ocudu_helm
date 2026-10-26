@@ -162,6 +162,33 @@ o1:
 
 > **Note**: LoadBalancer services require a LoadBalancer controller (e.g., MetalLB, cloud provider) in your cluster. Without one, services will remain in `<pending>` state. For clusters without LoadBalancer support, use `NodePort` instead.
 
+**Metrics and power consumption in Grafana** (`grafana-ocudu` chart):
+
+Enable `metricsService` and, in `config.gnb-config.yml`, turn on the remote
+control server and JSON metrics. The default config already sets
+`metrics.layers.enable_app_usage`, which reports CPU, memory and power.
+
+```yaml
+metricsService:
+  enabled: true
+config:
+  gnb-config.yml: |-
+    # ...rest of the config...
+    metrics:
+      enable_json: true
+      layers:
+        enable_app_usage: true
+    remote_control:
+      enabled: true
+      bind_addr: 0.0.0.0
+      port: 8001
+```
+
+Point the `grafana-ocudu` chart's `gnbs[].wsUrl` at the metrics service. The
+power reading needs the `PERFMON` capability (granted by default, see
+[docs/security.md](docs/security.md)) and a CPU with RAPL energy counters
+(Intel, recent AMD). Without them, the power panels show 0 W.
+
 ## Container Images
 
 Select the appropriate container image based on your CPU:

@@ -998,6 +998,8 @@ config:
     metrics:
       autostart_stdout_metrics: true
       enable_json: false
+      layers:
+        enable_app_usage: true
 
     remote_control:
       bind_addr: 0.0.0.0
