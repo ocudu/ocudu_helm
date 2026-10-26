@@ -23,13 +23,10 @@ spec:
       {{- include "ocudu-cu-up.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- if or (not (.Values.o1).enable_ocudu_o1) .Values.podAnnotations }}
+      {{- if or (include "ocudu-cu-up.mutableConfigmaps" .) .Values.podAnnotations }}
       annotations:
-        {{- if not (.Values.o1).enable_ocudu_o1 }}
+        {{- if include "ocudu-cu-up.mutableConfigmaps" . }}
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yml") . | sha256sum }}
-        {{- if .Values.ipsec.enabled }}
-        checksum/ipsec-config: {{ include (print $.Template.BasePath "/ipsec-configmap.yaml") . | sha256sum }}
-        {{- end }}
         {{- end }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}

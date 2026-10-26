@@ -15,6 +15,7 @@
 - The pod runs with the container runtime's default seccomp profile (`podSecurityContext.seccompProfile.type: RuntimeDefault`)
 - The CU container runs with `readOnlyRootFilesystem: true` and an `emptyDir` at `/tmp`. Set `securityContext.readOnlyRootFilesystem: false` to restore the old behavior
 - Default `config`: every pcap writes to `persistence.mountPath`
+- ConfigMaps, including the IPsec one, are immutable and their names end in a hash of their data, so a config change creates a new ConfigMap and rolls the pod, and a live edit is rejected. Roll back with `helm rollback`; `configmap.*.nameOverride` keeps a fixed, mutable ConfigMap
 
 ### Fixed
 

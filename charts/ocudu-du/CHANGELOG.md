@@ -11,6 +11,7 @@
 - The default config lists every `metrics.layers` switch the DU accepts with its default and links the OCUDU Configuration Reference, so you can see where to turn on each metric
 - The DU container runs with `readOnlyRootFilesystem: true` and an `emptyDir` at `/tmp`; DPDK keeps its runtime files in `/run/ocudu`. Set `securityContext.readOnlyRootFilesystem: false` to restore the old behavior
 - Default `config`: every pcap writes to `persistence.mountPath`
+- ConfigMaps, including the IPsec one, are immutable and their names end in a hash of their data, so a config change creates a new ConfigMap and rolls the pod, and a live edit is rejected. Roll back with `helm rollback`; `configmap.*.nameOverride` keeps a fixed, mutable ConfigMap
 
 ### Added
 

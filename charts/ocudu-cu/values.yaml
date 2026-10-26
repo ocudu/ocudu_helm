@@ -28,6 +28,9 @@ nameOverride: ""
 fullnameOverride: ""
 
 # -- ConfigMap name overrides
+# Each ConfigMap is immutable and its name ends in a hash of its data, so a change creates
+# a new one and rolls the pod; roll back with `helm rollback`. An override keeps a fixed,
+# mutable ConfigMap.
 configmap:
   main: { nameOverride: "" }
   entrypoint: { nameOverride: "" }

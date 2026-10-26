@@ -27,60 +27,67 @@ Create a default fully qualified app name.
 {{- end }}
 
 {{/*
+The data of each ConfigMap, rendered in one place so that the body and the hash in the
+name always agree.
+*/}}
+{{- define "ocudu-du.mainConfigData" -}}
+{{- .Values.config | toYaml }}
+{{- end }}
+
+{{- define "ocudu-du.o1ConfigData" -}}
+{{- .Values.o1Config | toYaml }}
+{{- end }}
+
+{{- define "ocudu-du.entrypointData" -}}
+entrypoint-ocudu-du.sh: {{ tpl (.Files.Get "resources/entrypoint.sh") . | quote | default 000 }}
+{{- end }}
+
+{{/*
+configmap.<key>.nameOverride, or empty. Called with (dict "root" $ "key" "main").
+*/}}
+{{- define "ocudu-du.configmapOverride" -}}
+{{- dig .key "nameOverride" "" (.root.Values.configmap | default dict) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+<fullname>-<suffix>-<8 hex of sha256(data)>, at most 63 characters; the fullname is cut,
+never the suffix or the hash. The ConfigMaps are immutable, so a change of data renders a
+new name: Helm creates the new ConfigMap, the pod rolls to it, and Helm removes the old one.
+*/}}
+{{- define "ocudu-du.hashedConfigmapName" -}}
+{{- $base := include "ocudu-du.fullname" .root | trunc (int (sub 53 (len .suffix))) | trimSuffix "-" }}
+{{- printf "%s-%s-%s" $base .suffix (.data | sha256sum | trunc 8) }}
+{{- end }}
+
+{{/*
 Main configmap name
 */}}
 {{- define "ocudu-du.mainConfigmapName" -}}
-{{- with .Values.configmap }}
-  {{- with .main }}
-    {{- if .nameOverride }}
-      {{- .nameOverride | trunc 63 | trimSuffix "-" -}}
-    {{- else }}
-      {{- printf "%s-config" (include "ocudu-du.fullname" $) | trunc 63 | trimSuffix "-" -}}
-    {{- end }}
-  {{- else }}
-    {{- printf "%s-config" (include "ocudu-du.fullname" $) | trunc 63 | trimSuffix "-" -}}
-  {{- end }}
-{{- else }}
-  {{- printf "%s-config" (include "ocudu-du.fullname" .) | trunc 63 | trimSuffix "-" -}}
-{{- end }}
+{{- include "ocudu-du.configmapOverride" (dict "root" . "key" "main") | default (include "ocudu-du.hashedConfigmapName" (dict "root" . "suffix" "config" "data" (include "ocudu-du.mainConfigData" .))) }}
 {{- end }}
 
 {{/*
 O1 mode configmap (values.o1Config)
 */}}
 {{- define "ocudu-du.o1ConfigmapName" -}}
-{{- with .Values.configmap }}
-  {{- with .o1 }}
-    {{- if .nameOverride }}
-      {{- .nameOverride | trunc 63 | trimSuffix "-" -}}
-    {{- else }}
-      {{- printf "%s-o1-config" (include "ocudu-du.fullname" $) | trunc 63 | trimSuffix "-" -}}
-    {{- end }}
-  {{- else }}
-    {{- printf "%s-o1-config" (include "ocudu-du.fullname" $) | trunc 63 | trimSuffix "-" -}}
-  {{- end }}
-{{- else }}
-  {{- printf "%s-o1-config" (include "ocudu-du.fullname" .) | trunc 63 | trimSuffix "-" -}}
-{{- end }}
+{{- include "ocudu-du.configmapOverride" (dict "root" . "key" "o1") | default (include "ocudu-du.hashedConfigmapName" (dict "root" . "suffix" "o1-config" "data" (include "ocudu-du.o1ConfigData" .))) }}
 {{- end }}
 
 {{/*
 Entrypoint script configmap
 */}}
 {{- define "ocudu-du.entrypointConfigmapName" -}}
-{{- with .Values.configmap }}
-  {{- with .entrypoint }}
-    {{- if .nameOverride }}
-      {{- .nameOverride | trunc 63 | trimSuffix "-" -}}
-    {{- else }}
-      {{- printf "%s-entrypoint" (include "ocudu-du.fullname" $) | trunc 63 | trimSuffix "-" -}}
-    {{- end }}
-  {{- else }}
-    {{- printf "%s-entrypoint" (include "ocudu-du.fullname" $) | trunc 63 | trimSuffix "-" -}}
-  {{- end }}
-{{- else }}
-  {{- printf "%s-entrypoint" (include "ocudu-du.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- include "ocudu-du.configmapOverride" (dict "root" . "key" "entrypoint") | default (include "ocudu-du.hashedConfigmapName" (dict "root" . "suffix" "entrypoint" "data" (include "ocudu-du.entrypointData" .))) }}
 {{- end }}
+
+{{/*
+"true" when the configuration or the entrypoint ConfigMap the pod mounts is kept fixed and
+mutable by a nameOverride. Only then does the pod need a checksum annotation to roll on a
+change; a hashed name rolls it by itself.
+*/}}
+{{- define "ocudu-du.mutableConfigmaps" -}}
+{{- $config := ternary "o1" "main" (eq (toString (.Values.o1).enable_ocudu_o1) "true") }}
+{{- if or (include "ocudu-du.configmapOverride" (dict "root" . "key" $config)) (include "ocudu-du.configmapOverride" (dict "root" . "key" "entrypoint")) }}true{{ end }}
 {{- end }}
 
 {{/*
@@ -218,7 +225,7 @@ rewrites addresses, which breaks the peer address detection IKE relies on.
 Name of the configmap holding the IPsec configuration.
 */}}
 {{- define "ocudu-du.ipsec.configmapName" -}}
-{{- printf "%s-ipsec-config" (include "ocudu-du.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- include "ocudu-du.hashedConfigmapName" (dict "root" . "suffix" "ipsec-config" "data" (include "ocudu-du.ipsec.configData" .)) -}}
 {{- end -}}
 
 {{/*
