@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- The README's CNTi badge no longer breaks when a pipeline on main does not run this chart's CNTi job. The job publishes the badge to the project's package registry as `ocudu-gnb` (CNTi Test Suite component 1.2.0, `badge_name`), and the README shows it from there
+
 ## 3.15.0 (2026-10-19)
 
 ### Added
