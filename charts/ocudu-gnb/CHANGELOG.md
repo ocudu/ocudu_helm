@@ -2,13 +2,22 @@
 
 ## Unreleased
 
+### Added
+
+- `startupProbe` (`pgrep gnb`, 180s budget by default), which gates the liveness and readiness probes
+- `topologySpreadConstraints` and `priorityClassName`
+
 ### Changed
 
 - Default image tag `ubuntu-24.04-avx512-latest` with `image.pullPolicy: Always`; it moves to each nightly build, while dated tags are pruned from the registry
+- **`persistence.enabled` now defaults to `false`** and `persistence.type` to `pvc`: logs go to an `emptyDir`. The `hostPath` default failed on a fresh node, where the directory is created as root and the non-root gNB cannot write to it
+- `readinessProbe`: `initialDelaySeconds` 15 → `0`, `timeoutSeconds` 1 → `3`, `failureThreshold` 30 → `6`, as in the CU and DU charts
+- The pod runs with the container runtime's default seccomp profile (`podSecurityContext.seccompProfile.type: RuntimeDefault`)
 
 ### Fixed
 
 - The README's CNTi badge no longer breaks when a pipeline on main does not run this chart's CNTi job. The job publishes the badge to the project's package registry as `ocudu-gnb` (CNTi Test Suite component 1.2.0, `badge_name`), and the README shows it from there
+- `replicaCount` is applied: the Deployment had no `replicas` field
 
 ## 3.15.0 (2026-10-19)
 

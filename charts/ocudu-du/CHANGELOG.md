@@ -9,6 +9,7 @@
 ### Changed
 
 - Default image tag `ubuntu-24.04-avx512-latest` with `image.pullPolicy: Always`; it moves to each nightly build, while dated tags are pruned from the registry
+- The pod runs with the container runtime's default seccomp profile (`podSecurityContext.seccompProfile.type: RuntimeDefault`)
 
 ## 1.14.0 (2026-10-26)
 
