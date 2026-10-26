@@ -180,6 +180,7 @@ podSecurityContext:
 securityContext:
   allowPrivilegeEscalation: true   # required for file caps on execve
   privileged: false
+  readOnlyRootFilesystem: true     # adds an emptyDir at /tmp
   capabilities:
     drop: ["ALL"]
     add:
@@ -190,6 +191,7 @@ securityContext:
 
 **Advantages:**
 - ✅ Non-root (uid 1000), drops ALL and adds only the three capabilities above
+- ✅ Read-only root filesystem: the gNB writes only to `/tmp`, `/run/ocudu` and `persistence.mountPath`. Point logs and pcaps at `persistence.mountPath`
 - ✅ No privileged mode
 - ✅ The runtime's default seccomp profile
 - ✅ NetworkPolicy support
