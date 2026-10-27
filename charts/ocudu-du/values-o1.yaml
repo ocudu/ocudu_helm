@@ -629,6 +629,9 @@ o1Config:
           <ocudu_metrics_extensions>
             <autostart_stdout_metrics>true</autostart_stdout_metrics>
             <enable_json>false</enable_json>
+            <layers>
+              <enable_app_usage>true</enable_app_usage>
+            </layers>
           </ocudu_metrics_extensions>
 
           <ocudu_pcap_extensions>

@@ -745,7 +745,7 @@ config:
       enable_log: false
       enable_verbose: false
       layers:
-        enable_app_usage: true    # CPU, memory and power (feeds Grafana's power panels)
+        enable_app_usage: true
         enable_executor: false
         enable_sched: true
         enable_sched_ue: true

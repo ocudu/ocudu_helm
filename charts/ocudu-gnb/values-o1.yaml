@@ -716,6 +716,7 @@ o1Config:
               <du_report_period>1000</du_report_period>
             </periodicity>
             <layers>
+              <enable_app_usage>true</enable_app_usage>
               <enable_ru>true</enable_ru>
               <enable_sched>true</enable_sched>
               <enable_rlc>false</enable_rlc>

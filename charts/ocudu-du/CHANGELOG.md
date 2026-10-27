@@ -2,11 +2,9 @@
 
 ## Unreleased
 
-### Fixed
-
-- Grafana's power consumption panels stayed empty: the default config never enabled `metrics.layers.enable_app_usage`, so the DU sent no `app_resource_usage` metrics. It is now on by default
-
 ### Changed
+
+- We enabled `metrics.layers.enable_app_usage` by default.
 
 - The default config lists every `metrics` option and every `metrics.layers` switch the DU accepts with its default and links the OCUDU Configuration Reference, so you can see where to turn on each metric
 
