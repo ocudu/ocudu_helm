@@ -14,8 +14,8 @@ root README.
 | IPsec | Encrypting the interfaces between RAN nodes with the IPsec sidecar |
 | [O1](o1.md) | O1/NETCONF management via `values-o1.yaml`: TLS, SSH host key, users |
 | Security | Pod Security Standards, Linux capabilities, service account |
-| Operations | Resources and QoS, upgrades, probes, PodDisruptionBudget, init process |
-| Storage | Persistence (emptyDir, PVC, hostPath) and log files |
+| [Operations](operations.md) | Resources and QoS, upgrades, probes, PodDisruptionBudget, init process |
+| [Storage](storage.md) | Persistence (emptyDir, PVC, hostPath) and log files |
 | Network modes | CNI vs hostNetwork vs SR-IOV, and which chart supports which |
 | NetworkPolicy | How the NetworkPolicy is built and its per-chart peers |
 | SR-IOV setup | Preparing SR-IOV on the node and in the cluster |
