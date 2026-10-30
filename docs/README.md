@@ -12,7 +12,7 @@ root README.
 | Guide | Covers |
 |-------|--------|
 | IPsec | Encrypting the interfaces between RAN nodes with the IPsec sidecar |
-| O1 | O1/NETCONF management via `values-o1.yaml`: TLS, SSH host key, users |
+| [O1](o1.md) | O1/NETCONF management via `values-o1.yaml`: TLS, SSH host key, users |
 | Security | Pod Security Standards, Linux capabilities, service account |
 | Operations | Resources and QoS, upgrades, probes, PodDisruptionBudget, init process |
 | Storage | Persistence (emptyDir, PVC, hostPath) and log files |
