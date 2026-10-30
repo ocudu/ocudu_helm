@@ -13,7 +13,7 @@ root README.
 |-------|--------|
 | [IPsec](ipsec.md) | Encrypting the interfaces between RAN nodes with the IPsec sidecar |
 | [O1](o1.md) | O1/NETCONF management via `values-o1.yaml`: TLS, SSH host key, users |
-| Security | Pod Security Standards, Linux capabilities, service account |
+| [Security](security.md) | Pod Security Standards, Linux capabilities per binary, service account |
 | [Operations](operations.md) | Resources and QoS, upgrades, probes, PodDisruptionBudget, init process |
 | [Storage](storage.md) | Persistence (emptyDir, PVC, hostPath) and log files |
 | Network modes | CNI vs hostNetwork vs SR-IOV, and which chart supports which |
