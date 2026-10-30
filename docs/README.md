@@ -16,8 +16,8 @@ root README.
 | [Security](security.md) | Pod Security Standards, Linux capabilities per binary, service account |
 | [Operations](operations.md) | Resources and QoS, upgrades, probes, PodDisruptionBudget, init process |
 | [Storage](storage.md) | Persistence (emptyDir, PVC, hostPath) and log files |
-| Network modes | CNI vs hostNetwork vs SR-IOV, and which chart supports which |
-| NetworkPolicy | How the NetworkPolicy is built and its per-chart peers |
+| [Network modes](network-modes.md) | CNI vs hostNetwork vs SR-IOV, and which chart supports which |
+| [NetworkPolicy](networkpolicy.md) | How the NetworkPolicy is built and its per-chart peers |
 | SR-IOV setup | Preparing SR-IOV on the node and in the cluster |
 | Hugepages | Hugepages for DPDK |
 
