@@ -18,8 +18,8 @@ root README.
 | [Storage](storage.md) | Persistence (emptyDir, PVC, hostPath) and log files |
 | [Network modes](network-modes.md) | CNI vs hostNetwork vs SR-IOV, and which chart supports which |
 | [NetworkPolicy](networkpolicy.md) | How the NetworkPolicy is built and its per-chart peers |
-| SR-IOV setup | Preparing SR-IOV on the node and in the cluster |
-| Hugepages | Hugepages for DPDK |
+| [SR-IOV setup](sriov-setup.md) | Preparing SR-IOV on the node and in the cluster |
+| [Hugepages](hugepages.md) | Hugepages for DPDK |
 
 > These guides are being written and added over time. Each becomes a link here once its
 > page exists. Until then, the information lives in the relevant chart's README.
