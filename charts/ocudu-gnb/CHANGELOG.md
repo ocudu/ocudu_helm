@@ -29,6 +29,7 @@
 - `values-o1.yaml`: bump the o1-adapter image to `20261110_51f00a60`. The adapter runs as PID 1 and ignored SIGTERM, so every pod stop waited the full grace period for SIGKILL; it now exits on SIGTERM
 - The README's link to the OCUDU Configuration Reference pointed at a page that does not exist. It now points at https://docs.ocudu.org/user_manual/config_reference/
 - With `o1.netconfServer.fileLog.enabled` the netconf-server's entrypoint runs as PID 1, so it receives SIGTERM and stops in time
+- A container that exits with an error now shows why: the gNB container, the O1 sidecars and the IPsec sidecar set `terminationMessagePolicy: FallbackToLogsOnError`, so the tail of the log becomes the termination message in `kubectl describe pod` and the Pod's status, without `kubectl logs --previous` (#76)
 - The README's CNTi badge no longer breaks when a pipeline on main does not run this chart's CNTi job. The job publishes the badge to the project's package registry as `ocudu-gnb` (CNTi Test Suite component 1.2.0, `badge_name`), and the README shows it from there
 - `replicaCount` is applied: the Deployment had no `replicas` field
 - With `persistence.preserveOldLogs`, the entrypoint printed the new log directory twice
