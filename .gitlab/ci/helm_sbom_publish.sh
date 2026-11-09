@@ -91,6 +91,12 @@ if oras resolve "$chart_reference" >/dev/null 2>&1; then
   tar -xzf "$package_file" -C "$work_dir"
   owner_pipeline=$(yq eval -r ".annotations.\"${PIPELINE_ANNOTATION}\" // \"\"" "${release_chart}/Chart.yaml")
   if [ "$owner_pipeline" != "$CI_PIPELINE_ID" ]; then
+    # A merge without a version bump only adds to "## Unreleased": never
+    # overwrite the release that is already in the registry.
+    if [ "$release_mode" = production ]; then
+      echo "Version ${version} is already published, nothing to release"
+      exit 0
+    fi
     echo "ERROR: chart ${chart_reference} already exists and belongs to another pipeline" >&2
     echo "Refusing to overwrite or attach SBOMs to an unrelated chart version" >&2
     exit 1
