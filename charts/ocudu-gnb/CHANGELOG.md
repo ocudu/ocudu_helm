@@ -7,6 +7,7 @@
 - `startupProbe` (`pgrep gnb`, 180s budget by default), which gates the liveness and readiness probes
 - `topologySpreadConstraints` and `priorityClassName`
 - With a read-only root and O1 off, rendering fails when `log.filename`, `trace.filename` or a pcap path in `config` lies outside `/tmp`, `/run/ocudu` and `persistence.mountPath`, the only writable directories
+- With a read-only root and O1 off, rendering fails when a `*filename` key under `log`, `trace` or `pcap` in `config` lies outside `/tmp`, `/run/ocudu` and `persistence.mountPath`, the only writable directories
 
 ### Changed
 

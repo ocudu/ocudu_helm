@@ -161,7 +161,7 @@ Fail unless resources.requests and resources.limits both set cpu and memory.
 {{/*
 Fail when the application would write outside its volumes. With a read-only root
 filesystem only /tmp, /run/ocudu and persistence.mountPath are writable, so
-log.filename, trace.filename and every pcap *_filename must lie under one of them.
+every key ending in filename under log, trace and pcap must lie under one of them.
 "stdout" is allowed. Skipped with O1, where the O1 adapter writes the configuration.
 */}}
 {{- define "ocudu-cu-up.requireWritablePaths" -}}
@@ -169,12 +169,11 @@ log.filename, trace.filename and every pcap *_filename must lie under one of the
 {{- $config := fromYaml (index .Values.config "cu-up-config.yml" | default "") -}}
 {{- $dirs := list (clean .Values.persistence.mountPath) "/run/ocudu" "/tmp" -}}
 {{- $paths := dict -}}
-{{- range $section := list "log" "trace" -}}
-{{- $_ := set $paths (printf "%s.filename" $section) (get (get $config $section | default dict) "filename") -}}
+{{- range $section := list "log" "trace" "pcap" -}}
+{{- range $key, $path := (get $config $section | default dict) -}}
+{{- if hasSuffix "filename" $key -}}
+{{- $_ := set $paths (printf "%s.%s" $section $key) $path -}}
 {{- end -}}
-{{- range $key, $path := (get $config "pcap" | default dict) -}}
-{{- if hasSuffix "_filename" $key -}}
-{{- $_ := set $paths (printf "pcap.%s" $key) $path -}}
 {{- end -}}
 {{- end -}}
 {{- range $key, $path := $paths -}}

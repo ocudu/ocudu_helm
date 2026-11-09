@@ -15,7 +15,7 @@
 ### Added
 
 - The chart pipeline runs the essential tests of the CNTi Test Suite against the chart in DU test mode (ru_dummy and a test UE, no CU, no RU) on a kind cluster, through the suite's GitLab CI/CD component. The values the job uses live under `.gitlab/cnti/ocudu-du/`
-- With a read-only root and O1 off, rendering fails when `log.filename`, `trace.filename` or a pcap path in `config` lies outside `/tmp`, `/run/ocudu` and `persistence.mountPath`, the only writable directories
+- With a read-only root and O1 off, rendering fails when a `*filename` key under `log`, `trace` or `pcap` in `config` lies outside `/tmp`, `/run/ocudu` and `persistence.mountPath`, the only writable directories
 
 ### Fixed
 
