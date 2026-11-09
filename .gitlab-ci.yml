@@ -167,26 +167,21 @@ helm-sbom image:
   stage: child
   rules:
     # Package changes must be validated against the immutable registry version.
+    # helm package ships every file in the chart directory that .helmignore does
+    # not exclude (ci/, docs/, README.md, ...), so all of it counts.
     - if: $ON_MR
       changes:
         paths: &helm_package_paths
-          - $CHART_PATH/Chart.yaml
-          - $CHART_PATH/values*.yaml
-          - $CHART_PATH/templates/**/*
-          - $CHART_PATH/resources/**/*
-          - $CHART_PATH/charts/**/*
-          - $CHART_PATH/crds/**/*
-          - $CHART_PATH/.helmignore
+          - $CHART_PATH/**/*
       variables:
         CHART_PACKAGE_CHANGED: "true"
-    # CI and documentation changes still exercise the child pipeline without requiring
-    # a chart version bump.
+    # CI changes still exercise the child pipeline without requiring a chart version
+    # bump.
     - if: $ON_MR
       changes:
         paths:
           - .gitlab/ci/helm_*
           - .gitlab/cnti/$CHART_NAME/**/*
-          - $CHART_PATH/**/*
       variables:
         CHART_PACKAGE_CHANGED: "false"
     # Never publish a production chart for a CI-only change.
