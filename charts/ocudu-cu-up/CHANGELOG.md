@@ -6,6 +6,7 @@
 
 - `ipsec.protectN3`: carry N3 in a tunnel as well, to a core-side peer (UPF) that runs its own IKEv2 endpoint. Add the UPF as a peer with a connection for N3, and point `cu_up.ngu.socket[].bind_addr` at its protected addresses. The `ngu` section is then checked like the other protected sections (no wildcard, no address outside `ipsec.connections`, a bind address required), the entrypoint stops prepending the pod IP as the N3 bind address, the network policy allows the core the tunnel instead of plaintext UDP 2152, and `n3Service.enabled` and `n3Service.advertisedAddress` are refused, as is `ipsec.protectN3` without `ipsec.enabled`. F1-U and Xn-U may then stay on UDP 2152, since the policy opens no plaintext port to the core. Off by default. See `docs/ipsec.md`, which now has a worked example of both sides and the limits: the uplink N3 address comes from the SMF and cannot be checked, and only one UPF is supported
 - With IPsec on, a protected section that sets `bind_interface` to anything but `auto` is refused: the socket would be pinned to that device and its traffic would leave outside the tunnel
+- `o1.netconfServer.persistence`: the running config set over NETCONF survives pod restarts in a PersistentVolumeClaim, on in `values-o1.yaml`; every helm upgrade starts from `o1Config` again and restarts the pod. Needs a StorageClass
 - The chart pipeline runs the essential tests of the CNTi Test Suite against the chart without a CU-CP on a kind cluster, through the suite's GitLab CI/CD component. The README shows the result as a badge; the values the job uses live under `.gitlab/cnti/ocudu-cu-up/`
 - With a read-only root and O1 off, rendering fails when a `*filename` key under `log`, `trace` or `pcap` in `config` lies outside `/tmp`, `/run/ocudu` and `persistence.mountPath`, the only writable directories
 
@@ -21,6 +22,7 @@
 
 - `values-o1.yaml`: bump the netconf-server image to `20261106_74b23eb8`, as in the gNB and DU charts, and the o1-adapter image to `20261110_51f00a60`. The adapter runs as PID 1 and ignored SIGTERM, so every pod stop waited the full grace period for SIGKILL; it now exits on SIGTERM
 - With `persistence.preserveOldLogs`, the entrypoint printed the new log directory twice
+- With `o1.netconfServer.fileLog.enabled` the netconf-server's entrypoint runs as PID 1, so it receives SIGTERM and stops in time
 
 ## 1.12.0 (2026-10-26)
 

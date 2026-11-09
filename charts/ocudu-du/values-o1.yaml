@@ -509,6 +509,18 @@ o1:
       # -- Log file name, created under persistence.mountPath.
       # @default -- `netconf.log`
       filename: netconf.log
+    # -- Keep the running config set over NETCONF across pod restarts. The server saves it
+    # on stop and loads it on the next start; every helm upgrade starts from o1Config again.
+    persistence:
+      # -- Store it in a PersistentVolumeClaim; when false it is lost with the pod.
+      # @default -- `true`
+      enabled: true
+      # -- StorageClass of the claim. Leave empty to use the cluster's default StorageClass.
+      storageClassName: ""
+      # -- Size of the claim
+      size: 10Mi
+      # -- Use this existing PersistentVolumeClaim instead of creating one
+      existingClaim: ""
 
 o1Config:
   o1-config.xml: |-

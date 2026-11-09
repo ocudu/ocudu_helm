@@ -15,6 +15,7 @@
 
 ### Added
 
+- `o1.netconfServer.persistence`: the running config set over NETCONF survives pod restarts in a PersistentVolumeClaim, on in `values-o1.yaml`; every helm upgrade starts from `o1Config` again and restarts the pod. Needs a StorageClass
 - The chart pipeline runs the essential tests of the CNTi Test Suite against the chart in DU test mode (ru_dummy and a test UE, no CU, no RU) on a kind cluster, through the suite's GitLab CI/CD component. The values the job uses live under `.gitlab/cnti/ocudu-du/`
 - With a read-only root and O1 off, rendering fails when a `*filename` key under `log`, `trace` or `pcap` in `config` lies outside `/tmp`, `/run/ocudu` and `persistence.mountPath`, the only writable directories
 
@@ -22,6 +23,7 @@
 
 - `values-o1.yaml`: bump the o1-adapter image to `20261110_51f00a60`. The adapter runs as PID 1 and ignored SIGTERM, so every pod stop waited the full grace period for SIGKILL; it now exits on SIGTERM
 - With `persistence.preserveOldLogs`, the entrypoint printed the new log directory twice
+- With `o1.netconfServer.fileLog.enabled` the netconf-server's entrypoint runs as PID 1, so it receives SIGTERM and stops in time
 
 ## 1.14.0 (2026-10-26)
 

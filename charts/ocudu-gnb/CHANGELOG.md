@@ -8,6 +8,7 @@
 - `topologySpreadConstraints` and `priorityClassName`
 - With a read-only root and O1 off, rendering fails when `log.filename`, `trace.filename` or a pcap path in `config` lies outside `/tmp`, `/run/ocudu` and `persistence.mountPath`, the only writable directories
 - With a read-only root and O1 off, rendering fails when a `*filename` key under `log`, `trace` or `pcap` in `config` lies outside `/tmp`, `/run/ocudu` and `persistence.mountPath`, the only writable directories
+- `o1.netconfServer.persistence`: the running config set over NETCONF survives pod restarts in a PersistentVolumeClaim, on in `values-o1.yaml`; every helm upgrade starts from `o1Config` again and restarts the pod. Needs a StorageClass
 
 ### Changed
 
@@ -26,6 +27,7 @@
 
 - `values-o1.yaml`: bump the o1-adapter image to `20261110_51f00a60`. The adapter runs as PID 1 and ignored SIGTERM, so every pod stop waited the full grace period for SIGKILL; it now exits on SIGTERM
 - The README's link to the OCUDU Configuration Reference pointed at a page that does not exist. It now points at https://docs.ocudu.org/user_manual/config_reference/
+- With `o1.netconfServer.fileLog.enabled` the netconf-server's entrypoint runs as PID 1, so it receives SIGTERM and stops in time
 - The README's CNTi badge no longer breaks when a pipeline on main does not run this chart's CNTi job. The job publishes the badge to the project's package registry as `ocudu-gnb` (CNTi Test Suite component 1.2.0, `badge_name`), and the README shows it from there
 - `replicaCount` is applied: the Deployment had no `replicas` field
 - With `persistence.preserveOldLogs`, the entrypoint printed the new log directory twice

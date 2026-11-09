@@ -6,6 +6,7 @@
 
 - `ipsec.protectN2` and `ipsec.protectN3`: carry N2 and N3 in tunnels as well, to core-side peers (AMF and UPF) that run their own IKEv2 endpoints. The flags are independent. A protected interface's sections (`amf` and `extra_amfs`, or `ngu`) are then checked like the other protected sections, with a bind address required, the entrypoint stops prepending the pod IP as that interface's bind address, and the network policy allows the core the tunnel instead of that interface's plaintext port. `n2Service.enabled`, `n3Service.enabled` and `n3Service.advertisedAddress` are refused while the matching flag is set, and either flag is refused without `ipsec.enabled`. With `protectN3`, F1-U and Xn-U may stay on UDP 2152. Off by default. See `docs/ipsec.md`
 - With IPsec on, a protected section that sets `bind_interface` to anything but `auto` is refused: the socket would be pinned to that device and its traffic would leave outside the tunnel
+- `o1.netconfServer.persistence`: the running config set over NETCONF survives pod restarts in a PersistentVolumeClaim, on in `values-o1.yaml`; every helm upgrade starts from `o1Config` again and restarts the pod. Needs a StorageClass
 - The chart pipeline runs the essential tests of the CNTi Test Suite against the chart without a core network on a kind cluster on a runner with the SCTP kernel module, through the suite's GitLab CI/CD component. The values the job uses live under `.gitlab/cnti/ocudu-cu/`
 - With a read-only root and O1 off, rendering fails when a `*filename` key under `log`, `trace` or `pcap` in `config` lies outside `/tmp`, `/run/ocudu` and `persistence.mountPath`, the only writable directories
 
@@ -21,6 +22,7 @@
 
 - `values-o1.yaml`: bump the netconf-server image to `20261106_74b23eb8`, as in the gNB and DU charts, and the o1-adapter image to `20261110_51f00a60`. The adapter runs as PID 1 and ignored SIGTERM, so every pod stop waited the full grace period for SIGKILL; it now exits on SIGTERM
 - With `persistence.preserveOldLogs`, the entrypoint printed the new log directory twice
+- With `o1.netconfServer.fileLog.enabled` the netconf-server's entrypoint runs as PID 1, so it receives SIGTERM and stops in time
 
 ## 1.15.0 (2026-10-26)
 

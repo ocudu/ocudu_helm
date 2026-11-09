@@ -254,6 +254,10 @@ The default is `registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk`, tagged
 | `o1.netconfServer.ssh.password` | string | `""` | Dev/test cleartext password the chart renders into a Secret itself; ignored when `passwordSecret` is set |
 | `o1.o1Adapter.fileLog.enabled` | bool | `false` | Persist the o1 adapter output to a file under `persistence.mountPath` |
 | `o1.netconfServer.fileLog.enabled` | bool | `false` | Persist the netconf-server output to a timestamped file under `persistence.mountPath` |
+| `o1.netconfServer.persistence.enabled` | bool | `true` | Keep the running config set over NETCONF across pod restarts in a PersistentVolumeClaim; every helm upgrade starts from `o1Config` again |
+| `o1.netconfServer.persistence.storageClassName` | string | `""` | StorageClass of the claim; empty uses the cluster default |
+| `o1.netconfServer.persistence.size` | string | `"10Mi"` | Size of the claim |
+| `o1.netconfServer.persistence.existingClaim` | string | `""` | Existing PersistentVolumeClaim to use instead of creating one |
 | `persistence.enabled` | bool | `false` | Enable persistent storage for logs (otherwise `emptyDir`) |
 | `persistence.type` | string | `"pvc"` | Storage type: `pvc` or `hostPath` |
 | `persistence.pvc.storageClassName` | string | `""` | StorageClass for PVC (empty = default) |

@@ -96,6 +96,10 @@ workload that should not run overlapping old/new pods.
 | `o1.netconfServer.ssh.password` | string | `""` | Dev/test cleartext password the chart renders into a Secret itself; ignored when `passwordSecret` is set |
 | `o1.o1Adapter.fileLog.enabled` | bool | `false` | Persist the o1 adapter output to a log file |
 | `o1.netconfServer.fileLog.enabled` | bool | `false` | Persist the netconf-server output to a timestamped log file |
+| `o1.netconfServer.persistence.enabled` | bool | `true` | Keep the running config set over NETCONF across pod restarts in a PersistentVolumeClaim; every helm upgrade starts from `o1Config` again |
+| `o1.netconfServer.persistence.storageClassName` | string | `""` | StorageClass of the claim; empty uses the cluster default |
+| `o1.netconfServer.persistence.size` | string | `"10Mi"` | Size of the claim |
+| `o1.netconfServer.persistence.existingClaim` | string | `""` | Existing PersistentVolumeClaim to use instead of creating one |
 | `config.cu-up-config.yml` | string | See `values.yaml` | CU-UP application configuration file |
 | `o1Config.o1-config.xml` | string | See `values-o1.yaml` | ManagedElement template served by the netconf-server (replaces `config` in O1 mode) |
 
@@ -360,6 +364,30 @@ o1:
 `clientCertSecret` is required whenever `certSecret` is set — rendering fails
 with a clear message otherwise. The server uses its secret as-is without
 generating new certs.
+
+### Keeping the running config
+
+The netconf-server starts from `o1Config`, and the SMO changes its running config over NETCONF.
+The server saves the running config when it stops and loads it on the next start, so the
+config survives a pod restart (drain, eviction, crash) when it is kept in a PersistentVolumeClaim:
+
+```yaml
+o1:
+  netconfServer:
+    persistence:
+      enabled: true          # on in values-o1.yaml
+      storageClassName: ""   # empty = the cluster's default StorageClass
+      size: 10Mi
+      existingClaim: ""
+```
+
+- Every `helm upgrade` and `helm rollback` starts from `o1Config` again: the chart passes the
+  release revision to the server, which drops a config saved under another revision. So every
+  upgrade also restarts the pod.
+- A container killed without SIGTERM (out of memory, hard eviction, node loss) cannot save:
+  the next start loads the config saved before.
+- A saved config that does not load stops the netconf-server; it never falls back to `o1Config`.
+- The claim is deleted with the release. With `enabled: false` the config is lost with the pod.
 
 ### Persistent sidecar logs
 

@@ -75,8 +75,13 @@ spec:
           emptyDir:
             sizeLimit: 2Mi
         - name: netconf-running-config-volume
+          {{- if (((.Values.o1).netconfServer).persistence).enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.o1.netconfServer.persistence.existingClaim | default (printf "%s-netconf-running" (include "ocudu-cu-up.fullname" .)) }}
+          {{- else }}
           emptyDir:
             sizeLimit: 2Mi
+          {{- end }}
         - name: o1-config-volume
           configMap:
             name: {{ include "ocudu-cu-up.o1ConfigmapName" . }}
@@ -415,8 +420,12 @@ spec:
               containerPort: {{ include "ocudu-cu-up.o1.tlsPort" . }}
               protocol: TCP
             {{- end }}
-          {{- if (((.Values.o1).netconfServer).ssh).username }}
           env:
+            # The saved running config is loaded only within one release revision, so every
+            # helm upgrade starts from o1Config again.
+            - name: NETCONF_CONFIG_GENERATION
+              value: {{ .Release.Revision | quote }}
+          {{- if (((.Values.o1).netconfServer).ssh).username }}
             # ietf-ssh-server local user with password authentication (RFC 9644),
             # created by the image's setup_ssh_user.sh for clients that only implement
             # the SSH "password" method. The password comes from the Secret via
@@ -438,12 +447,13 @@ spec:
           {{- $entrypointFlags = printf "%s --ssh-hostkey-dir /etc/netconf-ssh" $entrypointFlags }}
           {{- end }}
           {{- $ncLogFile := printf "%s/%s" .Values.persistence.mountPath ((.Values.o1).netconfServer.fileLog.filename | default "netconf.log") }}
-          command: [ "/bin/sh", "-c" ]
+          # exec keeps entrypoint.sh as PID 1, so SIGTERM reaches it and it saves the running config.
+          command: [ "/bin/bash", "-c" ]
           args:
             - >-
-              /usr/local/bin/entrypoint.sh --config cuup --custom-config /etc/netconf/o1-config.xml {{ $entrypointFlags }} 2>&1
-              | while IFS= read -r line || [ -n "$line" ]; do printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$line"; done
-              | tee -a {{ $ncLogFile | quote }}
+              exec > >(while IFS= read -r line || [ -n "$line" ]; do printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$line"; done
+              | tee -a {{ $ncLogFile | quote }}) 2>&1;
+              exec /usr/local/bin/entrypoint.sh --config cuup --custom-config /etc/netconf/o1-config.xml {{ $entrypointFlags }}
           {{- else }}
           command: [ "/usr/local/bin/entrypoint.sh" ]
           args:

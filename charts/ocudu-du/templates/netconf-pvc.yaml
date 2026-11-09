@@ -1,0 +1,22 @@
+{{- $persistence := ((.Values.o1).netconfServer).persistence }}
+{{- if and (.Values.o1).enable_ocudu_o1 ($persistence).enabled (not ($persistence).existingClaim) }}
+
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "ocudu-du.fullname" . }}-netconf-running
+  labels:
+    {{- include "ocudu-du.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if $persistence.storageClassName }}
+  storageClassName: {{ $persistence.storageClassName }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $persistence.size }}
+{{- end }}
