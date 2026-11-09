@@ -23,6 +23,8 @@
 
 ### Changed
 
+- `values-o1.yaml`: bump the netconf-server image to `20261106_74b23eb8` and the o1-adapter image to `20261105_649984ac`. The old netconf-server image has no `enable_app_usage` leaf in its YANG, so it rejected the O1 config and started with an empty datastore
+
 - We enabled `metrics.layers.enable_app_usage` by default.
 
 - The default config lists every `metrics` option and every `metrics.layers` switch with its default and links the OCUDU Configuration Reference, so you can see where to turn on each metric. The README has a metrics section that shows how to send metrics to the `grafana-ocudu` chart
