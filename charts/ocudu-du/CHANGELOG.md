@@ -4,20 +4,15 @@
 
 ### Changed
 
+- Default image tag `ubuntu-24.04-avx512-latest` with `image.pullPolicy: Always`; it moves to each nightly build, while dated tags are pruned from the registry
+- The pod runs with the container runtime's default seccomp profile (`podSecurityContext.seccompProfile.type: RuntimeDefault`)
 - `values-o1.yaml`: bump the netconf-server image to `20261106_74b23eb8` and the o1-adapter image to `20261105_649984ac`. The old netconf-server image has no `enable_app_usage` leaf in its YANG, so it rejected the O1 config and started with an empty datastore
-
-- We enabled `metrics.layers.enable_app_usage` by default.
-
-- The default config lists every `metrics` option and every `metrics.layers` switch the DU accepts with its default and links the OCUDU Configuration Reference, so you can see where to turn on each metric
+- `metrics.layers.enable_app_usage` defaults to `true`. It reports CPU, memory, power and buffer-pool metrics once `metrics.enable_json` or `metrics.enable_log` is on. If you override `config.du-config.yml`, add `enable_app_usage: true` under `metrics.layers` to get it
+- The default config lists every `metrics.layers` switch the DU accepts with its default and links the OCUDU Configuration Reference, so you can see where to turn on each metric
 
 ### Added
 
 - The chart pipeline runs the essential tests of the CNTi Test Suite against the chart in DU test mode (ru_dummy and a test UE, no CU, no RU) on a kind cluster, through the suite's GitLab CI/CD component. The values the job uses live under `.gitlab/cnti/ocudu-du/`
-
-### Changed
-
-- Default image tag `ubuntu-24.04-avx512-latest` with `image.pullPolicy: Always`; it moves to each nightly build, while dated tags are pruned from the registry
-- The pod runs with the container runtime's default seccomp profile (`podSecurityContext.seccompProfile.type: RuntimeDefault`)
 
 ## 1.14.0 (2026-10-26)
 

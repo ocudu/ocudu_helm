@@ -181,7 +181,7 @@ config:
     metrics:
       enable_json: true
       layers:
-        enable_app_usage: true   # CPU, memory and power
+        enable_app_usage: true   # CPU, memory, power and buffer pool
         enable_rlc: true         # example: add a layer that is off by default
     remote_control:
       enabled: true
@@ -191,7 +191,7 @@ config:
 
 Point the `grafana-ocudu` chart's `gnbs[].wsUrl` at the metrics service.
 
-`enable_app_usage` reports CPU, memory and power. The power reading needs the
+`enable_app_usage` reports CPU, memory, power and buffer-pool metrics. The power reading needs the
 `PERFMON` capability (granted by default, see [docs/security.md](docs/security.md))
 and a CPU with RAPL energy counters (Intel, recent AMD). Without them, the power
 panels show 0 W.
@@ -286,6 +286,11 @@ The gNB configuration file `gnb-config.yml` is defined in `values.yaml`. Refer t
 # Upgrade; pass the values file used for the install
 helm upgrade ocudu-gnb oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-gnb --version 3.0.0 -f my-values.yaml
 ```
+
+If your values file overrides `config.gnb-config.yml`, new defaults in the chart's
+config (for example `metrics.layers.enable_app_usage: true`) do not reach your
+deployment. Compare your config with the chart's `values.yaml` and copy over the
+settings you want.
 
 ## Uninstalling
 

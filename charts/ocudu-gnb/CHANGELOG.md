@@ -13,21 +13,15 @@
 - **`persistence.enabled` now defaults to `false`** and `persistence.type` to `pvc`: logs go to an `emptyDir`. The `hostPath` default failed on a fresh node, where the directory is created as root and the non-root gNB cannot write to it
 - `readinessProbe`: `initialDelaySeconds` 15 → `0`, `timeoutSeconds` 1 → `3`, `failureThreshold` 30 → `6`, as in the CU and DU charts
 - The pod runs with the container runtime's default seccomp profile (`podSecurityContext.seccompProfile.type: RuntimeDefault`)
+- `values-o1.yaml`: bump the netconf-server image to `20261106_74b23eb8` and the o1-adapter image to `20261105_649984ac`. The old netconf-server image has no `enable_app_usage` leaf in its YANG, so it rejected the O1 config and started with an empty datastore
+- `metrics.layers.enable_app_usage` defaults to `true`. It reports CPU, memory, power and buffer-pool metrics once `metrics.enable_json` or `metrics.enable_log` is on. If you override `config.gnb-config.yml`, add `enable_app_usage: true` under `metrics.layers` to get it
+- The default config lists every `metrics.layers` switch with its default and links the OCUDU Configuration Reference, so you can see where to turn on each metric. The README has a metrics section that shows how to send metrics to the `grafana-ocudu` chart
 
 ### Fixed
 
 - The README's link to the OCUDU Configuration Reference pointed at a page that does not exist. It now points at https://docs.ocudu.org/user_manual/config_reference/
-
 - The README's CNTi badge no longer breaks when a pipeline on main does not run this chart's CNTi job. The job publishes the badge to the project's package registry as `ocudu-gnb` (CNTi Test Suite component 1.2.0, `badge_name`), and the README shows it from there
 - `replicaCount` is applied: the Deployment had no `replicas` field
-
-### Changed
-
-- `values-o1.yaml`: bump the netconf-server image to `20261106_74b23eb8` and the o1-adapter image to `20261105_649984ac`. The old netconf-server image has no `enable_app_usage` leaf in its YANG, so it rejected the O1 config and started with an empty datastore
-
-- We enabled `metrics.layers.enable_app_usage` by default.
-
-- The default config lists every `metrics` option and every `metrics.layers` switch with its default and links the OCUDU Configuration Reference, so you can see where to turn on each metric. The README has a metrics section that shows how to send metrics to the `grafana-ocudu` chart
 
 ## 3.15.0 (2026-10-19)
 
