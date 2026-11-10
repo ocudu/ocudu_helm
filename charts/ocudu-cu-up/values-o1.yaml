@@ -369,7 +369,7 @@ o1:
     image:
       repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_o1_adapter/o1_adapter_nightly_amd64
       pullPolicy: IfNotPresent
-      tag: "20261008_d7c82cd8"
+      tag: "20261110_51f00a60"
     resources: {}
     securityContext: {}
     # -- Persist the o1 adapter container's stdout/stderr to a log file.
@@ -403,7 +403,7 @@ o1:
     image:
       repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_netconf/netconf_nightly_amd64
       pullPolicy: IfNotPresent
-      tag: "20261014_39618f9e"
+      tag: "20261106_74b23eb8"
     tls:
       # -- Enable NETCONF-over-TLS endpoint on port 6513 (alongside the default SSH endpoint on o1Port)
       enabled: false
@@ -429,7 +429,7 @@ o1:
       # user, RFC 9644). The image only offers keyboard-interactive to root; clients
       # that only implement the SSH "password" method need this user.
       # Empty = disabled (old behavior). Requires a netconf-server image with the
-      # setup_ssh_user.sh env support (the pinned 20261014_39618f9e has it).
+      # setup_ssh_user.sh env support (the pinned 20261106_74b23eb8 has it).
       username: netconf
       # -- Existing Secret with key "password" holding the NETCONF user's password
       # (production). Cleartext is rendered as $0$<password>; a value starting with $
