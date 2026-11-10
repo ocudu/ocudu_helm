@@ -320,7 +320,7 @@ o1:
     image:
       repository: registry.gitlab.com/ocudu/ocudu_elements/ocudu_oran_apps/ocudu_o1_adapter/o1_adapter_nightly_amd64
       pullPolicy: IfNotPresent
-      tag: "20261105_649984ac"
+      tag: "20261110_51f00a60"
     resources: {}
     securityContext: {}
     # -- Persist the o1 adapter container's stdout/stderr to a log file.

@@ -14,6 +14,10 @@
 
 - The chart pipeline runs the essential tests of the CNTi Test Suite against the chart in DU test mode (ru_dummy and a test UE, no CU, no RU) on a kind cluster, through the suite's GitLab CI/CD component. The values the job uses live under `.gitlab/cnti/ocudu-du/`
 
+### Fixed
+
+- `values-o1.yaml`: bump the o1-adapter image to `20261110_51f00a60`. The adapter runs as PID 1 and ignored SIGTERM, so every pod stop waited the full grace period for SIGKILL; it now exits on SIGTERM
+
 ## 1.14.0 (2026-10-26)
 
 ### Added
