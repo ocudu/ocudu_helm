@@ -23,6 +23,7 @@ CU_IMAGE_REPOSITORY="${OCUDU_REPOSITORY}/images/cu"
 DU_IMAGE_REPOSITORY="${OCUDU_REPOSITORY}/images/du-dpdk"
 CU_CP_IMAGE_REPOSITORY="${OCUDU_REPOSITORY}/images/cu-cp"
 CU_UP_IMAGE_REPOSITORY="${OCUDU_REPOSITORY}/images/cu-up"
+RU_EMULATOR_IMAGE_REPOSITORY="${OCUDU_REPOSITORY}/images/ru-emulator-dpdk"
 NETCONF_IMAGE_REPOSITORY="${OCUDU_ORAN_APPS_REPOSITORY}/ocudu_netconf/netconf_nightly_amd64"
 O1_ADAPTER_IMAGE_REPOSITORY="${OCUDU_ORAN_APPS_REPOSITORY}/ocudu_o1_adapter/o1_adapter_nightly_amd64"
 IPSEC_SIDECAR_IMAGE_REPOSITORY="${OCUDU_HELM_REPOSITORY}/ipsec-sidecar"
@@ -60,10 +61,19 @@ main_image_repository() {
     ocudu-du) printf '%s\n' "$DU_IMAGE_REPOSITORY" ;;
     ocudu-cu-cp) printf '%s\n' "$CU_CP_IMAGE_REPOSITORY" ;;
     ocudu-cu-up) printf '%s\n' "$CU_UP_IMAGE_REPOSITORY" ;;
+    ru-emulator) printf '%s\n' "$RU_EMULATOR_IMAGE_REPOSITORY" ;;
     *)
       echo "ERROR: unsupported Helm SBOM chart: $1" >&2
       exit 1
       ;;
+  esac
+}
+
+# The ru-emulator chart has neither an O1 nor an IPsec deployment.
+chart_profiles() {
+  case "$1" in
+    ru-emulator) printf '%s\n' default ;;
+    *) printf '%s\n' default o1 ipsec ;;
   esac
 }
 
@@ -231,7 +241,7 @@ generate_boms() {
   generated_at=${SBOM_GENERATED_AT:-$(date -u '+%Y-%m-%dT%H:%M:%SZ')}
   root_ref="pkg:helm/${chart_name}@${chart_version}"
 
-  for profile in default o1 ipsec; do
+  for profile in $(chart_profiles "$chart_name"); do
     rendered="${work_dir}/${profile}.yaml"
     case "$profile" in
       default)

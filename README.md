@@ -96,7 +96,7 @@ helm install my-gnb ocudu/ocudu-gnb \
   - [ru_emulator](charts/ru_emulator/README.md)
   - [tuned](charts/tuned/README.md)
 
-The RAN charts also publish signed, deployment-profile
+The RAN charts and `ru_emulator` also publish signed, deployment-profile
 [CycloneDX SBOMs](HELM_SBOM.md) alongside production OCI chart releases.
 
 ## Container Images

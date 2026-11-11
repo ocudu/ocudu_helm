@@ -207,4 +207,4 @@ while IFS="$(printf '\t')" read -r attachment_digest filename; do
 done < "$attachment_digests"
 
 cp "$package_file" "$output_dir/"
-echo "Published and verified three SBOM attachments for ${chart_reference}@${chart_digest}"
+echo "Published and verified the SBOM attachments for ${chart_reference}@${chart_digest}"

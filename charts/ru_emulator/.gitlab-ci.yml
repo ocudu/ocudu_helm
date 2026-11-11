@@ -3,6 +3,7 @@
 
 include:
   - local: .gitlab/ci/helm_utils.yml
+  - local: .gitlab/ci/helm_sbom.yml
 
 stages:
   - static
@@ -19,8 +20,15 @@ helm version check:
     CHART_PATH: charts/ru_emulator
     CHART_NAME: ru_emulator
 
+helm sbom:
+  extends: .helm sbom
+  variables:
+    CHART_PATH: charts/ru_emulator
+  needs:
+    - job: helm lint
+
 helm publish-dev:
-  extends: .helm publish-dev
+  extends: .helm publish-dev-sbom
   variables:
     CHART_PATH: charts/ru_emulator
     CHART_NAME: ru_emulator
@@ -29,7 +37,7 @@ helm publish-dev:
     - job: helm version check
 
 helm publish-prod:
-  extends: .helm publish-prod
+  extends: .helm publish-prod-sbom
   variables:
     CHART_PATH: charts/ru_emulator
     CHART_NAME: ru_emulator

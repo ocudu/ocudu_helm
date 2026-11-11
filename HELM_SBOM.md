@@ -8,6 +8,7 @@ SPDX-License-Identifier: BSD-3-Clause-Open-MPI
 Each production RAN chart release publishes three CycloneDX 1.6 SBOMs as
 separate OCI attachments to the immutable chart manifest. The supported charts
 are `ocudu-gnb`, `ocudu-cu`, `ocudu-du`, `ocudu-cu-cp`, and `ocudu-cu-up`.
+`ru-emulator` publishes only the regular/default SBOM.
 
 | Deployment profile | Filename | Included deployment images |
 | --- | --- | --- |
