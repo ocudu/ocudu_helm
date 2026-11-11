@@ -11,6 +11,10 @@
 - Default image tag `ubuntu-24.04-avx512-latest` with `image.pullPolicy: Always`; it moves to each nightly build, while dated tags are pruned from the registry
 - The ConfigMap is immutable and its name ends in a hash of its data, so a config change creates a new ConfigMap and rolls the pod, and a live edit is rejected. Roll back with `helm rollback`; `configmap.nameOverride` keeps a fixed, mutable ConfigMap
 
+### Fixed
+
+- The container sets `terminationMessagePolicy: FallbackToLogsOnError`, so when it exits with an error the tail of its log shows in `kubectl describe pod`
+
 ## 2.5.3 (2026-10-11)
 
 ### Changed
