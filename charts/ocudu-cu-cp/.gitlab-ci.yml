@@ -35,9 +35,7 @@ cnti-testsuite:
 cnti-testsuite-cu-cp:
   extends: [cnti-testsuite, .cnti diagnostics, .cnti runner setup]
   resource_group: cnti-sctp
-  rules:
-    - if: $ON_MR
-    - if: $ON_DEFAULT_BRANCH
+  rules: !reference [.cnti rules, rules]
 
 helm lint:
   extends: .helm lint

@@ -22,9 +22,7 @@ stages:
 # The component's job has no rules of its own, and a job without rules does
 # not run in merge request pipelines. Run it on merge requests and on main.
 cnti-testsuite:
-  rules:
-    - if: $ON_MR
-    - if: $ON_DEFAULT_BRANCH
+  rules: !reference [.cnti rules, rules]
 
 helm lint:
   extends: .helm lint

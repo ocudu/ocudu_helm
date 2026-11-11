@@ -214,3 +214,12 @@
         fi
         sleep 1
       done
+
+# Rules of the CNTi Test Suite jobs: run on merge requests and on main. The
+# ci-no-cnti merge request label skips them, for failures outside the chart.
+.cnti rules:
+  rules:
+    - if: $CI_MERGE_REQUEST_LABELS =~ /(^|,)ci-no-cnti(,|$)/
+      when: never
+    - if: $ON_MR
+    - if: $ON_DEFAULT_BRANCH
