@@ -164,6 +164,7 @@ spec:
           restartPolicy: Always
           image: "{{ include "ocudu-du.ipsec.image" . }}"
           imagePullPolicy: {{ .Values.ipsec.image.pullPolicy }}
+          terminationMessagePolicy: FallbackToLogsOnError
           securityContext:
             {{- include "ocudu-du.ipsec.securityContext" . | nindent 12 }}
           {{- with .Values.ipsec.resources }}
@@ -230,6 +231,7 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ include "ocudu-du.mainImage" . }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          terminationMessagePolicy: FallbackToLogsOnError
           {{- $hasLimits := and .Values.resources .Values.resources.limits (gt (len .Values.resources.limits) 0) }}
           {{- $hasRequests := and .Values.resources .Values.resources.requests (gt (len .Values.resources.requests) 0) }}
           {{- if or $hasLimits $hasRequests .Values.sriovConfig.enabled }}
@@ -364,6 +366,7 @@ spec:
             {{- toYaml (.Values.o1).o1Adapter.securityContext | nindent 12 }}
           image: "{{ template "ocudu-du.o1.o1Adapter.image" (.Values.o1).o1Adapter.image }}"
           imagePullPolicy: {{ (.Values.o1).o1Adapter.image.pullPolicy }}
+          terminationMessagePolicy: FallbackToLogsOnError
           resources:
             {{- toYaml (.Values.o1).o1Adapter.resources | nindent 12 }}
           {{- if ((.Values.o1).netconfServer.ssh).hostKeySecret }}
@@ -454,6 +457,7 @@ spec:
             {{- toYaml (.Values.o1).netconfServer.securityContext | nindent 12 }}
           image: "{{ template "ocudu-du.o1.netconfServer.image" (.Values.o1).netconfServer.image }}"
           imagePullPolicy: {{ (.Values.o1).netconfServer.image.pullPolicy }}
+          terminationMessagePolicy: FallbackToLogsOnError
           resources:
             {{- toYaml (.Values.o1).netconfServer.resources | nindent 12 }}
           ports:

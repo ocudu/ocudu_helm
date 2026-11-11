@@ -150,6 +150,7 @@ spec:
           restartPolicy: Always
           image: "{{ include "ocudu-cu-up.ipsec.image" . }}"
           imagePullPolicy: {{ .Values.ipsec.image.pullPolicy }}
+          terminationMessagePolicy: FallbackToLogsOnError
           securityContext:
             {{- include "ocudu-cu-up.ipsec.securityContext" . | nindent 12 }}
           {{- with .Values.ipsec.resources }}
@@ -216,6 +217,7 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ include "ocudu-cu-up.mainImage" . }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          terminationMessagePolicy: FallbackToLogsOnError
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
@@ -319,6 +321,7 @@ spec:
             {{- toYaml (.Values.o1).o1Adapter.securityContext | nindent 12 }}
           image: "{{ template "ocudu-cu-up.image" (.Values.o1).o1Adapter.image }}"
           imagePullPolicy: {{ (.Values.o1).o1Adapter.image.pullPolicy }}
+          terminationMessagePolicy: FallbackToLogsOnError
           resources:
             {{- toYaml (.Values.o1).o1Adapter.resources | nindent 12 }}
           {{- if ((.Values.o1).netconfServer.ssh).hostKeySecret }}
@@ -409,6 +412,7 @@ spec:
             {{- toYaml (.Values.o1).netconfServer.securityContext | nindent 12 }}
           image: "{{ template "ocudu-cu-up.image" (.Values.o1).netconfServer.image }}"
           imagePullPolicy: {{ (.Values.o1).netconfServer.image.pullPolicy }}
+          terminationMessagePolicy: FallbackToLogsOnError
           resources:
             {{- toYaml (.Values.o1).netconfServer.resources | nindent 12 }}
           ports:

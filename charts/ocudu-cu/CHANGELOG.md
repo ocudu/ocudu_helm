@@ -26,6 +26,7 @@
 - `values-o1.yaml`: bump the netconf-server image to `20261106_74b23eb8`, as in the gNB and DU charts, and the o1-adapter image to `20261110_51f00a60`. The adapter runs as PID 1 and ignored SIGTERM, so every pod stop waited the full grace period for SIGKILL; it now exits on SIGTERM
 - With `persistence.preserveOldLogs`, the entrypoint printed the new log directory twice
 - With `o1.netconfServer.fileLog.enabled` the netconf-server's entrypoint runs as PID 1, so it receives SIGTERM and stops in time
+- Every container sets `terminationMessagePolicy: FallbackToLogsOnError`, so a container that exits with an error shows the tail of its log in `kubectl describe pod`
 
 ## 1.15.0 (2026-10-26)
 
