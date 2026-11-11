@@ -282,9 +282,9 @@ The default is `registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk`, tagged
 | `o1.netconfServer.tls.certSecret` | string | `""` | Secret name with `ca.crt`, `server.crt`, `server.key`; omit for auto-generated self-signed certs |
 | `o1.netconfServer.tls.clientCertSecret` | string | `""` | Secret with the adapter's client identity (`ca.crt`, `client.crt`, `client.key`); required when `certSecret` is set |
 | `o1.netconfServer.ssh.hostKeySecret` | string | `""` | Secret with `ssh_host_{ed25519,ecdsa}_key` + `known_hosts`; omit to use the host key generated in the netconf image and skip host key verification. Needs a netconf-server image that supports `--ssh-hostkey-dir` (see `docs/o1.md`) |
-| `o1.netconfServer.ssh.username` | string | `"netconf"` | NETCONF SSH user with password authentication (RFC 9644 local user) for clients that only implement the SSH `password` method; empty = disabled |
-| `o1.netconfServer.ssh.passwordSecret` | string | `""` | Existing Secret with key `password` holding the NETCONF user's password (production); cleartext becomes `$0$<pw>`, a `$...` crypt hash passes through verbatim |
-| `o1.netconfServer.ssh.password` | string | `"netconf"` | Dev/test cleartext password the chart renders into a Secret itself; ignored when `passwordSecret` is set. Change it in production |
+| `o1.netconfServer.ssh.username` | string | `"netconf"` | NETCONF SSH user with password authentication (RFC 9644 local user); the o1 adapter logs in as it. Required unless `o1.netconfServer.tls.enabled` is true |
+| `o1.netconfServer.ssh.passwordSecret` | string | `""` | Existing Secret with key `password` holding the NETCONF user's cleartext password (production); not a crypt hash, because the o1 adapter logs in with it |
+| `o1.netconfServer.ssh.password` | string | `""` | Password the chart renders into its own Secret when `passwordSecret` is empty; empty = a random password, generated on install and kept on upgrade |
 | `o1.o1Adapter.fileLog.enabled` | bool | `false` | Persist the o1 adapter output to a file under `persistence.mountPath` |
 | `o1.netconfServer.fileLog.enabled` | bool | `false` | Persist the netconf-server output to a timestamped file under `persistence.mountPath` |
 | `o1.netconfServer.persistence.enabled` | bool | `true` | Keep the running config set over NETCONF across pod restarts in a PersistentVolumeClaim; every helm upgrade starts from `o1Config` again |

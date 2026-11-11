@@ -16,6 +16,8 @@
 
 ### Changed
 
+- `values-o1.yaml`: the NETCONF SSH user no longer has the fixed password `netconf`. Without `o1.netconfServer.ssh.password` or `passwordSecret`, the chart generates a random password into its Secret on install and keeps it on upgrade. Clients that log in as `netconf`/`netconf` must read the password from the Secret, or set `password` or `passwordSecret`
+- The o1 adapter logs in as `o1.netconfServer.ssh.username` with the password from the same Secret, instead of its built-in `root`/`root`. `values.yaml` also defaults `username` to `netconf`. `username` is now required unless `o1.netconfServer.tls.enabled` is true, and rendering fails without it. A `passwordSecret` must hold the cleartext password, not a crypt hash, because the adapter logs in with it
 - Default image tag `ubuntu-24.04-avx512-latest` with `image.pullPolicy: Always`; it moves to each nightly build, while dated tags are pruned from the registry
 - **`persistence.enabled` now defaults to `false`** and `persistence.type` to `pvc`: logs go to an `emptyDir`. The `hostPath` default failed on a fresh node, where the directory is created as root and the non-root gNB cannot write to it
 - `readinessProbe`: `initialDelaySeconds` 15 → `0`, `timeoutSeconds` 1 → `3`, `failureThreshold` 30 → `6`, as in the CU and DU charts

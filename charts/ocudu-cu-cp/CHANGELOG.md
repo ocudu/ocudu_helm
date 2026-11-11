@@ -17,6 +17,8 @@
 
 ### Changed
 
+- `values-o1.yaml`: the NETCONF SSH user no longer has the fixed password `netconf`. Without `o1.netconfServer.ssh.password` or `passwordSecret`, the chart generates a random password into its Secret on install and keeps it on upgrade. Clients that log in as `netconf`/`netconf` must read the password from the Secret, or set `password` or `passwordSecret`
+- The o1 adapter logs in as `o1.netconfServer.ssh.username` with the password from the same Secret, instead of its built-in `root`/`root`. `username` is now required unless `o1.netconfServer.tls.enabled` is true, and rendering fails without it. A `passwordSecret` must hold the cleartext password, not a crypt hash, because the adapter logs in with it
 - Default image tag `ubuntu-24.04-avx2-latest` with `image.pullPolicy: Always`; it moves to each nightly build, while dated tags are pruned from the registry
 - The pod runs with the container runtime's default seccomp profile (`podSecurityContext.seccompProfile.type: RuntimeDefault`)
 - The CU-CP container runs with `readOnlyRootFilesystem: true` and an `emptyDir` at `/tmp`. Set `securityContext.readOnlyRootFilesystem: false` to restore the old behavior

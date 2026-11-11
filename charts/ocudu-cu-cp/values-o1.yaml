@@ -424,19 +424,20 @@ o1:
       # Create with: see "Provisioning the SSH host key" in docs/o1.md
       hostKeySecret: ""
       # -- NETCONF SSH username with password authentication (ietf-ssh-server local
-      # user, RFC 9644). The image only offers keyboard-interactive to root; clients
-      # that only implement the SSH "password" method need this user.
-      # Empty = disabled (old behavior). Requires a netconf-server image with the
-      # setup_ssh_user.sh env support (the pinned 20261110_4d919a44 has it).
+      # user, RFC 9644). The netconf-server creates it, and the o1 adapter logs in as it.
+      # Required unless tls.enabled is true: the adapter would otherwise fall back to
+      # root/root, which the netconf-server image does not accept.
       username: netconf
       # -- Existing Secret with key "password" holding the NETCONF user's password
-      # (production). Cleartext is rendered as $0$<password>; a value starting with $
-      # (e.g. $6$... from mkpasswd -m sha-512 / openssl passwd -6) is used verbatim.
+      # (production). The o1 adapter logs in with it, so it must be the cleartext
+      # password, not a crypt hash.
       # Create with: kubectl create secret generic <name> --from-literal=password='...'
       passwordSecret: ""
-      # -- Dev/test only: cleartext password the chart renders into a Secret itself.
-      # Ignored when passwordSecret is set. Username without either fails rendering.
-      password: netconf
+      # -- Password the chart renders into its own Secret when passwordSecret is empty.
+      # Empty (default): the chart generates a random one on install and keeps it on
+      # upgrade. `helm template` (e.g. Argo CD) cannot read the existing Secret and
+      # generates a new one on every render, so use passwordSecret there.
+      password: ""
     resources: {}
     securityContext: {}
     # -- Persist the netconf-server container's stdout/stderr to a timestamped log file.

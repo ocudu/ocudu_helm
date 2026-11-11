@@ -326,12 +326,27 @@ spec:
           terminationMessagePolicy: FallbackToLogsOnError
           resources:
             {{- toYaml (.Values.o1).o1Adapter.resources | nindent 12 }}
-          {{- if ((.Values.o1).netconfServer.ssh).hostKeySecret }}
+          {{- $netconfSshUser := ((.Values.o1).netconfServer.ssh).username }}
+          {{- if not (or $netconfSshUser (.Values.o1).netconfServer.tls.enabled) }}
+          {{- fail "o1.netconfServer.ssh.username is required unless o1.netconfServer.tls.enabled is true: without it the o1 adapter falls back to root/root, which the netconf-server image does not accept" }}
+          {{- end }}
+          {{- if or ((.Values.o1).netconfServer.ssh).hostKeySecret $netconfSshUser }}
           env:
+            {{- if ((.Values.o1).netconfServer.ssh).hostKeySecret }}
             # Verifying the host key makes the adapter read an ssh_config, which looks up
             # the login name; the pod's uid has no passwd entry in the adapter image.
             - name: LOGNAME
               value: o1-adapter
+            {{- end }}
+            {{- if $netconfSshUser }}
+            # Handed to --netconf_password as $(NETCONF_SSH_PASSWORD), so the password
+            # never appears in the pod spec.
+            - name: NETCONF_SSH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ocudu-cu.netconfSshCredentialsSecretName" . }}
+                  key: password
+            {{- end }}
           {{- end }}
           {{- if $adapterFileLog }}
           # Tee the adapter's output onto the shared log volume. The adapter timestamps
@@ -352,6 +367,12 @@ spec:
             - {{ (.Values.o1).netconfServerAddr }}
             - "--netconf_port"
             - {{ (.Values.o1).o1Port | quote }}
+            {{- if $netconfSshUser }}
+            - "--netconf_username"
+            - {{ $netconfSshUser | quote }}
+            - "--netconf_password"
+            - "$(NETCONF_SSH_PASSWORD)"
+            {{- end }}
             - "--ves_host"
             - {{ (.Values.o1).ves.host | quote }}
             - "--ves_port"

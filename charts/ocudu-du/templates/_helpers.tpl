@@ -585,16 +585,13 @@ the port is not privileged.
 {{/*
 Name of the Secret holding the NETCONF SSH user's password (key "password").
 Production: o1.netconfServer.ssh.passwordSecret (operator-managed Secret).
-Dev/test: a chart-created Secret named after the release.
-Fails rendering when o1.netconfServer.ssh.username is set but neither is.
+Otherwise: the chart-created Secret named after the release.
 */}}
 {{- define "ocudu-du.netconfSshCredentialsSecretName" -}}
 {{- $ssh := ((.Values.o1).netconfServer).ssh | default dict -}}
 {{- if $ssh.passwordSecret -}}
 {{- $ssh.passwordSecret -}}
-{{- else if $ssh.password -}}
-{{- printf "%s-netconf-ssh-credentials" (include "ocudu-du.fullname" $) | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
-{{- fail "o1.netconfServer.ssh: set passwordSecret (existing Secret with key \"password\", production) or password (chart creates the Secret, dev/test) when username is set" -}}
+{{- printf "%s-netconf-ssh-credentials" (include "ocudu-du.fullname" $) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 {{- end }}
