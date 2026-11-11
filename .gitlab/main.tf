@@ -179,6 +179,13 @@ module "settings" {
   # Pipeline Schedules Configuration
   # =============================================================================
   schedules = {
+    nightly = {
+      description = "Nightly"
+      cron        = "00 4 * * 2-6"
+      timezone    = "Europe/Madrid"
+      ref         = "refs/heads/main"
+      active      = true
+    }
   }
 
 }
