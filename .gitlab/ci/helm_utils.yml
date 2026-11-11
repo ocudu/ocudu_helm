@@ -199,7 +199,11 @@
 # The job pod also carries the runner's service account, and kubescape prefers
 # that in-cluster config over ~/.kube/config: point KUBECONFIG at the file kind
 # writes, or kubescape scans the runner's cluster instead of the kind cluster.
+# Retry runner failures only, never failed tests.
 .cnti runner setup:
+  retry:
+    max: 2
+    when: [runner_system_failure, stuck_or_timeout_failure, scheduler_failure]
   before_script:
     - if command -v apk >/dev/null; then apk add --no-cache bash curl git tar >/dev/null; fi
     - export KUBECONFIG="$HOME/.kube/config"
