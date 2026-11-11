@@ -13,6 +13,16 @@ include:
       install_timeout: "900"
       # Runs on main publish the badge to the package registry under this name.
       badge_name: ocudu-du
+  # The workload tests of the same setup, on the Nightly schedule.
+  - component: $CI_SERVER_FQDN/lfn-cnti/testsuite-component/cnti-testsuite@1.2.0
+    inputs:
+      stage: static
+      version: v2.2.0
+      job_name: cnti-workload
+      tests: workload
+      cnf_config: .gitlab/cnti/ocudu-du/cnti-testsuite.yaml
+      install_timeout: "900"
+      badge_name: ocudu-du-workload
   - local: .gitlab/ci/helm_sbom.yml
 
 stages:
@@ -30,6 +40,19 @@ cnti-testsuite:
 cnti-testsuite-du:
   extends: [cnti-testsuite, .cnti diagnostics, .cnti runner setup]
   rules: !reference [.cnti rules, rules]
+
+cnti-workload:
+  rules:
+    - when: never
+
+# A manual job on merge requests tries out a change before the next nightly run.
+cnti-workload-du:
+  extends: [cnti-workload, .cnti diagnostics, .cnti runner setup]
+  rules:
+    - if: $CI_PIPELINE_SCHEDULE_DESCRIPTION =~ /Nightly/
+    - if: $ON_MR
+      when: manual
+      allow_failure: true
 
 helm lint:
   extends: .helm lint

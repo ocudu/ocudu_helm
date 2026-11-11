@@ -190,6 +190,16 @@ helm-sbom image:
         paths: *helm_package_paths
   needs: []
 
+# The RAN charts also run on the Nightly schedule, for the CNTi workload tests.
+# The schedule's description is passed on so the child pipeline can match it.
+.helm chart cnti:
+  extends: .helm chart
+  rules:
+    - !reference [.helm chart, rules]
+    - if: $CI_PIPELINE_SCHEDULE_DESCRIPTION =~ /Nightly/
+      variables:
+        CI_PIPELINE_SCHEDULE_DESCRIPTION: Nightly
+
 grafana-ocudu chart:
   extends: .helm chart
   variables:
@@ -227,7 +237,7 @@ ru_emulator chart:
     include: charts/ru_emulator/.gitlab-ci.yml
 
 ocudu-gnb chart:
-  extends: .helm chart
+  extends: .helm chart cnti
   variables:
     CHART_NAME: ocudu-gnb
     CHART_PATH: charts/ocudu-gnb
@@ -236,7 +246,7 @@ ocudu-gnb chart:
     include: charts/ocudu-gnb/.gitlab-ci.yml
 
 ocudu-cu chart:
-  extends: .helm chart
+  extends: .helm chart cnti
   variables:
     CHART_NAME: ocudu-cu
     CHART_PATH: charts/ocudu-cu
@@ -245,7 +255,7 @@ ocudu-cu chart:
     include: charts/ocudu-cu/.gitlab-ci.yml
 
 ocudu-du chart:
-  extends: .helm chart
+  extends: .helm chart cnti
   variables:
     CHART_NAME: ocudu-du
     CHART_PATH: charts/ocudu-du
@@ -254,7 +264,7 @@ ocudu-du chart:
     include: charts/ocudu-du/.gitlab-ci.yml
 
 ocudu-cu-cp chart:
-  extends: .helm chart
+  extends: .helm chart cnti
   variables:
     CHART_NAME: ocudu-cu-cp
     CHART_PATH: charts/ocudu-cu-cp
@@ -263,7 +273,7 @@ ocudu-cu-cp chart:
     include: charts/ocudu-cu-cp/.gitlab-ci.yml
 
 ocudu-cu-up chart:
-  extends: .helm chart
+  extends: .helm chart cnti
   variables:
     CHART_NAME: ocudu-cu-up
     CHART_PATH: charts/ocudu-cu-up
