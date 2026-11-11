@@ -537,6 +537,11 @@ and it claims nothing about any CNI beyond the requirements listed above.
 - **O1 and IPsec cannot be combined.** In O1 mode the config comes from the datastore at
   runtime, so the chart cannot check that the application binds to the protected addresses,
   and the O1 interface could move it off them afterwards.
+- **E2 is protected only with `ipsec.protectE2`.** It needs a RIC-side peer that terminates
+  IKEv2 with a certificate from the same authority. With it, `e2.addrs` and `e2.bind_addrs`
+  must name the protected addresses, and `networkPolicy.egress.ric` allows the RIC the
+  tunnel only. See the E2 section of the consolidated guide, `docs/ipsec.md` at the
+  repository root.
 - **N3 is protected only with `ipsec.protectN3`.** It needs a peer on the core side (UPF)
   that terminates IKEv2 with a certificate from the same authority. Without the flag, the
   policy keeps its plaintext rule for the core and the chart makes no claim about that

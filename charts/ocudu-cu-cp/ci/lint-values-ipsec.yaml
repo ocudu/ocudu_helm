@@ -21,14 +21,25 @@ e1Service:
 
 networkPolicy:
   enabled: true
+  egress:
+    ric:
+      enabled: true
+      to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
 
 ipsec:
   enabled: true
+  # E2 to a RIC that terminates IKEv2, so the `e2` section is checked too.
+  protectE2: true
   certSecret: ocudu-cu-cp-ipsec
   localId: cu-cp.example.com
   # Two peers, which is the case this chart exists to cover: the DU brings F1-C and the
   # CU-UP brings E1, and they are different pods with different identities.
   peers:
+    ric:
+      id: ric.example.com
+      address: ric-e2term-ipsec
     du:
       id: du.example.com
       # No address on either: the CU-CP is the side both others dial.
@@ -40,6 +51,11 @@ ipsec:
       # with `cu_cp.xnap.no_connection_init` set to match.
       address: ocudu-gnb-ipsec
   connections:
+    e2:
+      peer: ric
+      protocol: sctp
+      local: 100.64.60.1
+      remote: 100.64.60.2
     f1c:
       peer: du
       protocol: sctp
@@ -75,3 +91,8 @@ config:
             connections:
               - peer_addrs:
                   - 100.64.40.2
+
+    e2:
+      enable_cu_cp_e2: true
+      addrs: 100.64.60.2
+      bind_addrs: 100.64.60.1

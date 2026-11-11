@@ -276,6 +276,9 @@ Every one of these is a way the tunnel can end up configured but bypassed, which
 like success and is not. A failed install is recoverable; plaintext on the wire is not.
 */}}
 {{- define "ocudu-cu-cp.ipsec.validate" -}}
+{{- if and .Values.ipsec.protectE2 (not .Values.ipsec.enabled) -}}
+{{- fail "ipsec.protectE2 needs ipsec.enabled to be true: without the sidecar there is no tunnel to carry E2, and E2 would stay in clear" -}}
+{{- end -}}
 {{- if and .Values.ipsec.protectN2 (not .Values.ipsec.enabled) -}}
 {{- fail "ipsec.protectN2 needs ipsec.enabled to be true: without the sidecar there is no tunnel to carry N2, and N2 would stay in clear" -}}
 {{- end -}}
@@ -436,6 +439,18 @@ that AMF never comes up.
 {{- $protected := "" -}}
 {{- range $key := $sections -}}
 {{- $protected = printf "%s\n%s" $protected (include "ocudu-cu-cp.ipsec.section" (dict "blob" $blob "key" $key)) -}}
+{{- end -}}
+{{/*
+E2 runs to the RIC, which is not a pod this chart controls, so it is checked only when
+ipsec.protectE2 says the RIC side terminates IKEv2. Without a bind address the application
+binds its default of 127.0.0.1, and E2 to the RIC never comes up.
+*/}}
+{{- if .Values.ipsec.protectE2 -}}
+{{- $e2 := include "ocudu-cu-cp.ipsec.section" (dict "blob" $blob "key" "e2") -}}
+{{- if not (regexMatch "(?m)^(- )?bind_addrs?:" $e2) -}}
+{{- fail "ipsec.protectE2 needs e2.bind_addrs: without it the application binds 127.0.0.1 and E2 to the RIC never comes up" -}}
+{{- end -}}
+{{- $protected = printf "%s\n%s" $protected $e2 -}}
 {{- end -}}
 {{/*
 Every address the protected sections name has to be one this chart knows about. A wildcard

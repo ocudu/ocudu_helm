@@ -13,23 +13,41 @@
 
 networkPolicy:
   enabled: true
+  egress:
+    ric:
+      enabled: true
+      to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
 
 ipsec:
   enabled: true
+  # E2 to a RIC that terminates IKEv2, so the `e2` section is checked too.
+  protectE2: true
   certSecret: ocudu-gnb-ipsec
   localId: gnb-a.example.com
-  # One peer, so neither connection has to name it. The other gNB in the pair leaves
+  # Two peers, so every connection names its own. The other gNB in the pair leaves
   # `address` out and waits, with `cu_cp.xnap.no_connection_init` set to match.
   peers:
+    ric:
+      id: ric.example.com
+      address: ric-e2term-ipsec
     xn:
       id: gnb-b.example.com
       address: ocudu-gnb-b-ipsec
   connections:
+    e2:
+      peer: ric
+      protocol: sctp
+      local: 100.64.60.1
+      remote: 100.64.60.2
     xnc:
+      peer: xn
       protocol: sctp
       local: 100.64.40.1
       remote: 100.64.40.2
     xnu:
+      peer: xn
       protocol: udp
       local: 100.64.50.1
       remote: 100.64.50.2
@@ -56,3 +74,9 @@ config:
         peer_port: 2153
         socket:
           - bind_addr: 100.64.50.1
+
+    e2:
+      enable_du_e2: true
+      enable_cu_cp_e2: true
+      addrs: 100.64.60.2
+      bind_addrs: 100.64.60.1

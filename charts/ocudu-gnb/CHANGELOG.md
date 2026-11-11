@@ -4,6 +4,8 @@
 
 ### Added
 
+- `ipsec.protectE2`: carry E2 in a tunnel as well, to a RIC-side peer that runs its own IKEv2 endpoint. Add the RIC as a peer with a connection for E2, and point `e2.addrs` and `e2.bind_addrs` at its protected addresses. The `e2` section is then checked like the other protected sections, with a bind address required, and `ipsec.protectE2` is refused without `ipsec.enabled`. Off by default. See `docs/ipsec.md`
+- `networkPolicy.egress.ric`: an egress rule to the near-RT RIC, off by default. It allows SCTP `port` (36421), or only the IKE ports with `ipsec.protectE2`
 - `startupProbe` (`pgrep gnb`, 180s budget by default), which gates the liveness and readiness probes
 - `topologySpreadConstraints` and `priorityClassName`
 - With a read-only root and O1 off, rendering fails when `log.filename`, `trace.filename` or a pcap path in `config` lies outside `/tmp`, `/run/ocudu` and `persistence.mountPath`, the only writable directories

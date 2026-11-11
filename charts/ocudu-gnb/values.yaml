@@ -618,6 +618,18 @@ networkPolicy:
             matchLabels:
               app: influxdb
 
+    # -- Allow traffic to the near-RT RIC (E2)
+    ric:
+      # -- Enable RIC egress. With `ipsec.protectE2` it allows the tunnel only, never
+      # plaintext SCTP.
+      # @default -- `false`
+      enabled: false
+      # -- E2 port on the RIC, as in `e2.port` of the application config
+      port: 36421
+      # -- Destination selectors for the RIC
+      # @default -- `[]`
+      to: []
+
     # -- Where the cluster DNS lives.
     # The default names the cluster DNS pods. That is the narrow answer, and it works on a
     # CNI that translates a service address before it applies policy. Some CNIs apply
@@ -818,6 +830,14 @@ ipsec:
   # in the application config, and the chart refuses to render if they do not.
   # @default -- `{}`
   connections: {}
+
+  # -- Carry E2 in a tunnel too, to a RIC-side peer that terminates IKEv2.
+  # Add the RIC as a peer with a connection for E2, and point `e2.addrs` and
+  # `e2.bind_addrs` at its protected addresses. The `e2` section is then checked like the
+  # other protected sections, and `networkPolicy.egress.ric` allows the RIC the tunnel
+  # instead of plaintext SCTP.
+  # @default -- `false`
+  protectE2: false
 
   ike:
     # -- IKE proposal. Exactly one, so there is nothing to fall back to.

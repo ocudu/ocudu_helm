@@ -21,15 +21,26 @@ e1Service:
 
 networkPolicy:
   enabled: true
+  egress:
+    ric:
+      enabled: true
+      to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
 
 ipsec:
   enabled: true
+  # E2 to a RIC that terminates IKEv2, so the `e2` section is checked too.
+  protectE2: true
   certSecret: ocudu-cu-up-ipsec
   localId: cu-up.example.com
   # Two peers, and one of each kind: the CU-UP dials the CU-CP for E1, and waits for the
   # DU on F1-U. So this fixture exercises both the initiator and the responder branch in
   # one render.
   peers:
+    ric:
+      id: ric.example.com
+      address: ric-e2term-ipsec
     cucp:
       id: cu-cp.example.com
       address: ocudu-cu-cp-ipsec
@@ -39,6 +50,11 @@ ipsec:
       id: gnb-b.example.com
       address: ocudu-gnb-ipsec
   connections:
+    e2:
+      peer: ric
+      protocol: sctp
+      local: 100.64.60.1
+      remote: 100.64.60.2
     f1u:
       peer: du
       protocol: udp
@@ -76,3 +92,8 @@ config:
         peer_port: 2153
         socket:
           - bind_addr: 100.64.50.1
+
+    e2:
+      enable_cu_up_e2: true
+      addrs: 100.64.60.2
+      bind_addrs: 100.64.60.1

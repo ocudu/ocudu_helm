@@ -33,6 +33,7 @@ behind it.
 | &nbsp;&nbsp;• a CU and a DU over F1 | [CU ↔ DU (F1)](#cu--du-f1) |
 | &nbsp;&nbsp;• a split CU (CU-CP + CU-UP) and a DU | [CU-CP + CU-UP + DU (F1-C, F1-U, E1)](#cu-cp--cu-up--du-f1-c-f1-u-e1) |
 | protect N2 or N3 to the core | [N2 and N3 to the core](#n2-and-n3-to-the-core) |
+| protect E2 to the RIC | [E2 to the RIC](#e2-to-the-ric) |
 | issue certificates with cert-manager | [cert-manager](#cert-manager) |
 | understand why `helm install` is refusing to render | [What the chart refuses to render](#what-the-chart-refuses-to-render) |
 | know what is and is not protected | [Limits](#limits) |
@@ -60,15 +61,16 @@ An interface between two RAN pods can be carried in a tunnel only when the other
 pod running this same sidecar; an interface to the core can be carried only when the core
 terminates compatible IKEv2/IPsec (see [N2 and N3 to the core](#n2-and-n3-to-the-core)).
 That rules in the interfaces between RAN pods, rules the core interfaces in only behind
-`protectN2` / `protectN3`, and rules out the ones that never reach the network stack.
+`protectN2` / `protectN3`, rules E2 in only behind `protectE2`, and rules out the ones
+that never reach the network stack.
 
-| Chart | Protects | Optional, core-side | Never (and why) |
+| Chart | Protects | Optional, core- or RIC-side | Never (and why) |
 |-------|----------|---------------------|-----------------|
-| `ocudu-gnb` | Xn-C, Xn-U | — | F1-C, F1-U, E1 are in-process connectors with no sockets; this chart defines no `protectN2` / `protectN3`, so it cannot carry N2 or N3 in a tunnel |
-| `ocudu-cu` | F1-C, F1-U | N2 (`protectN2`), N3 (`protectN3`) | — |
-| `ocudu-du` | F1-C, F1-U | — | fronthaul is a separate interface; a kernel-bypass datapath never reaches XFRM |
-| `ocudu-cu-cp` | F1-C, E1 | N2 (`protectN2`) | — |
-| `ocudu-cu-up` | F1-U, E1 | N3 (`protectN3`) | — |
+| `ocudu-gnb` | Xn-C, Xn-U | E2 (`protectE2`) | F1-C, F1-U, E1 are in-process connectors with no sockets; this chart defines no `protectN2` / `protectN3`, so it cannot carry N2 or N3 in a tunnel |
+| `ocudu-cu` | F1-C, F1-U | N2 (`protectN2`), N3 (`protectN3`), E2 (`protectE2`) | — |
+| `ocudu-du` | F1-C, F1-U | E2 (`protectE2`) | fronthaul is a separate interface; a kernel-bypass datapath never reaches XFRM |
+| `ocudu-cu-cp` | F1-C, E1 | N2 (`protectN2`), E2 (`protectE2`) | — |
+| `ocudu-cu-up` | F1-U, E1 | N3 (`protectN3`), E2 (`protectE2`) | — |
 
 **Xn** faces another gNB — a pod running this same sidecar — so it is the one O-RAN
 interface that is always protectable where it exists. It is terminated by the full-node and
@@ -78,6 +80,10 @@ the DU has no Xn peer.
 **N2 and N3** run to the core (AMF and UPF), which is not a pod this chart controls. They
 are left in clear unless `ipsec.protectN2` / `ipsec.protectN3` is set and a core-side peer
 terminates IKEv2. See [N2 and N3 to the core](#n2-and-n3-to-the-core).
+
+**E2** runs to the near-RT RIC, which is not a pod this chart controls either. It is left
+in clear unless `ipsec.protectE2` is set and a RIC-side peer terminates IKEv2. See
+[E2 to the RIC](#e2-to-the-ric).
 
 Where an interface is in-process (the F1/E1 connectors inside a monolithic `ocudu-gnb`) or
 runs over a kernel-bypass datapath, there is no packet in the kernel stack to intercept, so
@@ -187,6 +193,8 @@ your chart when reading the steps.
 
 The `amf`, `ngu`, `n2Service` and `n3Service` entries in parentheses apply only with
 `ipsec.protectN2` / `ipsec.protectN3`; see [N2 and N3 to the core](#n2-and-n3-to-the-core).
+With `ipsec.protectE2`, every chart also checks the top-level `e2` section; see
+[E2 to the RIC](#e2-to-the-ric).
 
 The conditional `ipsec` keys that control the core-port checks exist only on the charts
 that can carry the interface in question:
@@ -197,6 +205,7 @@ that can carry the interface in question:
 | `ipsec.allowXnuOnCorePort` | `ocudu-gnb`, `ocudu-cu`, `ocudu-cu-up` | override the Xn-U-off-core-port check |
 | `ipsec.protectN2` | `ocudu-cu`, `ocudu-cu-cp` | carry N2 in a tunnel to the AMF |
 | `ipsec.protectN3` | `ocudu-cu`, `ocudu-cu-up` | carry N3 in a tunnel to the UPF |
+| `ipsec.protectE2` | all five | carry E2 in a tunnel to the RIC |
 
 For the full list of `ipsec` keys and their defaults, see the `ipsec:` block in your
 chart's `values.yaml`, for example
@@ -1043,6 +1052,76 @@ connections {
 }
 ```
 
+## E2 to the RIC
+
+E2 runs to the near-RT RIC, which is not a pod this chart controls, so it is left in clear
+unless `ipsec.protectE2` is set. Every chart offers the flag, because every E2 agent (DU,
+CU-CP, CU-UP, and the monolithic units) speaks E2 from its own pod. With the flag, E2 is
+carried in a tunnel like F1-C, to a RIC-side peer that terminates IKEv2. In a split
+deployment each pod opens its own E2 association, so each one needs its own tunnel to the
+RIC. A monolithic `ocudu-gnb` or `ocudu-cu` has one `e2` section for all its units, and so
+one tunnel.
+
+The flag adds the top-level `e2` section of the application config to the protected
+sections: `e2.addrs` and `e2.bind_addrs` have to be addresses from `ipsec.connections`, a
+wildcard or a RIC service name is refused, and `e2.bind_addrs` is required, because without
+it the application binds 127.0.0.1. Name the RIC by its protected IP address, not by DNS.
+
+The policy has no E2 rule by default. Set `networkPolicy.egress.ric.enabled` and name the
+RIC in `networkPolicy.egress.ric.to`. With `protectE2` the rule allows the tunnel only;
+without it the rule allows plaintext SCTP to `networkPolicy.egress.ric.port` (36421).
+
+This adds E2 to the DU from [CU ↔ DU (F1)](#cu--du-f1). The F1 parts are unchanged and
+left out here:
+
+```yaml
+# chart: ocudu-du
+networkPolicy:
+  enabled: true
+  egress:
+    ric:
+      enabled: true
+      to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ric
+
+ipsec:
+  enabled: true
+  protectE2: true
+  peers:
+    cu:
+      id: cu.example.com
+      address: ocudu-cu-ipsec
+    ric:
+      id: ric.example.com
+      # The RIC's outer endpoint. Set it, so this side starts the connection.
+      address: e2term-ipsec.ric
+  connections:
+    f1c:
+      peer: cu
+      # ...
+    e2:
+      peer: ric
+      protocol: sctp
+      local: 100.64.70.1
+      remote: 100.64.70.2
+
+config:
+  du-config.yml: |-
+    # ... f1ap, f1u as before ...
+    e2:
+      enable_du_e2: true
+      addrs: 100.64.70.2
+      bind_addrs: 100.64.70.1
+      port: 36421
+```
+
+Use a different protected pair for each pod that talks E2, in the same way as every other
+connection. The RIC side has to terminate IKEv2 as described in
+[The core side](#the-core-side), with `[sctp]` traffic selectors for the E2 pair and an
+E2 termination bound to the `remote` address.
+
 ## cert-manager
 
 `ipsec.certManager.enabled` renders a `Certificate` that writes the secret named by
@@ -1107,6 +1186,8 @@ no entry apply to every chart.
 | `ipsec.protectN3` without `ipsec.enabled` | there is no tunnel to carry N3, so it would stay in clear | cu, cu-up |
 | `n3Service` enabled, or `n3Service.advertisedAddress` set, with `ipsec.protectN3` | the service publishes an unprotected path to N3 on the pod address, and the advertised address would be ignored | cu, cu-up |
 | no `bind_addr` in `cu_up.ngu.socket[]` with `ipsec.protectN3` | the application would bind 127.0.0.1 and N3 would never come up | cu, cu-up |
+| `ipsec.protectE2` without `ipsec.enabled` | there is no tunnel to carry E2, so it would stay in clear | all |
+| no `bind_addrs` in `e2` with `ipsec.protectE2` | the application would bind 127.0.0.1 and E2 would never come up | all |
 
 ## Restarts
 
@@ -1133,15 +1214,18 @@ above.
   runtime, so the chart cannot check that the application binds to the protected addresses,
   and the O1 interface could move it off them afterwards.
 - **Each chart protects only the interfaces listed in
-  [What each chart protects](#what-each-chart-protects).** For `ocudu-gnb` that is Xn and
-  nothing else — F1-C, F1-U and E1 are in-process connectors that never reach the network
-  stack. For `ocudu-du` it is F1 and nothing else. The fronthaul is a separate interface
+  [What each chart protects](#what-each-chart-protects).** For `ocudu-gnb` that is Xn, plus E2
+  with `protectE2` — F1-C, F1-U and E1 are in-process connectors that never reach the network
+  stack. For `ocudu-du` it is F1, plus E2 with `protectE2`. The fronthaul is a separate interface
   with its own requirements, and a kernel-bypass datapath does not pass through XFRM at all.
 - **N2 and N3 are protected only with `ipsec.protectN2` and `ipsec.protectN3`** (on the
   charts that offer them). Each needs a core-side peer that terminates IKEv2 with a
   certificate from the same authority. Without the flag, the policy keeps its plaintext port
   for that interface and the chart makes no claim about it. See
   [N2 and N3 to the core](#n2-and-n3-to-the-core).
+- **E2 is protected only with `ipsec.protectE2`.** It needs a RIC-side peer that
+  terminates IKEv2 with a certificate from the same authority. Without the flag, the chart
+  makes no claim about E2. See [E2 to the RIC](#e2-to-the-ric).
 - **The chart cannot check the uplink N3 address.** The SMF supplies it at runtime, in
   NGAP. If it is not the UPF's protected address, uplink leaves outside the tunnel. See
   [N3](#n3).

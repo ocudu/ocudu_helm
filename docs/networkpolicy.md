@@ -67,7 +67,7 @@ for the exact semantics.
 The peer keys differ by chart, because each chart terminates different interfaces. Most
 keys exist under **both** `ingress` and `egress`, but two do not: `management` is
 **ingress-only** (on `ocudu-gnb`), and `dnsTo` is **egress-only** (all charts). The table
-below marks those.
+below marks those. `ric` is **egress-only** too, since the E2 agent always dials the RIC.
 
 | Key | gnb | cu | du | cu-cp | cu-up | Peer / interface |
 |-----|:---:|:--:|:--:|:-----:|:-----:|------------------|
@@ -78,6 +78,7 @@ below marks those.
 | `cuCp` | — | — | — | — | ✅ | the CU-CP over E1 (E1AP) |
 | `xn` | ✅ | ✅ | — | ✅ | ✅ | an Xn peer (see [Xn](#xn)) |
 | `management` | ✅ | — | — | — | — | O1/NETCONF management (ingress only) |
+| `egress.ric` | ✅ | ✅ | ✅ | ✅ | ✅ | the near-RT RIC over E2 (egress only, off by default) |
 | `monitoring` | ✅ | ✅ | ✅ | ✅ | ✅ | metrics scrape / metrics push |
 | `custom` | ✅ | ✅ | ✅ | ✅ | ✅ | your own extra rules |
 | `egress.dnsTo` | ✅ | ✅ | ✅ | ✅ | ✅ | cluster DNS (egress only) |
@@ -119,6 +120,7 @@ the monitoring peer).
 | E1 (E1AP) | SCTP 38462 | cu-cp, cu-up |
 | Xn-C (XnAP) | SCTP 38422 | gnb, cu, cu-cp |
 | Xn-U (GTP-U) | UDP `xn.xnuPort` (default 2152) | gnb, cu, cu-up |
+| E2 (E2AP) | SCTP `egress.ric.port` (default 36421) — only when `egress.ric.enabled` | all |
 | DNS | UDP/TCP 53 | all |
 | Monitoring (ingress scrape) | TCP `metricsService.port` (8001) — only when `metricsService.enabled` | all |
 | Monitoring (egress push) | TCP 8086 (InfluxDB); TCP 8443 (VES, gnb with O1) | all |
@@ -265,7 +267,10 @@ key this affects, and what turns it on, differs by interface:
   leaves the plaintext N2 (SCTP 38412) and N3 (UDP 2152) ports open. These keys exist on
   `ocudu-cu` (N2 and N3), `ocudu-cu-cp` (N2) and `ocudu-cu-up` (N3). On `ocudu-gnb` the
   `fiveGCore` ports are never swapped — the gNB chart has no `protectN2`/`protectN3` and
-  its only IPsec-gated block is `xn`.
+  its only IPsec-gated block for a 3GPP interface is `xn`.
+- **E2** (`egress.ric`) switches only when `ipsec.protectE2` is also set. It defaults to
+  `false`, so without it an enabled `egress.ric` opens plaintext SCTP 36421. Every chart
+  has this key.
 
 Leave the relevant peer key enabled either way, so its peer is still named.
 

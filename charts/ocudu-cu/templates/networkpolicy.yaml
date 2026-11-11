@@ -225,6 +225,35 @@ spec:
     {{- end }}
     {{- end }}
 
+    {{- if .Values.networkPolicy.egress.ric.enabled }}
+    {{- if and .Values.ipsec.enabled .Values.ipsec.protectE2 }}
+    # With E2 protected, the RIC may exchange nothing but the tunnel itself. The
+    # plaintext E2 port is deliberately absent here.
+    - to:
+      {{- toYaml .Values.networkPolicy.egress.ric.to | nindent 6 }}
+      {{- if eq .Values.ipsec.encapsulation "udp" }}
+      ports:
+        {{- if not .Values.ipsec.ikeOnNatTPortOnly }}
+        - protocol: UDP
+          port: 500   # IKE
+        {{- end }}
+        - protocol: UDP
+          port: 4500  # IKE, and ESP once either end is behind address translation
+      {{- else }}
+      # Native ESP is IP protocol 50, and a policy can only name TCP, UDP and SCTP, so
+      # this rule has to permit every protocol to the peer — including the plaintext
+      # ports. That is the cost of `native`, and why `udp` is the default.
+      {{- end }}
+    {{- else }}
+    # Allow traffic to the near-RT RIC (E2)
+    - to:
+      {{- toYaml .Values.networkPolicy.egress.ric.to | nindent 6 }}
+      ports:
+        - protocol: SCTP
+          port: {{ .Values.networkPolicy.egress.ric.port }}  # E2 (E2AP)
+    {{- end }}
+    {{- end }}
+
     {{- if .Values.networkPolicy.egress.dnsTo }}
     # Allow DNS resolution
     - to:

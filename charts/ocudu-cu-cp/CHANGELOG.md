@@ -4,6 +4,8 @@
 
 ### Added
 
+- `ipsec.protectE2`: carry E2 in a tunnel as well, to a RIC-side peer that runs its own IKEv2 endpoint. Add the RIC as a peer with a connection for E2, and point `e2.addrs` and `e2.bind_addrs` at its protected addresses. The `e2` section is then checked like the other protected sections, with a bind address required, and `ipsec.protectE2` is refused without `ipsec.enabled`. Off by default. See `docs/ipsec.md`
+- `networkPolicy.egress.ric`: an egress rule to the near-RT RIC, off by default. It allows SCTP `port` (36421), or only the IKE ports with `ipsec.protectE2`
 - `ipsec.protectN2`: carry N2 in a tunnel as well, to a core-side peer (AMF) that runs its own IKEv2 endpoint. Add the AMF as a peer with a connection for N2, and point `cu_cp.amf.addrs` and `cu_cp.amf.bind_addrs` at its protected addresses. The `amf` section is then checked like the other protected sections (no wildcard, no address outside `ipsec.connections`, a bind address required), and so is every entry of `extra_amfs`. The entrypoint stops prepending the pod IP as the N2 bind address, the network policy allows the core the tunnel instead of plaintext SCTP 38412, and `n2Service.enabled` is refused, as is `ipsec.protectN2` without `ipsec.enabled`. Off by default. See `docs/ipsec.md`, which now has a worked example of both sides
 - With IPsec on, a protected section that sets `bind_interface` to anything but `auto` is refused: the socket would be pinned to that device and its traffic would leave outside the tunnel
 - `o1.netconfServer.persistence`: the running config set over NETCONF survives pod restarts in a PersistentVolumeClaim, on in `values-o1.yaml`; every helm upgrade starts from `o1Config` again and restarts the pod. Needs a StorageClass
