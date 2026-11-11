@@ -65,25 +65,6 @@ release_chart="${work_dir}/${chart_name}"
 package_file="${work_dir}/${chart_name}-${version}.tgz"
 existing=false
 
-if [ "$sign_boms" = true ]; then
-  if [ -z "${HELM_SBOM_SIGN_PRIVATE_KEY:-}" ] || [ ! -f "$HELM_SBOM_SIGN_PRIVATE_KEY" ]; then
-    echo "ERROR: HELM_SBOM_SIGN_PRIVATE_KEY must be a protected GitLab File variable" >&2
-    exit 1
-  fi
-  if [ -z "${HELM_SBOM_SIGN_PUBLIC_KEY:-}" ] || [ ! -f "$HELM_SBOM_SIGN_PUBLIC_KEY" ]; then
-    echo "ERROR: HELM_SBOM_SIGN_PUBLIC_KEY must be a protected GitLab File variable" >&2
-    exit 1
-  fi
-  derived_public="${work_dir}/derived-public.pem"
-  expected_public="${work_dir}/expected-public.pem"
-  openssl pkey -in "$HELM_SBOM_SIGN_PRIVATE_KEY" -pubout -outform DER -out "$derived_public"
-  openssl pkey -pubin -in "$HELM_SBOM_SIGN_PUBLIC_KEY" -outform DER -out "$expected_public"
-  if ! cmp -s "$derived_public" "$expected_public"; then
-    echo "ERROR: HELM_SBOM_SIGN_PRIVATE_KEY does not match HELM_SBOM_SIGN_PUBLIC_KEY" >&2
-    exit 1
-  fi
-fi
-
 if oras resolve "$chart_reference" >/dev/null 2>&1; then
   existing=true
   echo "Chart ${chart_reference} already exists; checking whether this is a retry"
@@ -115,6 +96,25 @@ else
     helm dependency update "$release_chart"
   fi
   helm package "$release_chart" --destination "$work_dir" >/dev/null
+fi
+
+if [ "$sign_boms" = true ]; then
+  if [ -z "${HELM_SBOM_SIGN_PRIVATE_KEY:-}" ] || [ ! -f "$HELM_SBOM_SIGN_PRIVATE_KEY" ]; then
+    echo "ERROR: HELM_SBOM_SIGN_PRIVATE_KEY must be a protected GitLab File variable" >&2
+    exit 1
+  fi
+  if [ -z "${HELM_SBOM_SIGN_PUBLIC_KEY:-}" ] || [ ! -f "$HELM_SBOM_SIGN_PUBLIC_KEY" ]; then
+    echo "ERROR: HELM_SBOM_SIGN_PUBLIC_KEY must be a protected GitLab File variable" >&2
+    exit 1
+  fi
+  derived_public="${work_dir}/derived-public.pem"
+  expected_public="${work_dir}/expected-public.pem"
+  openssl pkey -in "$HELM_SBOM_SIGN_PRIVATE_KEY" -pubout -outform DER -out "$derived_public"
+  openssl pkey -pubin -in "$HELM_SBOM_SIGN_PUBLIC_KEY" -outform DER -out "$expected_public"
+  if ! cmp -s "$derived_public" "$expected_public"; then
+    echo "ERROR: HELM_SBOM_SIGN_PRIVATE_KEY does not match HELM_SBOM_SIGN_PUBLIC_KEY" >&2
+    exit 1
+  fi
 fi
 
 SBOM_CHART_PACKAGE_FILE=$package_file SBOM_GENERATED_AT=$generated_at \
