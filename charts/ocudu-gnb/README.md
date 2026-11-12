@@ -15,6 +15,7 @@ A Helm chart for deploying the OCUDU 5G CU/DU (gNB)
 - **[Hugepages](docs/hugepages.md)** - Hugepages configuration for DPDK performance
 - **[Storage](docs/storage.md)** - PVC and hostPath storage configuration
 - **[O1 / NETCONF](docs/o1.md)** - O1 interface, optional TLS, and persistent sidecar logs
+- **[IPsec](docs/ipsec.md)** - Protect Xn with IKEv2 and tunnel-mode ESP
 
 ## Quick Start
 
@@ -26,14 +27,15 @@ Before deploying, ensure:
 2. **Network Setup**: Choose your deployment mode:
    - **SR-IOV (Default)**: Requires SR-IOV device plugin (see [SR-IOV Setup](docs/sriov-setup.md))
    - **Host Network (Fallback)**: Direct host access, no SR-IOV needed
-3. **DPDK Driver**: Network interface bound to DPDK-compatible driver (`igb_uio` or `vfio-pci`)
-4. **Hugepages**: Configure hugepages for optimal DPDK performance (see [Hugepages Guide](docs/hugepages.md))
-5. **Non-root prerequisites** (for the default minimum-privilege securityContext to work):
+3. **DPDK Driver**: Network interface bound to `vfio-pci` (`igb_uio` needs a privileged container)
+4. **Hugepages**: Required for DPDK (see [Hugepages Guide](docs/hugepages.md))
+5. **CPU pinning**: The kubelet `static` CPU manager policy and a Guaranteed pod; the DPDK image refuses to start when its CPU set does not match its CPU request
+6. **Non-root prerequisites** (for the default minimum-privilege securityContext to work):
    - Image has file caps on the binary: `setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+p /usr/local/bin/gnb`
    - Node's containerd has `device_ownership_from_security_context = true`
    - Namespace enforces the Privileged Pod Security level: Baseline rejects `SYS_NICE`, `IPC_LOCK` and `PERFMON`
 
-   See [Security Guide](docs/security.md) for the full rationale. If either condition is not met, override the chart's `securityContext` with a broader cap set or run as root.
+   See [Security Guide](docs/security.md) for the full rationale. If any of these is not met, override the chart's `securityContext` with a broader cap set or run as root.
 
 See [Network Modes](docs/network-modes.md) for detailed deployment mode comparison.
 
@@ -44,7 +46,7 @@ See [Network Modes](docs/network-modes.md) for detailed deployment mode comparis
 # OCI registry - no need to add repo
 
 # Install; my-values.yaml must set resources (see below)
-helm install ocudu-gnb oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-gnb --version 3.0.0 -f my-values.yaml
+helm install ocudu-gnb oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-gnb -f my-values.yaml
 
 # Local installation
 cd charts/ocudu-gnb
@@ -55,11 +57,14 @@ The default `resources` request and limit 4 CPUs and 4Gi. `resources.requests` a
 `resources.limits` must both set `cpu` and `memory`; the chart does not render without them.
 Equal requests and limits give the pod Guaranteed QoS.
 
-After installation, Helm will display **post-install notes** with:
-- Deployment configuration summary
-- Service access information
-- Verification commands
-- Next steps and documentation links
+After installation, Helm lists the Services the release created.
+
+```bash
+kubectl get pod -l app.kubernetes.io/name=ocudu-gnb
+kubectl logs -l app.kubernetes.io/name=ocudu-gnb -c ocudu-gnb -f
+```
+
+A successful start logs `==== gNB started ===`.
 
 ### Basic Configuration Examples
 
@@ -81,7 +86,16 @@ resources:
     cpu: 12
     memory: 16Gi
     hugepages-1Gi: 2Gi
+
+config:
+  gnb-config.yml: |-
+    hal:
+      eal_args: "--lcores (0-1)@(0-11)"
+    # ...rest of the config...
 ```
+
+With a VF the config must have `hal.eal_args` with an `@(...)` CPU list; the entrypoint
+fills in the pod's CPUs and refuses to start without it. See [SR-IOV Setup](docs/sriov-setup.md).
 
 **Quick test with host network**:
 ```yaml
@@ -90,6 +104,13 @@ network:
 
 sriovConfig:
   enabled: false
+
+securityContext:
+  privileged: true  # the DPDK datapath needs it without SR-IOV
+  capabilities:
+    add:
+      - SYS_NICE
+      - NET_ADMIN
 
 resources:
   limits:
@@ -105,7 +126,7 @@ resources:
 initCommand:
   - /usr/bin/tini
   - -s
-  - -d
+  - -g
   - --
 ```
 
@@ -221,16 +242,20 @@ The default is `registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk`, tagged
 | `image.tag` | string | `"ubuntu-24.04-avx512-latest"` | Image tag |
 | `image.pullPolicy` | string | `"Always"` | Image pull policy |
 | `extraLabels` | object | `{}` | Extra labels applied to the Deployment and Pod template |
-| `initCommand` | list | `["/usr/bin/catatonit", "-d", "--"]` | Init process command used as container PID 1 |
+| `initCommand` | list | `["/usr/bin/catatonit", "-g", "--"]` | Init process command used as container PID 1 |
+| `runtimeClassName` | string | `""` | RuntimeClass of the pod, e.g. one from an OpenShift PerformanceProfile |
+| `configmap.*.nameOverride` | string | `""` | Fixed, mutable ConfigMap name; by default ConfigMaps are immutable and named after a hash of their data |
+| `securityContext.readOnlyRootFilesystem` | bool | `true` | Read-only root; `gnb` writes only to `/tmp`, `/run/ocudu` and `persistence.mountPath` |
 | `network.hostNetwork` | bool | `false` | Enable host network mode (bypasses NetworkPolicy) |
 | `sriovConfig.enabled` | bool | `true` | Enable SR-IOV device plugin |
-| `sriovConfig.extendedResourceName` | string | `"intel.com/intel_sriov_netdevice"` | SR-IOV resource name (specify resources manually in resources section) |
+| `sriovConfig.extendedResourceName` | string | `"intel.com/intel_sriov_netdevice"` | SR-IOV resource name; the chart requests one VF of it |
 | `serviceAccount.annotations` | object | `{}` | Annotations on the gNB pod's ServiceAccount (no token is mounted, no Role is bound) |
 | `startupProbe.enabled` | bool | `true` | Gate liveness/readiness until `gnb` is running |
 | `podDisruptionBudget.enabled` | bool | `true` | Enable PodDisruptionBudget |
 | `podDisruptionBudget.unhealthyPodEvictionPolicy` | string | `"AlwaysAllow"` | Pod eviction policy |
 | `networkPolicy.enabled` | bool | `false` | Enable NetworkPolicy (only works with hostNetwork: false) |
-| `service.enabled` | bool | `false` | Enable LoadBalancer service for N2/N3 interfaces |
+| `ipsec.enabled` | bool | `false` | Protect Xn with IKEv2 and tunnel-mode ESP — see [`docs/ipsec.md`](docs/ipsec.md) |
+| `service.enabled` | bool | `false` | Enable the Service for N2/N3 interfaces |
 | `service.type` | string | `"LoadBalancer"` | Service type: `LoadBalancer`, `NodePort`, or `ClusterIP` |
 | `service.externalIPs` | list | `[]` | IP addresses routed to the N2/N3 Service by the surrounding network |
 | `service.advertisedAddress` | string | `""` | N3 address advertised to the core; defaults to `loadBalancerIP` |
@@ -249,10 +274,11 @@ The default is `registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk`, tagged
 | `o1.netconfServer.service.loadBalancerClass` | string | `""` | LoadBalancer class (optional) |
 | `o1.netconfServer.tls.enabled` | bool | `false` | Enable NETCONF-over-TLS endpoint on port 6513 |
 | `o1.netconfServer.tls.certSecret` | string | `""` | Secret name with `ca.crt`, `server.crt`, `server.key`; omit for auto-generated self-signed certs |
+| `o1.netconfServer.tls.clientCertSecret` | string | `""` | Secret with the adapter's client identity (`ca.crt`, `client.crt`, `client.key`); required when `certSecret` is set |
 | `o1.netconfServer.ssh.hostKeySecret` | string | `""` | Secret with `ssh_host_{ed25519,ecdsa}_key` + `known_hosts`; omit to use the host key generated in the netconf image and skip host key verification. Needs a netconf-server image that supports `--ssh-hostkey-dir` (see `docs/o1.md`) |
-| `o1.netconfServer.ssh.username` | string | `""` | NETCONF SSH user with password authentication (RFC 9644 local user) for clients that only implement the SSH `password` method; empty = disabled |
+| `o1.netconfServer.ssh.username` | string | `"netconf"` | NETCONF SSH user with password authentication (RFC 9644 local user) for clients that only implement the SSH `password` method; empty = disabled |
 | `o1.netconfServer.ssh.passwordSecret` | string | `""` | Existing Secret with key `password` holding the NETCONF user's password (production); cleartext becomes `$0$<pw>`, a `$...` crypt hash passes through verbatim |
-| `o1.netconfServer.ssh.password` | string | `""` | Dev/test cleartext password the chart renders into a Secret itself; ignored when `passwordSecret` is set |
+| `o1.netconfServer.ssh.password` | string | `"netconf"` | Dev/test cleartext password the chart renders into a Secret itself; ignored when `passwordSecret` is set. Change it in production |
 | `o1.o1Adapter.fileLog.enabled` | bool | `false` | Persist the o1 adapter output to a file under `persistence.mountPath` |
 | `o1.netconfServer.fileLog.enabled` | bool | `false` | Persist the netconf-server output to a timestamped file under `persistence.mountPath` |
 | `o1.netconfServer.persistence.enabled` | bool | `true` | Keep the running config set over NETCONF across pod restarts in a PersistentVolumeClaim; every helm upgrade starts from `o1Config` again |
@@ -264,6 +290,7 @@ The default is `registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk`, tagged
 | `persistence.pvc.storageClassName` | string | `""` | StorageClass for PVC (empty = default) |
 | `persistence.pvc.size` | string | `"10Gi"` | PVC storage size |
 | `persistence.hostPath.path` | string | `"/mnt/debugging-logs"` | Host path for logs |
+| `persistence.preserveOldLogs` | bool | `true` | Give each run's log files a timestamp and link the newest as `current` |
 | `resources.limits` | object | 4 CPUs, 4Gi | Resource limits (CPU, memory, hugepages); `cpu` and `memory` are required |
 | `resources.requests` | object | 4 CPUs, 4Gi | Resource requests (CPU, memory, hugepages); `cpu` and `memory` are required |
 | `nodeSelector` | object | `{}` | Node selector for pod assignment |
@@ -271,8 +298,10 @@ The default is `registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk`, tagged
 | `affinity` | object | `{}` | Affinity rules for pod assignment |
 | `topologySpreadConstraints` | list | `[]` | Topology spread constraints for pod assignment |
 | `priorityClassName` | string | `""` | Priority class assigned to the pod |
-| `o1.enable_ocudu_o1` | bool | `false` | Enable O1 interface (NETCONF management) |
 | `config.gnb-config.yml` | string | See values.yaml | gNB configuration file |
+
+The `o1.*` rows other than `o1.enable_ocudu_o1` give the defaults of
+[`values-o1.yaml`](values-o1.yaml); install O1 with `-f values-o1.yaml`.
 
 For complete parameter documentation, see:
 - [Security configuration](docs/security.md) - service account, PDB, Pod Security Standards
@@ -289,8 +318,15 @@ The gNB configuration file `gnb-config.yml` is defined in `values.yaml`. Refer t
 
 ```bash
 # Upgrade; pass the values file used for the install
-helm upgrade ocudu-gnb oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-gnb --version 3.0.0 -f my-values.yaml
+helm upgrade ocudu-gnb oci://registry.gitlab.com/ocudu/ocudu_elements/ocudu_helm/ocudu-gnb -f my-values.yaml
 ```
+
+ConfigMaps are immutable and named after a hash of their data, so a config change rolls
+the pod and a live `kubectl edit` is rejected. Roll back with `helm rollback`.
+
+`persistence.enabled` defaults to `false`: without it in your values, logs go to an
+`emptyDir`. With the read-only root, every log, trace and pcap path in the config must be
+under `/tmp`, `/run/ocudu` or `persistence.mountPath`, or the chart does not render.
 
 If your values file overrides `config.gnb-config.yml`, new defaults in the chart's
 config (for example `metrics.layers.enable_app_usage: true`) do not reach your
@@ -300,7 +336,7 @@ settings you want.
 ## Uninstalling
 
 ```bash
-helm uninstall my-gnb
+helm uninstall ocudu-gnb
 ```
 
 This removes all Kubernetes resources associated with the chart.
@@ -309,7 +345,7 @@ This removes all Kubernetes resources associated with the chart.
 
 - **Documentation**: [OCUDU Docs](https://gitlab.com/ocudu/ocudu_elements/ocudu_helm)
 - **Issues**: [GitLab Issues](https://gitlab.com/ocudu/ocudu_elements/ocudu_helm/-/issues)
-- **Community**: [OCUDU Discussions](https://gitlab.com/ocudu/ocudu/-/issues)
+- **OCUDU issues**: [OCUDU on GitLab](https://gitlab.com/ocudu/ocudu/-/issues)
 
 ## License
 
