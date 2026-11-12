@@ -13,6 +13,9 @@ include:
       install_timeout: "900"
       # Runs on main publish the badge to the package registry under this name.
       badge_name: ocudu-cu-up
+      # The CU-UP opens an SCTP socket for E1 at startup and cannot create it
+      # when the kernel has no SCTP; only the on-prem runners have the module loaded.
+      runner_tags: [on-prem-linux-amd64, sctp]
   # The workload tests of the same setup, on the Nightly schedule.
   - component: $CI_SERVER_FQDN/lfn-cnti/testsuite-component/cnti-testsuite@1.2.0
     inputs:
@@ -23,6 +26,7 @@ include:
       cnf_config: .gitlab/cnti/ocudu-cu-up/cnti-testsuite.yaml
       install_timeout: "900"
       badge_name: ocudu-cu-up-workload
+      runner_tags: [on-prem-linux-amd64, sctp]
   - local: .gitlab/ci/helm_sbom.yml
 
 stages:
@@ -37,8 +41,11 @@ cnti-testsuite:
   rules:
     - when: never
 
+# The CU, CU-CP and CU-UP runs all land on the few on-prem runners with SCTP, and
+# two kind clusters on one host fail to come up. Run one at a time, across pipelines.
 cnti-testsuite-cu-up:
   extends: [cnti-testsuite, .cnti diagnostics, .cnti runner setup]
+  resource_group: cnti-sctp
   rules: !reference [.cnti rules, rules]
 
 cnti-workload:
@@ -48,6 +55,7 @@ cnti-workload:
 # A manual job on merge requests tries out a change before the next nightly run.
 cnti-workload-cu-up:
   extends: [cnti-workload, .cnti diagnostics, .cnti runner setup]
+  resource_group: cnti-sctp
   rules:
     - if: $CI_PIPELINE_SCHEDULE_DESCRIPTION =~ /Nightly/
     - if: $ON_MR
