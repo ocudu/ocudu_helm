@@ -199,6 +199,8 @@
 # The job pod also carries the runner's service account, and kubescape prefers
 # that in-cluster config over ~/.kube/config: point KUBECONFIG at the file kind
 # writes, or kubescape scans the runner's cluster instead of the kind cluster.
+# kubectl still takes the job pod's namespace when the kind context sets none:
+# unset the in-cluster variables so it falls back to the default namespace.
 # Retry runner failures only, never failed tests.
 .cnti runner setup:
   retry:
@@ -207,6 +209,7 @@
   before_script:
     - if command -v apk >/dev/null; then apk add --no-cache bash curl git tar >/dev/null; fi
     - export KUBECONFIG="$HOME/.kube/config"
+    - unset KUBERNETES_SERVICE_HOST KUBERNETES_SERVICE_PORT
     - |
       i=0
       while ! docker info >/dev/null 2>&1; do
