@@ -265,7 +265,7 @@ the cluster, and the full list of what the chart refuses.
 ## Security Context and Capabilities
 
 The chart defaults are otherwise restrictive — non-root pod, read-only root
-filesystem, every capability dropped except the three below, no service account
+filesystem, every capability dropped except the two below, no service account
 token, no RBAC, no privileged container — but two settings are deliberately not
 at their most restrictive value:
 
@@ -273,14 +273,14 @@ at their most restrictive value:
 securityContext:
   allowPrivilegeEscalation: true
   capabilities:
-    add: [SYS_NICE, IPC_LOCK, PERFMON]
+    add: [SYS_NICE, IPC_LOCK]
 ```
 
 - `SYS_NICE`: `odu` runs its real-time threads at `SCHED_FIFO` priority. Without it,
   `odu` prints `Scheduling priority of thread "..." not changed`, and the fronthaul
   misses its deadlines.
 - `IPC_LOCK`: DPDK pins its hugepage memory for DMA through VFIO.
-- `PERFMON`: only for the RAPL power metric; `odu` runs without it.
+- `PERFMON` (not added by default): only for the RAPL power metric; `odu` runs without it.
 
 The image bakes all three into the binary as permitted-only *file* capabilities
 (`setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+p`), and `odu` starts with whichever of

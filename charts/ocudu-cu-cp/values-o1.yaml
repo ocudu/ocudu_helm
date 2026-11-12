@@ -98,7 +98,8 @@ podSecurityContext:
 # -- Container-level security context
 # The image bakes SYS_NICE and PERFMON into /usr/local/bin/ocucp as
 # permitted-only file capabilities (setcap cap_sys_nice,cap_perfmon+p); ocucp
-# starts with whichever of them the container grants. See values.yaml.
+# starts with whichever of them the container grants. Add PERFMON to read the
+# RAPL power metric. See values.yaml.
 securityContext:
   allowPrivilegeEscalation: true
   privileged: false
@@ -106,7 +107,6 @@ securityContext:
     drop: ["ALL"]
     add:
       - SYS_NICE
-      - PERFMON
 
 # -- Resource requests and limits. Required: requests and limits must each set cpu and memory.
 resources: {}

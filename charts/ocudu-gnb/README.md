@@ -33,7 +33,7 @@ Before deploying, ensure:
 6. **Non-root prerequisites** (for the default minimum-privilege securityContext to work):
    - Image has file caps on the binary: `setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+p /usr/local/bin/gnb`
    - Node's containerd has `device_ownership_from_security_context = true`
-   - Namespace enforces the Privileged Pod Security level: Baseline rejects `SYS_NICE`, `IPC_LOCK` and `PERFMON`
+   - Namespace enforces the Privileged Pod Security level: Baseline rejects `SYS_NICE` and `IPC_LOCK`
 
    See [Security Guide](docs/security.md) for the full rationale. If any of these is not met, override the chart's `securityContext` with a broader cap set or run as root.
 
@@ -192,11 +192,14 @@ layer. For what each switch reports, see the
 [OCUDU Configuration Reference](https://docs.ocudu.org/user_manual/config_reference/).
 
 To send the metrics to Grafana, enable `metricsService`, JSON metrics and the
-remote control server:
+remote control server, and add `PERFMON` for the power metric:
 
 ```yaml
 metricsService:
   enabled: true
+securityContext:
+  capabilities:
+    add: [SYS_NICE, IPC_LOCK, PERFMON]   # list replaces the default: keep SYS_NICE and IPC_LOCK
 config:
   gnb-config.yml: |-
     # ...rest of the config...
@@ -214,9 +217,9 @@ config:
 Point the `grafana-ocudu` chart's `gnbs[].wsUrl` at the metrics service.
 
 `enable_app_usage` reports CPU, memory, power and buffer-pool metrics. The power reading needs the
-`PERFMON` capability (granted by default, see [docs/security.md](docs/security.md))
-and a CPU with RAPL energy counters (Intel, recent AMD). Without them, the power
-panels show 0 W.
+`PERFMON` capability, which the chart does not grant by default (see
+[docs/security.md](docs/security.md)), and a CPU with RAPL energy counters (Intel, recent AMD).
+Without them, the power panels show 0 W.
 
 ## Container Images
 

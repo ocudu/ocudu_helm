@@ -119,8 +119,8 @@ initCommand:
 # Requires the image to have file capabilities baked into /usr/local/bin/gnb
 # (setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+p) and containerd
 # `device_ownership_from_security_context = true` on the node. gnb starts with
-# whichever of the three the container grants; without PERFMON only the power
-# metric is missing. See docs/security.md for details.
+# whichever of the three the container grants. PERFMON is left out by default;
+# add it to read the RAPL power metric. See docs/security.md for details.
 securityContext:
   allowPrivilegeEscalation: true
   privileged: false
@@ -131,7 +131,6 @@ securityContext:
     add:
       - SYS_NICE
       - IPC_LOCK
-      - PERFMON
 
 # -- gNB startup probe configuration.
 # Holds off the liveness and readiness probes until gnb is running, so neither

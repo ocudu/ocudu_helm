@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- README: the power panels need the `PERFMON` capability on the RAN chart, which it no longer grants by default.
+
 ## 2.5.2 (2026-09-25)
 
 ### Changed

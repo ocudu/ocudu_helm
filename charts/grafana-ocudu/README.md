@@ -37,6 +37,10 @@ Before installing:
 
 3. **Metrics Source**: Configure Telegraf to point to your OCUDU metrics endpoint
 
+4. **Power metric**: The RAN charts do not grant the `PERFMON` capability by default, so the
+   power panels show 0 W. Add `PERFMON` to the RAN chart's `securityContext.capabilities.add`
+   (see [the security guide](../../docs/security.md#capabilities-per-chart))
+
 ## Installing the Chart
 
 **Build dependencies first**:

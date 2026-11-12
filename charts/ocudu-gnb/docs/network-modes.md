@@ -36,7 +36,6 @@ securityContext:
     add:
       - SYS_NICE
       - IPC_LOCK
-      - PERFMON
 ```
 
 ### Characteristics

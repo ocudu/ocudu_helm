@@ -75,7 +75,7 @@ workload that should not run overlapping old/new pods.
 | `ipsec.certSecret` | string | `""` | Secret holding this pod's identity (`tls.crt`, `tls.key`, `ca.crt`) |
 | `ipsec.certManager.enabled` | bool | `false` | Have cert-manager issue `certSecret` instead of bringing your own |
 | `networkPolicy.egress.dnsTo` | list | cluster DNS pods | Where DNS lives; set `[]` to allow port 53 to any destination |
-| `metricsService.enabled` | bool | `false` | Enable the metrics/remote-control WebSocket endpoint |
+| `metricsService.enabled` | bool | `false` | Enable the metrics/remote-control WebSocket endpoint. The power metric also needs `PERFMON`, see [Security Context and Capabilities](#security-context-and-capabilities) |
 | `persistence.enabled` | bool | `false` | Enable persistent storage for logs (otherwise `emptyDir`) |
 | `persistence.type` | string | `"pvc"` | Storage type: `pvc` or `hostPath` |
 | `resources` | object | 2 CPUs, 4Gi | Requests and limits; `cpu` and `memory` are required in both |
@@ -213,7 +213,7 @@ cluster, and the full list of what the chart refuses.
 ## Security Context and Capabilities
 
 The chart defaults are otherwise restrictive — non-root pod, read-only root
-filesystem, every capability dropped except the two below, no service account
+filesystem, every capability dropped except `SYS_NICE`, no service account
 token, no RBAC, no hostPath, no privileged container — but two settings are
 deliberately not at their most restrictive value:
 
@@ -221,20 +221,27 @@ deliberately not at their most restrictive value:
 securityContext:
   allowPrivilegeEscalation: true
   capabilities:
-    add: [SYS_NICE, PERFMON]
+    add: [SYS_NICE]
 ```
 
 `ocuup` needs `SYS_NICE` to run its worker pool and its I/O thread at `SCHED_FIFO`
 priority. Without it, `ocuup` prints `Scheduling priority of thread "..." not changed`
 and runs those threads at normal priority. It uses `PERFMON` only to read the RAPL
-power metric, and runs without it.
+power metric, which it reports with `metrics.layers.enable_app_usage: true`. The chart
+leaves `PERFMON` out; to read the power metric, add it back:
+
+```yaml
+securityContext:
+  capabilities:
+    add: [SYS_NICE, PERFMON]   # list replaces the default: keep SYS_NICE
+```
 
 The image bakes both into the binary as permitted-only *file* capabilities
 (`setcap cap_sys_nice,cap_perfmon+p`). Two kernel rules apply:
 
 - without the effective bit, `execve()` succeeds with whichever of the file's
   capabilities the container grants, and `ocuup` raises them at startup, so
-  removing either from `capabilities.add` only disables what depends on it;
+  leaving one out of `capabilities.add` only disables what depends on it;
 - `allowPrivilegeEscalation: false` sets `NO_NEW_PRIVS`, under which the kernel
   ignores file capabilities entirely, so the process would start without any of
   them.
@@ -244,8 +251,8 @@ Older OCUDU images also carry `IPC_LOCK` and set the effective bit
 the container grants all three, so add `IPC_LOCK` back when running one.
 
 `PERFMON` is on kubescape's insecure-capability list (C-0046), so the CNTI
-`insecure_capabilities` check fails while it is granted. Remove it to pass that
-check without the power metric. The `privilege_escalation` check fails regardless,
+`insecure_capabilities` check fails while it is granted; this is why the chart
+leaves it out. The `privilege_escalation` check fails regardless,
 because file capabilities need `allowPrivilegeEscalation: true`.
 
 With the read-only root filesystem, `ocuup` writes only to `/tmp`, `/run/ocudu`

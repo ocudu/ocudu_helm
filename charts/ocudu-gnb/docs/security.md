@@ -22,12 +22,12 @@ Kubernetes Pod Security Standards (PSS) define security policies at three levels
 | Security Level | Compatible | Notes |
 |---------------|-----------|-------|
 | **Privileged** | ✅ Yes | Required by every deployment mode, including the non-privileged SR-IOV default |
-| **Baseline** | ❌ No | Baseline allows a fixed list of capabilities that does not include `SYS_NICE`, `IPC_LOCK` or `PERFMON` |
+| **Baseline** | ❌ No | Baseline allows a fixed list of capabilities that does not include `SYS_NICE` or `IPC_LOCK` |
 | **Restricted** | ❌ No | Restricted allows no added capability except `NET_BIND_SERVICE` and requires `allowPrivilegeEscalation: false` |
 
 ### Required Capabilities
 
-The default security context adds three Linux capabilities:
+The default security context adds two Linux capabilities; a third is optional:
 
 - `SYS_NICE`: the gNB runs its fronthaul timing, fronthaul I/O and worker threads at `SCHED_FIFO`
   real-time priority. Without it the gNB starts, prints
@@ -41,8 +41,10 @@ The default security context adds three Linux capabilities:
   `EAL: Cannot set up DMA remapping, error 12 (Cannot allocate memory)`, and the kernel logs
   `vfio_pin_pages_remote: RLIMIT_MEMLOCK (8388608) exceeded`. Only nodes whose container
   runtime runs with an unlimited locked-memory limit work without it.
-- `PERFMON`: the gNB reads the CPU energy counters (RAPL) with `perf_event_open()` for its power
-  metrics. The gNB runs without it; only the power metric is missing.
+- `PERFMON` (not added by default): the gNB reads the CPU energy counters (RAPL) with
+  `perf_event_open()` for its power metrics. The gNB runs without it; only the power metric is
+  missing. Add it to read that metric, for example in the `grafana-ocudu` dashboards; see the
+  metrics example in the [README](../README.md).
 
 The image carries all three as permitted-only file capabilities on `/usr/local/bin/gnb` (no
 effective bit). The gNB starts with whichever of them the container grants and raises them at
@@ -78,7 +80,6 @@ securityContext:
     add:
       - SYS_NICE
       - IPC_LOCK
-      - PERFMON
 ```
 
 ### Prerequisites for the minimum-privilege default
@@ -186,11 +187,10 @@ securityContext:
     add:
       - SYS_NICE      # SCHED_FIFO real-time threads
       - IPC_LOCK      # DPDK DMA memory pinned through VFIO
-      - PERFMON       # RAPL power metric; optional
 ```
 
 **Advantages:**
-- ✅ Non-root (uid 1000), drops ALL and adds only the three capabilities above
+- ✅ Non-root (uid 1000), drops ALL and adds only the two capabilities above
 - ✅ Read-only root filesystem: the gNB writes only to `/tmp`, `/run/ocudu` and `persistence.mountPath`. Point logs and pcaps at `persistence.mountPath`
 - ✅ No privileged mode
 - ✅ The runtime's default seccomp profile

@@ -130,13 +130,13 @@ initCommand:
 #
 # The image bakes both into /usr/local/bin/ocuup as permitted-only file
 # capabilities (setcap cap_sys_nice,cap_perfmon+p). ocuup starts with whichever
-# of them the container grants, so either can be removed below. File
-# capabilities need allowPrivilegeEscalation: true; NO_NEW_PRIVS
-# (allowPrivilegeEscalation: false) makes the kernel ignore them altogether.
+# of them the container grants. File capabilities need
+# allowPrivilegeEscalation: true; NO_NEW_PRIVS (allowPrivilegeEscalation: false)
+# makes the kernel ignore them altogether.
 #
-# PERFMON is on kubescape's insecure-capability list: remove it to pass the CNTI
-# insecure_capabilities check, at the cost of the power metric. The
-# privilege_escalation check fails regardless.
+# PERFMON is left out by default: it is on kubescape's insecure-capability list.
+# Add it to read the RAPL power metric. The CNTI privilege_escalation check
+# fails regardless.
 securityContext:
   allowPrivilegeEscalation: true
   privileged: false
@@ -146,7 +146,6 @@ securityContext:
     drop: ["ALL"]
     add:
       - SYS_NICE
-      - PERFMON
 
 # -- Resource requests and limits. Required: requests and limits must each set cpu and memory.
 # The default 4Gi leaves room for the 2 GiB buffer pool OCUDU allocates at startup.

@@ -38,11 +38,11 @@ binary needs. The image bakes these into the binary as **permitted-only file cap
 
 | Chart | Binary | Default `capabilities.add` | Why |
 |-------|--------|----------------------------|-----|
-| `ocudu-gnb` | `gnb` | `SYS_NICE`, `IPC_LOCK`, `PERFMON` | real-time threads, DPDK DMA pinning, RAPL power metric |
-| `ocudu-du` | `odu` | `SYS_NICE`, `IPC_LOCK`, `PERFMON` | real-time threads, DPDK DMA pinning, RAPL power metric |
+| `ocudu-gnb` | `gnb` | `SYS_NICE`, `IPC_LOCK` | real-time threads, DPDK DMA pinning |
+| `ocudu-du` | `odu` | `SYS_NICE`, `IPC_LOCK` | real-time threads, DPDK DMA pinning |
 | `ocudu-cu` | `ocu` | `SYS_NICE` | real-time threads |
-| `ocudu-cu-cp` | `ocucp` | `SYS_NICE`, `PERFMON` | real-time threads, RAPL power metric |
-| `ocudu-cu-up` | `ocuup` | `SYS_NICE`, `PERFMON` | real-time threads, RAPL power metric |
+| `ocudu-cu-cp` | `ocucp` | `SYS_NICE` | real-time threads |
+| `ocudu-cu-up` | `ocuup` | `SYS_NICE` | real-time threads |
 
 All five also set `allowPrivilegeEscalation: true`, `privileged: false` and `drop: ["ALL"]`.
 
@@ -63,8 +63,20 @@ What each capability does:
   Only a node whose runtime has an unlimited locked-memory limit works without it. The
   CU-side charts run no DPDK datapath, so they do not add it.
 - **`PERFMON`** — reads the CPU energy counters (RAPL) with `perf_event_open()` for the power
-  metric. Every chart that adds it runs without it; only the power metric is missing. The
-  default on `ocudu-cu` leaves it out already.
+  metric (`metrics.layers.enable_app_usage`). No chart adds it by default. Add it when you
+  collect metrics, for example with the `grafana-ocudu` chart, and want the power reading;
+  without it the power reads 0 W. `capabilities.add` is a list, so repeat the chart's defaults:
+
+  ```yaml
+  # chart: ocudu-gnb or ocudu-du
+  securityContext:
+    capabilities:
+      add: [SYS_NICE, IPC_LOCK, PERFMON]
+  # chart: ocudu-cu, ocudu-cu-cp or ocudu-cu-up
+  securityContext:
+    capabilities:
+      add: [SYS_NICE, PERFMON]
+  ```
 
 See the [guides index](README.md) for Hugepages and SR-IOV setup (the DPDK charts'
 node-side requirements), and your chart's `values.yaml` for the exact `securityContext`
@@ -283,9 +295,7 @@ The chart pipelines run the essential tests of the
 interact with the capabilities above:
 
 - **`insecure_capabilities`** fails while `PERFMON` is granted — it is on kubescape's
-  insecure-capability list (C-0046). Remove `PERFMON` from `capabilities.add` to pass the
-  check, at the cost of the power metric. This applies to the charts that add it (`ocudu-gnb`,
-  `ocudu-du`, `ocudu-cu-cp`, `ocudu-cu-up`); `ocudu-cu` already omits it.
+  insecure-capability list (C-0046). This is why no chart adds it by default.
 - **`privilege_escalation`** fails regardless, because the file capabilities need
   `allowPrivilegeEscalation: true` (see
   [File capabilities and `allowPrivilegeEscalation`](#file-capabilities-and-allowprivilegeescalation)).
