@@ -73,7 +73,7 @@ workload that should not run overlapping old/new pods.
 | `ipsec.certSecret` | string | `""` | Secret holding this pod's identity (`tls.crt`, `tls.key`, `ca.crt`) |
 | `ipsec.certManager.enabled` | bool | `false` | Have cert-manager issue `certSecret` instead of bringing your own |
 | `networkPolicy.egress.dnsTo` | list | cluster DNS pods | Where DNS lives; set `[]` to allow port 53 to any destination |
-| `metricsService.enabled` | bool | `false` | Enable the metrics/remote-control WebSocket endpoint. The power metric also needs `PERFMON`, see [Security Context and Capabilities](#security-context-and-capabilities) |
+| `metricsService.enabled` | bool | `false` | Enable the metrics/remote-control WebSocket endpoint. For Grafana and the power metric, see [Metrics with Grafana](#metrics-with-grafana-grafana-ocudu-chart) |
 | `persistence.enabled` | bool | `false` | Enable persistent storage for logs (otherwise `emptyDir`) |
 | `persistence.type` | string | `"pvc"` | Storage type: `pvc` or `hostPath` |
 | `resources` | object | 1 CPU, 4Gi | Requests and limits; `cpu` and `memory` are required in both |
@@ -155,6 +155,34 @@ A hostPath volume ties the pod to whichever node holds that directory, so it can
 only ever be rescheduled there. Treat this as a local-debugging configuration,
 not a production one. Logs default to an `emptyDir` for that reason.
 
+### Metrics with Grafana (`grafana-ocudu` chart)
+
+The CU-CP sends its metrics to the `grafana-ocudu` chart like the gNB does. Enable
+`metricsService`, JSON metrics and the remote control server, and add `PERFMON` for the
+power metric:
+
+```yaml
+metricsService:
+  enabled: true
+securityContext:
+  capabilities:
+    add: [SYS_NICE, PERFMON]   # list replaces the default: keep SYS_NICE
+config:
+  cu-cp-config.yml: |-
+    # ...rest of the config...
+    metrics:
+      enable_json: true
+      layers:
+        enable_app_usage: true   # CPU, memory, power and buffer pool
+    remote_control:
+      enabled: true
+      bind_addr: 0.0.0.0
+      port: 8001
+```
+
+Add an entry to the `grafana-ocudu` chart's `gnbs[]` list with `wsUrl` pointing at this
+chart's `-metrics` Service on port 8001. Without `PERFMON` the power panels show 0 W.
+
 ## IPsec
 
 F1-C and E1 can be carried over IKEv2 with tunnel-mode ESP, by a strongSwan sidecar that runs in
@@ -216,7 +244,8 @@ securityContext:
 priority. Without it, `ocucp` prints `Scheduling priority of thread "..." not changed`
 and runs those threads at normal priority. It uses `PERFMON` only to read the RAPL
 power metric, which it reports with `metrics.layers.enable_app_usage: true`. The chart
-leaves `PERFMON` out; to read the power metric, add it back:
+leaves `PERFMON` out; to read the power metric, for example in Grafana (see
+[Metrics with Grafana](#metrics-with-grafana-grafana-ocudu-chart)), add it back:
 
 ```yaml
 securityContext:

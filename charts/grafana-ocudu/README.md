@@ -124,6 +124,8 @@ gnbs:
     wsUrl: "my-gnb-metrics.my-namespace.svc:8001"
 ```
 
+A CU-CP or CU-UP metrics endpoint goes in the same list.
+
 **Persistent Storage for InfluxDB3**:
 ```yaml
 influxdb3:
@@ -179,7 +181,7 @@ grafana:
 | influxdb3.persistence.size | string | `"50Gi"` | Storage size |
 | influxdb3.persistence.mountPath | string | `"/var/lib/influxdb3"` | Data mount path |
 | influxdb3.persistence.pluginMountPath | string | `"/var/lib/influxdb3-plugins"` | Plugin mount path |
-| gnbs | list | `[]` | **Required.** One entry per gNB, each with `id` and `wsUrl`; one Telegraf Deployment is rendered per entry |
+| gnbs | list | `[]` | **Required.** One entry per gNB, CU-CP or CU-UP, each with `id` and `wsUrl`; one Telegraf Deployment is rendered per entry |
 | telegraf.image.repo | string | `"registry.gitlab.com/ocudu/ocudu/telegraf"` | Telegraf image repository |
 | telegraf.image.tag | string | `"0.17.0"` | Telegraf image tag |
 | telegraf.imagePullSecrets | list | `[{name: regcred}]` | Pull secrets for the Telegraf image |

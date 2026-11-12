@@ -163,6 +163,7 @@ influxdb3:
     pluginMountPath: /var/lib/influxdb3-plugins
 
 # -- List of gNBs to collect metrics from (required, at least one entry).
+# A CU-CP or CU-UP metrics endpoint is an entry too.
 #
 # Each entry creates a dedicated Telegraf Deployment that connects to that
 # gNB's WebSocket endpoint and tags all metrics with the gNB's id, allowing

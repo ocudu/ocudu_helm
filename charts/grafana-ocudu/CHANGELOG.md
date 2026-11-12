@@ -4,6 +4,7 @@
 
 ### Changed
 - README: the power panels need the `PERFMON` capability on the RAN chart, which it no longer grants by default.
+- README, `values.yaml`: CU-CP and CU-UP metrics endpoints go in the `gnbs` list too.
 
 ## 2.5.2 (2026-09-25)
 
