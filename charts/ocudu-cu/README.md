@@ -65,6 +65,7 @@ workload that should not run overlapping old/new pods.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `network.hostNetwork` | bool | `false` | Enable host network mode |
+| `network.ipFamilyPolicy` | string | `"PreferDualStack"` | IP family policy of the Services except the IPsec one; `""` leaves it to the cluster |
 | `n2Service.enabled` | bool | `true` | Enable N2 (NGAP) Service |
 | `n3Service.enabled` | bool | `true` | Enable N3 (GTP-U) Service |
 | `n3Service.externalIPs` | list | `[]` | Addresses routed to the N3 Service by the surrounding network |

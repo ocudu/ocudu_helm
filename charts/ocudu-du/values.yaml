@@ -199,6 +199,10 @@ network:
   # true: Uses host network namespace directly (simple setup, NetworkPolicy NOT supported)
   # @default -- `false`
   hostNetwork: false
+  # -- IP family policy of the chart's Services, except the IPsec one.
+  # PreferDualStack gives them both address families on a dual-stack cluster and
+  # falls back to one on a single-stack cluster. "" leaves it to the cluster (SingleStack).
+  ipFamilyPolicy: PreferDualStack
 
 # -- Node selector for pod assignment
 # A DU driving real radio hardware legitimately has to be pinned to the node

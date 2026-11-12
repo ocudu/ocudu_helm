@@ -63,6 +63,7 @@ workload that should not run overlapping old/new pods.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `network.hostNetwork` | bool | `false` | Enable host network mode |
+| `network.ipFamilyPolicy` | string | `"PreferDualStack"` | IP family policy of the Services except the IPsec one; `""` leaves it to the cluster |
 | `n2Service.enabled` | bool | `true` | Enable N2 (NGAP) Service |
 | `e1Service.enabled` | bool | `false` | Enable E1 (E1AP) Service |
 | `f1cService.enabled` | bool | `true` | Enable F1-C (F1AP) Service |

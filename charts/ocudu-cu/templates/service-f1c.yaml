@@ -11,6 +11,9 @@ metadata:
     {{- include "ocudu-cu.labels" . | nindent 4 }}
     app.kubernetes.io/component: f1c
 spec:
+  {{- with .Values.network.ipFamilyPolicy }}
+  ipFamilyPolicy: {{ . }}
+  {{- end }}
   type: {{ .Values.f1cService.type | default "ClusterIP" }}
   {{- if eq (.Values.f1cService.type | default "ClusterIP") "LoadBalancer" }}
   {{- if .Values.f1cService.loadBalancerIP }}

@@ -76,6 +76,7 @@ workload that should not run overlapping old/new pods.
 | `image.repository` | string | `"registry.gitlab.com/ocudu/ocudu/images/du-dpdk"` | Container image repository; `du-uhd` for USRP radios |
 | `image.tag` | string | `"ubuntu-24.04-avx512-latest"` | Image tag; pick the CPU variant (`avx512`, `avx2`, `neon`) the node supports |
 | `network.hostNetwork` | bool | `false` | Enable host network mode |
+| `network.ipFamilyPolicy` | string | `"PreferDualStack"` | IP family policy of the Services except the IPsec one; `""` leaves it to the cluster |
 | `sriovConfig.enabled` | bool | `true` | Request one SR-IOV VF from the device plugin |
 | `sriovConfig.extendedResourceName` | string | `"intel.com/intel_sriov_dpdk"` | Resource name advertised by the SR-IOV device plugin |
 | `f1cService.enabled` | bool | `true` | Enable F1-C (F1AP) Service |

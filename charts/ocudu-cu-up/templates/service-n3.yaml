@@ -11,6 +11,9 @@ metadata:
     {{- include "ocudu-cu-up.labels" . | nindent 4 }}
     app.kubernetes.io/component: n3
 spec:
+  {{- with .Values.network.ipFamilyPolicy }}
+  ipFamilyPolicy: {{ . }}
+  {{- end }}
   type: {{ .Values.n3Service.type | default "ClusterIP" }}
   {{- with .Values.n3Service.externalIPs }}
   externalIPs:

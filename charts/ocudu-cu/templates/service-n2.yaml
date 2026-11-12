@@ -11,6 +11,9 @@ metadata:
     {{- include "ocudu-cu.labels" . | nindent 4 }}
     app.kubernetes.io/component: n2
 spec:
+  {{- with .Values.network.ipFamilyPolicy }}
+  ipFamilyPolicy: {{ . }}
+  {{- end }}
   type: {{ .Values.n2Service.type | default "ClusterIP" }}
   {{- if eq (.Values.n2Service.type | default "ClusterIP") "LoadBalancer" }}
   {{- if .Values.n2Service.loadBalancerIP }}

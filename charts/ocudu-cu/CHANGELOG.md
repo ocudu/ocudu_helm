@@ -20,6 +20,7 @@
 - Default `config`: every pcap writes to `persistence.mountPath`
 - ConfigMaps, including the IPsec one, are immutable and their names end in a hash of their data, so a config change creates a new ConfigMap and rolls the pod, and a live edit is rejected. Roll back with `helm rollback`; `configmap.*.nameOverride` keeps a fixed, mutable ConfigMap
 - `values-o1.yaml`: bump the netconf-server image to `20261110_4d919a44`, which saves and loads the running config for `o1.netconfServer.persistence`
+- Services set `ipFamilyPolicy: PreferDualStack` (`network.ipFamilyPolicy`), so they get both address families on a dual-stack cluster and one on a single-stack cluster. The IPsec Service is unchanged; `""` restores the cluster default
 
 ### Fixed
 

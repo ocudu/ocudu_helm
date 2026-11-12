@@ -11,6 +11,9 @@ metadata:
     {{- include "ocudu-cu-cp.labels" . | nindent 4 }}
     app.kubernetes.io/component: o1-netconf
 spec:
+  {{- with .Values.network.ipFamilyPolicy }}
+  ipFamilyPolicy: {{ . }}
+  {{- end }}
   type: {{ (.Values.o1).netconfServer.service.type | default "NodePort" }}
   {{- if eq ((.Values.o1).netconfServer.service.type | default "NodePort") "LoadBalancer" }}
   {{- if (.Values.o1).netconfServer.service.loadBalancerIP }}

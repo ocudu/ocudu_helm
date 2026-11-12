@@ -250,6 +250,7 @@ The default is `registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk`, tagged
 | `configmap.*.nameOverride` | string | `""` | Fixed, mutable ConfigMap name; by default ConfigMaps are immutable and named after a hash of their data |
 | `securityContext.readOnlyRootFilesystem` | bool | `true` | Read-only root; `gnb` writes only to `/tmp`, `/run/ocudu` and `persistence.mountPath` |
 | `network.hostNetwork` | bool | `false` | Enable host network mode (bypasses NetworkPolicy) |
+| `network.ipFamilyPolicy` | string | `"PreferDualStack"` | IP family policy of the Services except the IPsec one; `""` leaves it to the cluster |
 | `sriovConfig.enabled` | bool | `true` | Enable SR-IOV device plugin |
 | `sriovConfig.extendedResourceName` | string | `"intel.com/intel_sriov_netdevice"` | SR-IOV resource name; the chart requests one VF of it |
 | `serviceAccount.annotations` | object | `{}` | Annotations on the gNB pod's ServiceAccount (no token is mounted, no Role is bound) |

@@ -177,6 +177,10 @@ network:
   # true: Uses host network namespace directly (simple setup, NetworkPolicy NOT supported)
   # @default -- `false`
   hostNetwork: false
+  # -- IP family policy of the chart's Services, except the IPsec one.
+  # PreferDualStack gives them both address families on a dual-stack cluster and
+  # falls back to one on a single-stack cluster. "" leaves it to the cluster (SingleStack).
+  ipFamilyPolicy: PreferDualStack
 
 # -- Resource requests and limits. Required: requests and limits must each set cpu and memory.
 # Hugepages are automatically configured when defined in limits or requests.
