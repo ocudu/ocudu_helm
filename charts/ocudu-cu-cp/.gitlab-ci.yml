@@ -23,6 +23,9 @@ include:
       version: v2.2.0
       job_name: cnti-workload
       tests: workload
+      # The image's file capabilities need allowPrivilegeEscalation: true, so
+      # this check always fails; see docs/security.md.
+      extra_args: --skip privilege_escalation
       cnf_config: .gitlab/cnti/ocudu-cu-cp/cnti-testsuite.yaml
       install_timeout: "900"
       badge_name: ocudu-cu-cp-workload

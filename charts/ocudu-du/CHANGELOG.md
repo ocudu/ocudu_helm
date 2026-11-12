@@ -19,7 +19,7 @@
 - `o1.netconfServer.persistence`: the running config set over NETCONF survives pod restarts in a PersistentVolumeClaim, on in `values-o1.yaml`; every helm upgrade starts from `o1Config` again and restarts the pod. Needs a StorageClass
 - The chart pipeline runs the essential tests of the CNTi Test Suite against the chart in DU test mode (ru_dummy and a test UE, no CU, no RU) on a kind cluster, through the suite's GitLab CI/CD component. The values the job uses live under `.gitlab/cnti/ocudu-du/`
 - With a read-only root and O1 off, rendering fails when a `*filename` key under `log`, `trace` or `pcap` in `config` lies outside `/tmp`, `/run/ocudu` and `persistence.mountPath`, the only writable directories
-- A nightly pipeline runs the workload tests of the CNTi Test Suite against the chart, with the same setup as the essential tests
+- A nightly pipeline runs the workload tests of the CNTi Test Suite against the chart, with the same setup as the essential tests, except `privilege_escalation`, which the file capabilities always fail
 - A README for the chart, with the CNTi essential and workload badges
 
 ### Fixed
