@@ -95,9 +95,9 @@ workload that should not run overlapping old/new pods.
 | `o1.netconfServer.tls.enabled` | bool | `false` | Enable the NETCONF-over-TLS endpoint on port 6513 |
 | `o1.netconfServer.tls.certSecret` | string | `""` | Secret with the server identity (`ca.crt`, `server.crt`, `server.key`); omit for auto-generated self-signed certs |
 | `o1.netconfServer.tls.clientCertSecret` | string | `""` | Secret with the adapter's client identity (`ca.crt`, `client.crt`, `client.key`); required when `certSecret` is set |
-| `o1.netconfServer.ssh.username` | string | `""` | NETCONF SSH user with password authentication, for clients that only implement the SSH `password` method; empty = disabled |
+| `o1.netconfServer.ssh.username` | string | `"netconf"` | NETCONF SSH user with password authentication, for clients that only implement the SSH `password` method; empty = disabled |
 | `o1.netconfServer.ssh.passwordSecret` | string | `""` | Existing Secret with key `password` holding the NETCONF user's password (production) |
-| `o1.netconfServer.ssh.password` | string | `""` | Dev/test cleartext password the chart renders into a Secret itself; ignored when `passwordSecret` is set |
+| `o1.netconfServer.ssh.password` | string | `"netconf"` | Dev/test cleartext password the chart renders into a Secret itself; ignored when `passwordSecret` is set |
 | `o1.o1Adapter.fileLog.enabled` | bool | `false` | Persist the o1 adapter output to a log file |
 | `o1.netconfServer.fileLog.enabled` | bool | `false` | Persist the netconf-server output to a timestamped log file |
 | `o1.netconfServer.persistence.enabled` | bool | `true` | Keep the running config set over NETCONF across pod restarts in a PersistentVolumeClaim; every helm upgrade starts from `o1Config` again |
