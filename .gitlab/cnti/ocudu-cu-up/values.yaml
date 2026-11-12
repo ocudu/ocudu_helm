@@ -28,3 +28,8 @@ config:
     log:
       filename: stdout
       all_level: warning
+
+# The chart's NetworkPolicy. The default kind CNI enforces it, so the run also
+# checks that the pod works under it.
+networkPolicy:
+  enabled: true

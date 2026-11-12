@@ -92,3 +92,8 @@ config:
     metrics:
       autostart_stdout_metrics: false
       enable_json: false
+
+# The chart's NetworkPolicy. The default kind CNI enforces it, so the run also
+# checks that the pod works under it.
+networkPolicy:
+  enabled: true
