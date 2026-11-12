@@ -87,6 +87,7 @@ helm install my-gnb ocudu/ocudu-gnb \
 - Each chart's own README covers that chart specifically:
   - [ocudu-gnb](charts/ocudu-gnb/README.md)
   - [ocudu-cu](charts/ocudu-cu/README.md)
+  - [ocudu-du](charts/ocudu-du/README.md)
   - [ocudu-cu-cp](charts/ocudu-cu-cp/README.md)
   - [ocudu-cu-up](charts/ocudu-cu-up/README.md)
   - [linuxptp](charts/linuxptp/README.md)
