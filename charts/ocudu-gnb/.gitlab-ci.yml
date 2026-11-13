@@ -22,8 +22,10 @@ include:
       job_name: cnti-workload
       tests: workload
       # The image's file capabilities need allowPrivilegeEscalation: true, so
-      # this check always fails; see docs/security.md.
-      extra_args: --skip privilege_escalation
+      # privilege_escalation always fails; see docs/security.md. The gNB only opens
+      # connections and serves no port by default, so it has no Service for
+      # service_discovery to find.
+      extra_args: --skip privilege_escalation --skip service_discovery
       cnf_config: .gitlab/cnti/ocudu-gnb/cnti-testsuite.yaml
       install_timeout: "900"
       badge_name: ocudu-gnb-workload
