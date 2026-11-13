@@ -464,10 +464,12 @@ o1:
       username: netconf
       # -- Existing Secret with key "password" holding the NETCONF user's password
       # (production). The o1 adapter logs in with it, so it must be the cleartext
-      # password, not a crypt hash.
+      # password, not a crypt hash, and must not start with $ (the netconf-server
+      # image takes such a value as a crypt hash).
       # Create with: kubectl create secret generic <name> --from-literal=password='...'
       passwordSecret: ""
       # -- Password the chart renders into its own Secret when passwordSecret is empty.
+      # Must not start with $; rendering fails otherwise.
       # Empty (default): the chart generates a random one on install and keeps it on
       # upgrade. `helm template` (e.g. Argo CD) cannot read the existing Secret and
       # generates a new one on every render, so use passwordSecret there.

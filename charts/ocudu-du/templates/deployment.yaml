@@ -117,6 +117,14 @@ spec:
               - key: known_hosts
                 path: known_hosts
         {{- end }}
+        {{- if ((.Values.o1).netconfServer.ssh).username }}
+        - name: netconf-ssh-password
+          secret:
+            secretName: {{ include "ocudu-du.netconfSshCredentialsSecretName" . }}
+            items:
+              - key: password
+                path: password
+        {{- end }}
         {{- else }}
         - name: config-volume
           configMap:
@@ -373,23 +381,12 @@ spec:
           {{- if not (or $netconfSshUser (.Values.o1).netconfServer.tls.enabled) }}
           {{- fail "o1.netconfServer.ssh.username is required unless o1.netconfServer.tls.enabled is true: without it the o1 adapter falls back to root/root, which the netconf-server image does not accept" }}
           {{- end }}
-          {{- if or ((.Values.o1).netconfServer.ssh).hostKeySecret $netconfSshUser }}
+          {{- if ((.Values.o1).netconfServer.ssh).hostKeySecret }}
           env:
-            {{- if ((.Values.o1).netconfServer.ssh).hostKeySecret }}
             # Verifying the host key makes the adapter read an ssh_config, which looks up
             # the login name; the pod's uid has no passwd entry in the adapter image.
             - name: LOGNAME
               value: o1-adapter
-            {{- end }}
-            {{- if $netconfSshUser }}
-            # Handed to --netconf_password as $(NETCONF_SSH_PASSWORD), so the password
-            # never appears in the pod spec.
-            - name: NETCONF_SSH_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "ocudu-du.netconfSshCredentialsSecretName" . }}
-                  key: password
-            {{- end }}
           {{- end }}
           {{- if $adapterFileLog }}
           # Tee the adapter's output onto the shared log volume. The adapter timestamps
@@ -413,8 +410,10 @@ spec:
             {{- if $netconfSshUser }}
             - "--netconf_username"
             - {{ $netconfSshUser | quote }}
-            - "--netconf_password"
-            - "$(NETCONF_SSH_PASSWORD)"
+            # Read from the mounted Secret: a password on the command line is visible
+            # to every user on the node through ps.
+            - "--netconf_password_file"
+            - "/etc/netconf-ssh-password/password"
             {{- end }}
             - "--ves_host"
             - {{ (.Values.o1).ves.host | quote }}
@@ -471,6 +470,11 @@ spec:
             {{- if ((.Values.o1).netconfServer.ssh).hostKeySecret }}
             - name: netconf-ssh-known-hosts
               mountPath: /etc/netconf-ssh
+              readOnly: true
+            {{- end }}
+            {{- if $netconfSshUser }}
+            - name: netconf-ssh-password
+              mountPath: /etc/netconf-ssh-password
               readOnly: true
             {{- end }}
         - name: netconf-server
