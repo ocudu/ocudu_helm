@@ -333,7 +333,7 @@ the pod and a live `kubectl edit` is rejected. Roll back with `helm rollback`.
 under `/tmp`, `/run/ocudu` or `persistence.mountPath`, or the chart does not render.
 
 If your values file overrides `config.gnb-config.yml`, new defaults in the chart's
-config (for example `metrics.layers.enable_app_usage: true`) do not reach your
+config (for example in `metrics.layers`) do not reach your
 deployment. Compare your config with the chart's `values.yaml` and copy over the
 settings you want.
 

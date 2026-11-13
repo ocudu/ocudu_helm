@@ -101,8 +101,8 @@ podSecurityContext:
 # Requires the image to have file capabilities baked into /usr/local/bin/gnb
 # (setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+p) and containerd
 # `device_ownership_from_security_context = true` on the node. gnb starts with
-# whichever of the three the container grants; without PERFMON only the power
-# metric is missing. See docs/security.md for details.
+# whichever of the three the container grants. PERFMON is left out: it only
+# serves the power metric, and enable_app_usage is off. See docs/security.md.
 securityContext:
   allowPrivilegeEscalation: true
   privileged: false
@@ -111,7 +111,6 @@ securityContext:
     add:
       - SYS_NICE
       - IPC_LOCK
-      - PERFMON
 
 # -- gNB liveness probe configuration.
 livenessProbe:
@@ -719,7 +718,7 @@ o1Config:
           </ocudu_hal_extensions>
 
           <ocudu_remote_control_extensions>
-            <enabled>true</enabled>
+            <enabled>false</enabled>
             <bind_addr>0.0.0.0</bind_addr>
           </ocudu_remote_control_extensions>
 
@@ -731,7 +730,7 @@ o1Config:
               <du_report_period>1000</du_report_period>
             </periodicity>
             <layers>
-              <enable_app_usage>true</enable_app_usage>
+              <enable_app_usage>false</enable_app_usage>
               <enable_ru>true</enable_ru>
               <enable_sched>true</enable_sched>
               <enable_rlc>false</enable_rlc>

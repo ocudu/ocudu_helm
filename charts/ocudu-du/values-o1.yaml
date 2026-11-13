@@ -123,8 +123,8 @@ podSecurityContext:
 # Requires the image to have file capabilities baked into /usr/local/bin/odu
 # (setcap cap_sys_nice,cap_ipc_lock,cap_perfmon+p) and containerd
 # `device_ownership_from_security_context = true` on the node. odu starts with
-# whichever of the three the container grants; without PERFMON only the power
-# metric is missing.
+# whichever of the three the container grants. PERFMON is left out: it only
+# serves the power metric, and enable_app_usage is off. See docs/security.md.
 securityContext:
   allowPrivilegeEscalation: true
   privileged: false
@@ -133,7 +133,6 @@ securityContext:
     add:
       - SYS_NICE
       - IPC_LOCK
-      - PERFMON
 
 # -- Resource requests and limits. Required: requests and limits must each set cpu and memory.
 # Hugepages are automatically configured when defined in limits or requests.
@@ -637,7 +636,7 @@ o1Config:
           </ocudu_log_extensions>
 
           <ocudu_remote_control_extensions>
-            <enabled>true</enabled>
+            <enabled>false</enabled>
             <bind_addr>0.0.0.0</bind_addr>
           </ocudu_remote_control_extensions>
 
@@ -645,7 +644,7 @@ o1Config:
             <autostart_stdout_metrics>true</autostart_stdout_metrics>
             <enable_json>false</enable_json>
             <layers>
-              <enable_app_usage>true</enable_app_usage>
+              <enable_app_usage>false</enable_app_usage>
             </layers>
           </ocudu_metrics_extensions>
 

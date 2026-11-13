@@ -63,7 +63,8 @@ What each capability does:
   Only a node whose runtime has an unlimited locked-memory limit works without it. The
   CU-side charts run no DPDK datapath, so they do not add it.
 - **`PERFMON`** — reads the CPU energy counters (RAPL) with `perf_event_open()` for the power
-  metric (`metrics.layers.enable_app_usage`). No chart adds it by default. Add it when you
+  metric (`metrics.layers.enable_app_usage`). No chart adds it, in `values.yaml` or
+  `values-o1.yaml`, and their configs turn `enable_app_usage` off. Turn both on when you
   collect metrics, for example with the `grafana-ocudu` chart, and want the power reading;
   without it the power reads 0 W. `capabilities.add` is a list, so repeat the chart's defaults:
 
