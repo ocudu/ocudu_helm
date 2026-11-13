@@ -21,6 +21,12 @@ e1Service:
 
 networkPolicy:
   enabled: true
+  ingress:
+    ric:
+      enabled: true
+      from:
+        - ipBlock:
+            cidr: 10.0.0.0/8
   egress:
     ric:
       enabled: true

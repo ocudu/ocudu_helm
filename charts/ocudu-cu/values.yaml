@@ -368,6 +368,19 @@ networkPolicy:
             matchLabels:
               app: telegraf
 
+    # -- Allow IKE from the near-RT RIC, so the RIC can start the E2 tunnel.
+    # Rendered only with `ipsec.enabled` and `ipsec.protectE2`, and then only for the IKE
+    # ports. Plaintext E2 needs no ingress rule: the E2 agent always dials the RIC. With
+    # IPsec it is the IKE initiator that counts, and that can be the RIC, for example
+    # when the RIC peer has no `address` or after the RIC restarts.
+    ric:
+      # -- Enable RIC ingress
+      # @default -- `false`
+      enabled: false
+      # -- Source selectors for the RIC
+      # @default -- `[]`
+      from: []
+
     # -- Custom ingress rules
     # @default -- `[]`
     custom: []

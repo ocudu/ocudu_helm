@@ -20,23 +20,12 @@ f1uService:
 
 networkPolicy:
   enabled: true
-  egress:
-    ric:
-      enabled: true
-      to:
-        - ipBlock:
-            cidr: 10.0.0.0/8
 
 ipsec:
   enabled: true
-  # E2 to a RIC that terminates IKEv2, so the `e2` section is checked too.
-  protectE2: true
   certSecret: ocudu-du-ipsec
   localId: du.example.com
   peers:
-    ric:
-      id: ric.example.com
-      address: ric-e2term-ipsec
     cu:
       id: cu.example.com
       # Set, so this side starts the connection. The CU fixture leaves it empty and
@@ -46,18 +35,11 @@ ipsec:
   # this is the branch that lets a two-pod deployment stay as short as it ever was. The CU
   # fixture has more than one peer and exercises the explicit branch.
   connections:
-    e2:
-      peer: ric
-      protocol: sctp
-      local: 100.64.60.1
-      remote: 100.64.60.2
     f1c:
-      peer: cu
       protocol: sctp
       local: 100.64.10.2
       remote: 100.64.10.1
     f1u:
-      peer: cu
       protocol: udp
       local: 100.64.30.2
       remote: 100.64.30.1
@@ -73,8 +55,3 @@ config:
         - bind_addr: 100.64.30.2
       bind_port: 2151
       peer_port: 2151
-
-    e2:
-      enable_du_e2: true
-      addrs: 100.64.60.2
-      bind_addrs: 100.64.60.1

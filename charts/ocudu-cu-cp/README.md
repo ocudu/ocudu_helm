@@ -74,6 +74,8 @@ workload that should not run overlapping old/new pods.
 | `ipsec.certSecret` | string | `""` | Secret holding this pod's identity (`tls.crt`, `tls.key`, `ca.crt`) |
 | `ipsec.certManager.enabled` | bool | `false` | Have cert-manager issue `certSecret` instead of bringing your own |
 | `networkPolicy.egress.dnsTo` | list | cluster DNS pods | Where DNS lives; set `[]` to allow port 53 to any destination |
+| `networkPolicy.egress.ric` | object | off | Egress to the near-RT RIC: SCTP `port` (36421), or only IKE with `ipsec.protectE2` |
+| `networkPolicy.ingress.ric` | object | off | IKE from the near-RT RIC, so it can start the E2 tunnel; only with `ipsec.protectE2` |
 | `metricsService.enabled` | bool | `false` | Enable the metrics/remote-control WebSocket endpoint. For Grafana and the power metric, see [Metrics with Grafana](#metrics-with-grafana-grafana-ocudu-chart) |
 | `persistence.enabled` | bool | `false` | Enable persistent storage for logs (otherwise `emptyDir`) |
 | `persistence.type` | string | `"pvc"` | Storage type: `pvc` or `hostPath` |
@@ -221,6 +223,9 @@ worth setting where a specific value is required.
 **N2 is protected only with `ipsec.protectN2`**, against a core-side peer (AMF) that
 terminates IKEv2. Without it the policy keeps its plaintext rule for the core and the chart
 claims nothing about N2.
+
+**E2 is protected only with `ipsec.protectE2`**, against a RIC-side peer that terminates
+IKEv2. Without it E2 stays in the clear, and `networkPolicy.egress.ric` opens plaintext SCTP.
 
 The application has to bind the protected addresses, and the chart refuses to render if it
 does not — along with a dozen other configurations that would leave traffic unprotected.

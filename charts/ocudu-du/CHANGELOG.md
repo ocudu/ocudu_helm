@@ -22,6 +22,7 @@
 
 - `ipsec.protectE2`: carry E2 in a tunnel as well, to a RIC-side peer that runs its own IKEv2 endpoint. Add the RIC as a peer with a connection for E2, and point `e2.addrs` and `e2.bind_addrs` at its protected addresses. The `e2` section is then checked like the other protected sections, with a bind address required, and `ipsec.protectE2` is refused without `ipsec.enabled`. Off by default. See `docs/ipsec.md`
 - `networkPolicy.egress.ric`: an egress rule to the near-RT RIC, off by default. It allows SCTP `port` (36421), or only the IKE ports with `ipsec.protectE2`
+- `networkPolicy.ingress.ric`: IKE from the near-RT RIC, off by default and rendered only with `ipsec.protectE2`, so the RIC can start the E2 tunnel too
 - `o1.netconfServer.persistence`: the running config set over NETCONF survives pod restarts in a PersistentVolumeClaim, on in `values-o1.yaml`; every helm upgrade starts from `o1Config` again and restarts the pod. Needs a StorageClass
 - The chart pipeline runs the essential tests of the CNTi Test Suite against the chart in DU test mode (ru_dummy and a test UE, no CU, no RU) on a kind cluster, through the suite's GitLab CI/CD component. The values the job uses live under `.gitlab/cnti/ocudu-du/`
 - With a read-only root and O1 off, rendering fails when a `*filename` key under `log`, `trace` or `pcap` in `config` lies outside `/tmp`, `/run/ocudu` and `persistence.mountPath`, the only writable directories

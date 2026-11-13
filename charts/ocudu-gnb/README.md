@@ -258,6 +258,8 @@ The default is `registry.gitlab.com/ocudu/ocudu/images/gnb-dpdk`, tagged
 | `podDisruptionBudget.enabled` | bool | `true` | Enable PodDisruptionBudget |
 | `podDisruptionBudget.unhealthyPodEvictionPolicy` | string | `"AlwaysAllow"` | Pod eviction policy |
 | `networkPolicy.enabled` | bool | `false` | Enable NetworkPolicy (only works with hostNetwork: false) |
+| `networkPolicy.egress.ric` | object | off | Egress to the near-RT RIC: SCTP `port` (36421), or only IKE with `ipsec.protectE2` |
+| `networkPolicy.ingress.ric` | object | off | IKE from the near-RT RIC, so it can start the E2 tunnel; only with `ipsec.protectE2` |
 | `ipsec.enabled` | bool | `false` | Protect Xn with IKEv2 and tunnel-mode ESP — see [`docs/ipsec.md`](docs/ipsec.md) |
 | `service.enabled` | bool | `false` | Enable the Service for N2/N3 interfaces |
 | `service.type` | string | `"LoadBalancer"` | Service type: `LoadBalancer`, `NodePort`, or `ClusterIP` |

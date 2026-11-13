@@ -1070,6 +1070,14 @@ it the application binds 127.0.0.1. Name the RIC by its protected IP address, no
 The policy has no E2 rule by default. Set `networkPolicy.egress.ric.enabled` and name the
 RIC in `networkPolicy.egress.ric.to`. With `protectE2` the rule allows the tunnel only;
 without it the rule allows plaintext SCTP to `networkPolicy.egress.ric.port` (36421).
+`networkPolicy.egress.ric.port` and the application's `e2.port` are separate settings, so
+a RIC on another port needs both.
+
+The E2 agent always dials the RIC, but with IPsec it is the IKE initiator that counts, and
+that can be the RIC: when the RIC peer has no `address`, and whenever the RIC re-keys or
+re-establishes the association first. Set `networkPolicy.ingress.ric.enabled` and name the
+RIC in `networkPolicy.ingress.ric.from` as well. That rule exists only with `protectE2`,
+and then allows IKE only.
 
 This adds E2 to the DU from [CU ↔ DU (F1)](#cu--du-f1). The F1 parts are unchanged and
 left out here:
@@ -1078,6 +1086,13 @@ left out here:
 # chart: ocudu-du
 networkPolicy:
   enabled: true
+  ingress:
+    ric:
+      enabled: true
+      from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ric
   egress:
     ric:
       enabled: true

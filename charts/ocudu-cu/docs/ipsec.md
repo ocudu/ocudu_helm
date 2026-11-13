@@ -496,6 +496,8 @@ exists to prevent.
 | `ipsec.protectN3` without `ipsec.enabled` | there is no tunnel to carry N3, so it would stay in clear |
 | `n3Service` enabled, or `n3Service.advertisedAddress` set, with `ipsec.protectN3` | the service publishes an unprotected path to N3 on the pod address, and the advertised address would be ignored |
 | no `bind_addr` in `cu_up.ngu.socket[]` with `ipsec.protectN3` | the application would bind 127.0.0.1 and N3 would never come up |
+| `ipsec.protectE2` without `ipsec.enabled` | there is no tunnel to carry E2, so it would stay in clear |
+| no `bind_addrs` in `e2` with `ipsec.protectE2` | the application would bind 127.0.0.1 and E2 would never come up |
 
 ## Dropping a capability
 
@@ -581,8 +583,8 @@ and it claims nothing about any CNI beyond the requirements listed above.
   and the O1 interface could move it off them afterwards.
 - **E2 is protected only with `ipsec.protectE2`.** It needs a RIC-side peer that terminates
   IKEv2 with a certificate from the same authority. With it, `e2.addrs` and `e2.bind_addrs`
-  must name the protected addresses, and `networkPolicy.egress.ric` allows the RIC the
-  tunnel only. See the E2 section of the consolidated guide, `docs/ipsec.md` at the
+  must name the protected addresses, and `networkPolicy.egress.ric` and
+  `networkPolicy.ingress.ric` allow the RIC the tunnel only. See the E2 section of the consolidated guide, `docs/ipsec.md` at the
   repository root.
 - **N2 and N3 are protected only with `ipsec.protectN2` and `ipsec.protectN3`.** Each needs
   a peer on the core side that terminates IKEv2 with a certificate from the same authority.

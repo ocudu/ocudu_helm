@@ -301,6 +301,8 @@ exists to prevent.
 | `ipsec.encapsulation` set to anything but `udp` or `native` | there is no third way to carry ESP, and a typo would otherwise pick the default silently |
 | a protected address in the config that is not in `ipsec.connections`, or a wildcard bind | traffic that would never enter the tunnel. An address written as a list item is read the same as one written beside its key |
 | F1-U on the core's GTP-U port, 2152 | the policy rule that lets the core be reached also permits plaintext F1-U to the peer; override with `ipsec.allowF1uOnCorePort` |
+| `ipsec.protectE2` without `ipsec.enabled` | there is no tunnel to carry E2, so it would stay in clear |
+| no `bind_addrs` in `e2` with `ipsec.protectE2` | the application would bind 127.0.0.1 and E2 would never come up |
 
 ## Dropping a capability
 
@@ -386,9 +388,9 @@ and it claims nothing about any CNI beyond the requirements listed above.
   and the O1 interface could move it off them afterwards.
 - **E2 is protected only with `ipsec.protectE2`.** It needs a RIC-side peer that terminates
   IKEv2 with a certificate from the same authority. With it, `e2.addrs` and `e2.bind_addrs`
-  must name the protected addresses, and `networkPolicy.egress.ric` allows the RIC the
-  tunnel only. See the E2 section of the consolidated guide, `docs/ipsec.md` at the
+  must name the protected addresses, and `networkPolicy.egress.ric` and
+  `networkPolicy.ingress.ric` allow the RIC the tunnel only. See the E2 section of the consolidated guide, `docs/ipsec.md` at the
   repository root.
-- **This protects F1, and E2 only with `ipsec.protectE2`.** The fronthaul is a separate interface with its own
-  requirements, and a kernel-bypass datapath does not pass through XFRM at all. F1-C and
+- **This protects F1, plus E2 as above, and nothing else.** The fronthaul is a separate
+  interface with its own requirements, and a kernel-bypass datapath does not pass through XFRM at all. F1-C and
   F1-U go through the kernel network stack, which is why they can be protected this way.
