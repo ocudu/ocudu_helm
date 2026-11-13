@@ -25,7 +25,9 @@ include:
       tests: workload
       # The image's file capabilities need allowPrivilegeEscalation: true, so
       # this check always fails; see docs/security.md.
-      extra_args: --skip privilege_escalation
+      # pod_dns_error cannot inject its DNS fault into a container with a read-only
+      # root filesystem, so it errors on every chart.
+      extra_args: --skip privilege_escalation --skip pod_dns_error
       cnf_config: .gitlab/cnti/ocudu-cu-cp/cnti-testsuite.yaml
       install_timeout: "900"
       badge_name: ocudu-cu-cp-workload
