@@ -16,4 +16,5 @@ it's very hard to read otherwise.)
 - Add a link to each job that has this failure. Please press `Keep artifacts` to save the job's data as much as
   possible.
 
-/label ~bug::ci ~triage /assign @ninjab3s @niklas-srs
+/label ~bug::ci ~triage
+/assign @ninjab3s @niklas-srs
