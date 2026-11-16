@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# AI jobs from ocudu_tools' ci_box.
+
+include:
+  # include:project can't read variables from this file, so the path is spelled out.
+  - project: ocudu/ocudu_tools
+    ref: main  # also picks the ci-box image version
+    file: .gitlab/ci/ci-box.yml
+    inputs:
+      # New issues only; failures are matched to existing issues across the ocudu group.
+      issue_project: ocudu/ocudu_elements/ocudu_helm
+
+# Last, on schedules with a failed job: matches each failure to an issue in the ocudu group, or opens one here.
+# Needs the CI/CD variables AI_GITLAB_TOKEN and CLAUDE_CODE_OAUTH_TOKEN (or ANTHROPIC_API_KEY).
+ci-triage:
+  extends: .ci-triage
+  variables:
+    OCUDU_TOOLS_PROJECT: ocudu/ocudu_tools  # ci-box image path
