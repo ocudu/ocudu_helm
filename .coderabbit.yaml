@@ -13,8 +13,8 @@ reviews:
   high_level_summary: false
   high_level_summary_in_walkthrough: false
   review_status: false
-  review_info: false
-  review_details: false
+  review_info: true
+  review_details: true
   collapse_walkthrough: true
   changed_files_summary: false
   sequence_diagrams: false
@@ -42,25 +42,34 @@ reviews:
   path_instructions:
     - path: "**"
       instructions: |
-        Use Major only for issues reachable with the chart defaults or a values file in this repo; if an issue depends on another setting, mark it Minor and name that setting.
-        Report a finding only with a concrete failure scenario (values or cluster state leading to the wrong outcome); drop speculative ones.
+        Assess severity by impact and realistic reachability, including documented optional configurations. Name the exact values, image version and cluster prerequisites. Do not downgrade a security bypass, data loss or broken supported deployment merely because it needs a non-default setting.
+        Report findings with a concrete trigger, affected path, consequence and evidence. Distinguish reproduced behavior from source-based inference and unavailable evidence. Focus on changed code and regressions it introduces; avoid unrelated cleanup. Group the same defect across sibling charts in one finding.
     - path: "charts/**/templates/**"
       instructions: |
-        Go-templated Kubernetes manifests, not plain YAML. CI runs `helm lint --strict` and kubeconform on the rendered defaults and the ci/ values files; skip what those catch.
+        Go-templated Kubernetes manifests, not plain YAML. Inspect the affected chart child pipeline to identify which values profiles CI actually renders. Avoid repeating a diagnostic already reported by CI, but still review untested branches, embedded application YAML/XML, runtime behavior and upgrades. Successful rendering is not proof that the pinned image accepts its configuration.
         Check that optional values are accessed nil-safely, that indentation helpers (`nindent`, `toYaml`) produce valid output, and that selector labels stay unchanged, since a changed Deployment selector breaks `helm upgrade`.
-        Privileged containers, added capabilities, hostNetwork, hugepages, SR-IOV resources and CPU pinning are intended in the RAN and timing charts (ocudu-*, ru_emulator, linuxptp, tuned, rt-tests); do not flag them.
+        Use docs/security.md and the chart-specific values to distinguish justified hardware permissions from regressions. Do not request blanket removal of required capabilities, host networking, hugepages or CPU pinning. Flag newly unnecessary permissions, loss of required permissions, secret exposure and weakened isolation. Evaluate application, init and sidecar containers separately.
     - path: "charts/ocudu-{gnb,cu,du,cu-cp,cu-up}/**"
       instructions: |
-        These five charts share most templates and values by copy. When a change fixes or adds something in one of them, check whether the others need the same change and name the ones that do.
+        These five charts share templates, entrypoints and values by copy. Check whether a fix also applies to siblings, base values, values-o1.yaml, embedded YAML/XML and docs. Preserve intentional differences in supported interfaces and DPDK/SR-IOV support; consult docs/README.md. Verify image CLI flags and configuration/YANG keys against the version actually selected by the chart, not only upstream main/dev. Identify any required companion image release.
     - path: "charts/**"
       instructions: |
-        A change to a chart's templates, values or resources needs an entry under `## Unreleased` in that chart's CHANGELOG.md. New or changed values keys need the chart README updated.
-    - path: ".gitlab/**"
+        A change to a chart's templates, values or resources needs an entry under `## Unreleased` in that chart's CHANGELOG.md. New or changed values keys need the chart README updated. The moving application `-latest` image tags in values.yaml are intentional; do not request pinning solely as generic best practice.
+    - path: "{.gitlab/**,.gitlab-ci.yml,charts/**/.gitlab-ci.yml,images/**/.gitlab-ci.yml}"
       instructions: |
-        GitLab CI. Check rules/needs/extends correctness and that jobs still run on the intended pipelines (MR, default branch, schedules), including the child pipelines each chart and image triggers.
+        GitLab CI. Check rules/needs/extends correctness and that jobs still run on the intended pipelines (MR, default branch, schedules), including the child pipelines each chart and image triggers. Trace shared includes, variables and pipeline-source changes into child pipelines. Check fork behavior and runner prerequisites such as SCTP. Distinguish chart package changes from CI-only changes: packaged content is determined by .helmignore. A routine change collects under Unreleased and does not require a version bump.
     - path: "images/**"
       instructions: |
-        Check image size, layer caching and pinned versions.
+        Check build reproducibility, runtime dependencies, entrypoint tools, library paths and file capabilities. Check compatibility with chart configuration and initCommand. For compatibility claims identify the resolved image digest or source revision, and distinguish it from build dependency pinning.
+    - path: "charts/**/resources/**"
+      instructions: |
+        Check process lifecycle, signal forwarding, wait/reaping, exit status and failure propagation. Trace writable paths against mounts and readOnlyRootFilesystem. Check O1 seed versus persisted running configuration through restart and upgrade. Optional tools must only be required on the paths that need them; avoid duplicated dependency lists.
+    - path: "charts/**/templates/{_helpers.tpl,networkpolicy.yaml,deployment.yaml,ipsec-*.yaml,service-ipsec.yaml}"
+      instructions: |
+        For IPsec changes trace each protected interface through application bind addresses, peers, traffic selectors and NetworkPolicy ingress/egress. Check initiator and responder IKE, extra peers, supported YAML list forms, contradictory enable flags and plaintext escape paths. Distinguish UDP encapsulation from native ESP. Reject unsupported configurations clearly rather than silently ignoring security intent.
+    - path: "{docs/**,charts/**/README.md,charts/**/docs/**}"
+      instructions: |
+        Check documented defaults, names, ports and commands against current values, templates and image behavior. Verify complete examples for the claimed topology; distinguish a successful render from runtime validation. Include all enabled sidecars in security and Guaranteed QoS claims. Keep shared feature explanations in docs/ and chart-specific differences in chart READMEs. Prefer user actions and prerequisites over implementation history.
 
   tools:
     # Templates are Go templates, not YAML; helm lint and kubeconform cover them in CI.
@@ -108,6 +117,20 @@ chat:
   allow_non_org_members: false
 
 knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - files: "docs/*.md"
+        applyTo: "charts/**,docs/**"
+  linked_repositories:
+    - repository: ocudu/ocudu
+      instructions: "Application CLI/config schemas, binary behavior, image builds and shared CI. Check the chart-selected image revision; if it cannot be verified, explicitly state that limitation."
+    - repository: ocudu/ocudu_elements/ocudu_oran_apps/ocudu_netconf
+      instructions: "YANG modules, XML import, SSH credentials and persistence. Check the chart-selected image revision, including failure handling and password interpretation."
+    - repository: ocudu/ocudu_elements/ocudu_oran_apps/ocudu_o1_adapter
+      instructions: "NETCONF authentication, password file normalization, CLI flags and health endpoints. Check compatibility with the chart-selected adapter and NETCONF images."
+    - repository: ocudu/ocudu_tools
+      instructions: "Shared ci-box and triage job definitions. Resolve the ref used by include:project and check inherited rules, variables and child-pipeline handling."
   learnings:
     scope: local
   issues:
