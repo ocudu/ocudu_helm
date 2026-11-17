@@ -77,6 +77,13 @@ helm lint ipsec:
     CHART_PATH: charts/ocudu-du
     LINT_VALUES_FILE: charts/ocudu-du/ci/lint-values-ipsec.yaml
 
+# The default values leave usb off, so the jobs above never render the /dev/bus/usb mount.
+helm lint usb:
+  extends: .helm lint
+  variables:
+    CHART_PATH: charts/ocudu-du
+    LINT_VALUES_FILE: charts/ocudu-du/ci/lint-values-usb.yaml
+
 helm version check:
   extends: .helm version check
   variables:
@@ -91,6 +98,7 @@ helm sbom:
     - job: helm lint
     - job: helm lint o1
     - job: helm lint ipsec
+    - job: helm lint usb
 
 helm publish-dev:
   extends: .helm publish-dev-sbom
@@ -101,6 +109,7 @@ helm publish-dev:
     - job: helm lint
     - job: helm lint o1
     - job: helm lint ipsec
+    - job: helm lint usb
     - job: helm version check
 
 helm publish-prod:

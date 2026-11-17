@@ -725,6 +725,19 @@ sriovConfig:
   # @default -- `intel.com/intel_sriov_dpdk`
   extendedResourceName: "intel.com/intel_sriov_dpdk"
 
+# -- USB access for an SDR radio on the node's USB bus, such as a USRP B2xx (split 8,
+# `ru_sdr` with `device_driver: uhd`)
+usb:
+  # -- Mount the host's /dev/bus/usb into the DU container. Needs
+  # `securityContext.privileged: true`: the container's device cgroup refuses USB devices
+  # otherwise, and no capability lifts that. The mount is live, so the radio stays
+  # reachable when it re-enumerates under a new device node after UHD loads its firmware.
+  # Use the `du-uhd` image and `sriovConfig.enabled: false`. The node needs UHD's udev
+  # rule, so that the device is writable for uid 1000. A USRP on the network (X3xx, N3xx)
+  # needs none of this.
+  # @default -- `false`
+  enabled: false
+
 # -- Persistent storage configuration
 # Disabled by default: logs go to an `emptyDir`, which keeps the pod reschedulable
 # onto any node. Enable it to keep logs across pod restarts — worth doing on a
@@ -758,6 +771,8 @@ config:
       socket:
         - bind_addr: 127.0.10.2
 
+    # A USRP B2xx on USB: needs the du-uhd image, usb.enabled and
+    # securityContext.privileged: true (see usb above).
     ru_sdr:
       device_driver: uhd
       device_args: type=b200,num_recv_frames=64,num_send_frames=64

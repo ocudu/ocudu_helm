@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (C) 2021-2026 Software Radio Systems Limited
+# SPDX-License-Identifier: BSD-3-Clause-Open-MPI
+
+# Minimal values for linting the USB path. `usb.enabled` is false in the shipped defaults,
+# so without this file the /dev/bus/usb mount is never rendered.
+#
+# This is a lint fixture, and also the shape of a USRP B2xx deployment: the default config
+# already uses `ru_sdr` with a B200.
+
+image:
+  repository: registry.gitlab.com/ocudu/ocudu/images/du-uhd
+
+# A USB radio needs no VF.
+sriovConfig:
+  enabled: false
+
+usb:
+  enabled: true
+
+# Required with usb.enabled: the chart refuses to render without it.
+securityContext:
+  privileged: true

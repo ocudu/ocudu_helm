@@ -30,6 +30,7 @@
 - With a read-only root and O1 off, rendering fails when a `*filename` key under `log`, `trace` or `pcap` in `config` lies outside `/tmp`, `/run/ocudu` and `persistence.mountPath`, the only writable directories
 - A nightly pipeline runs the workload tests of the CNTi Test Suite against the chart, with the same setup as the essential tests, except `privilege_escalation`, which the file capabilities always fail, and `pod_dns_error`, whose DNS fault cannot be injected into a read-only root filesystem
 - A README for the chart, with the CNTi essential and workload badges
+- `usb.enabled`: mount the host's `/dev/bus/usb` into the DU container, for a USRP B2xx on USB (the default `ru_sdr` config). Needs `securityContext.privileged: true`, and rendering fails without it: the container's device cgroup refuses USB devices otherwise, and no capability lifts that. Privileged alone is not enough either, because a B2xx re-enumerates under a new device node when UHD loads its firmware, and the container's own `/dev` is a copy taken at start; the mount is live. Off by default. A USRP on the network needs neither
 
 ### Fixed
 

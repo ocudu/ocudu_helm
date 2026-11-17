@@ -151,6 +151,18 @@ spec:
         - name: ocudu-tmp
           emptyDir: {}
         {{- end }}
+        {{- if (.Values.usb).enabled }}
+        {{- if not .Values.securityContext.privileged }}
+        {{- fail "usb.enabled needs securityContext.privileged: true: without it the container's device cgroup refuses to open the USB devices, whatever capabilities it has" }}
+        {{- end }}
+        # The host's /dev/bus/usb, mounted live: a USRP B2xx re-enumerates under a new device
+        # node when UHD loads its firmware, and a privileged container's own /dev is a copy
+        # taken at start that never sees the new node.
+        - name: host-usb
+          hostPath:
+            path: /dev/bus/usb
+            type: Directory
+        {{- end }}
           {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-1Gi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-1Gi")) }}
         - name: hugepage-1gi
           emptyDir:
@@ -357,6 +369,10 @@ spec:
             # The entrypoint's mktemp, and any scratch file the image would write.
             - name: ocudu-tmp
               mountPath: /tmp
+            {{- end }}
+            {{- if (.Values.usb).enabled }}
+            - name: host-usb
+              mountPath: /dev/bus/usb
             {{- end }}
             {{- if or (and .Values.resources.limits (index .Values.resources.limits "hugepages-1Gi")) (and .Values.resources.requests (index .Values.resources.requests "hugepages-1Gi")) }}
             - name: hugepage-1gi
