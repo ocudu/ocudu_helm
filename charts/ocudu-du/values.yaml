@@ -735,7 +735,7 @@ usb:
   # Use the `du-uhd` image and `sriovConfig.enabled: false`. The node needs UHD's udev
   # rule, so that the device is writable for uid 1000, and a USB 3 port. The namespace
   # needs `pod-security.kubernetes.io/enforce: privileged`, as for every chart. A USRP on
-  # the network (X3xx, N3xx) needs none of this.
+  # the network needs none of this.
   # @default -- `false`
   enabled: false
 
