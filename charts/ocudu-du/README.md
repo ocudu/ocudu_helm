@@ -192,12 +192,16 @@ usb:
   enabled: true
 securityContext:
   privileged: true
+nodeSelector:
+  <label>: <value>   # a label set on the node the radio is plugged into
 ```
 
-The default `config` already drives a B200 through `ru_sdr`. The node needs UHD's udev
-rule (`uhd-usrp.rules`), so that uid 1000 can open the device, and a USB 3 port: `odu`
-refuses a B2xx on USB 2. The namespace must enforce the Privileged Pod Security level,
-as for every chart (see the [security guide](../../docs/security.md#pod-security-standards)).
+The mount is the USB bus of whichever node runs the pod, so pin the pod to the node with
+the radio. The default `config` already drives a B200 through `ru_sdr`. The node needs
+UHD's udev rule (`uhd-usrp.rules`), so that uid 1000 can open the device, and a USB 3
+port: `odu` refuses a B2xx on USB 2. The namespace must enforce the Privileged Pod
+Security level, as for every chart (see the
+[security guide](../../docs/security.md#pod-security-standards)).
 
 ### hostPath persistence
 
