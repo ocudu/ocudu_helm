@@ -79,6 +79,7 @@ workload that should not run overlapping old/new pods.
 | `network.ipFamilyPolicy` | string | `"PreferDualStack"` | IP family policy of the Services except the IPsec one; `""` leaves it to the cluster |
 | `sriovConfig.enabled` | bool | `true` | Request one SR-IOV VF from the device plugin |
 | `sriovConfig.extendedResourceName` | string | `"intel.com/intel_sriov_dpdk"` | Resource name advertised by the SR-IOV device plugin |
+| `usb.enabled` | bool | `false` | Mount the node's `/dev/bus/usb` for a USRP B2xx; needs `securityContext.privileged: true` — see [USRP B2xx on USB](#usrp-b2xx-on-usb) |
 | `f1cService.enabled` | bool | `true` | Enable F1-C (F1AP) Service |
 | `f1uService.enabled` | bool | `true` | Enable F1-U (GTP-U) Service |
 | `networkPolicy.enabled` | bool | `false` | Enable NetworkPolicy (only effective when `hostNetwork: false`) |
@@ -180,6 +181,24 @@ config:
       pci: 1
 ```
 
+### USRP B2xx on USB
+
+```yaml
+image:
+  repository: registry.gitlab.com/ocudu/ocudu/images/du-uhd
+sriovConfig:
+  enabled: false
+usb:
+  enabled: true
+securityContext:
+  privileged: true
+```
+
+The default `config` already drives a B200 through `ru_sdr`. The node needs UHD's udev
+rule (`uhd-usrp.rules`), so that uid 1000 can open the device, and a USB 3 port: `odu`
+refuses a B2xx on USB 2. The namespace must enforce the Privileged Pod Security level,
+as for every chart (see the [security guide](../../docs/security.md#pod-security-standards)).
+
 ### hostPath persistence
 
 ```yaml
@@ -267,7 +286,7 @@ the cluster, and the full list of what the chart refuses.
 
 The chart defaults are otherwise restrictive — non-root pod, read-only root
 filesystem, every capability dropped except the two below, no service account
-token, no RBAC, no privileged container — but two settings are deliberately not
+token, no RBAC, no privileged container unless `usb.enabled` — but two settings are deliberately not
 at their most restrictive value:
 
 ```yaml
